@@ -1,0 +1,25 @@
+#!/bin/bash
+# Meton - Convenience launcher script
+#
+# This script makes it easy to run Meton from anywhere by:
+# 1. Changing to the Meton directory
+# 2. Activating the virtual environment
+# 3. Running the main script with any provided arguments
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Change to Meton directory
+cd "$SCRIPT_DIR" || exit 1
+
+# Activate virtual environment
+if [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+else
+    echo "Error: Virtual environment not found at venv/bin/activate"
+    echo "Please run ./setup.sh first"
+    exit 1
+fi
+
+# Run Meton with any provided arguments
+python meton.py "$@"

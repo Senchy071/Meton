@@ -1,0 +1,185 @@
+"""Configuration management for Meton.
+
+Example usage:
+    >>> from core.config import Config
+    >>> config = Config()
+    >>> print(config.models.primary)  # "codellama:34b"
+    >>> print(config.agent.max_iterations)  # 10
+    >>> config.reload()  # Reload from file
+"""
+
+import yaml
+from pathlib import Path
+from typing import Dict, Any, List, Optional
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+class ModelSettings(BaseModel):
+    """LLM model settings."""
+    temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    max_tokens: int = Field(default=2048, ge=1)
+    top_p: float = Field(default=0.9, ge=0.0, le=1.0)
+    num_ctx: int = Field(default=4096, ge=1)
+
+
+class ModelsConfig(BaseModel):
+    """Models configuration."""
+    primary: str = "codellama:34b"
+    fallback: str = "codellama:13b"
+    quick: str = "codellama:7b"
+    settings: ModelSettings = Field(default_factory=ModelSettings)
+
+
+class AgentConfig(BaseModel):
+    """Agent configuration."""
+    max_iterations: int = Field(default=10, ge=1)
+    verbose: bool = True
+    show_reasoning: bool = True
+    timeout: int = Field(default=300, ge=1)
+
+
+class FileOpsToolConfig(BaseModel):
+    """File operations tool configuration."""
+    enabled: bool = True
+    allowed_paths: List[str] = Field(default_factory=list)
+    blocked_paths: List[str] = Field(default_factory=list)
+    max_file_size_mb: int = Field(default=10, ge=1)
+
+    @model_validator(mode='after')
+    def validate_paths(self) -> 'FileOpsToolConfig':
+        """Validate that allowed paths exist and are directories."""
+        for path_str in self.allowed_paths:
+            path = Path(path_str)
+            if not path.exists():
+                print(f"Warning: Allowed path does not exist: {path_str}")
+            elif not path.is_dir():
+                raise ValueError(f"Allowed path is not a directory: {path_str}")
+        return self
+
+
+class CodeExecutorToolConfig(BaseModel):
+    """Code executor tool configuration."""
+    enabled: bool = True
+    timeout: int = Field(default=5, ge=1)
+    max_output_length: int = Field(default=10000, ge=100)
+
+
+class WebSearchToolConfig(BaseModel):
+    """Web search tool configuration."""
+    enabled: bool = False  # DISABLED BY DEFAULT
+    max_results: int = Field(default=5, ge=1, le=20)
+    timeout: int = Field(default=10, ge=1)
+
+
+class ToolsConfig(BaseModel):
+    """Tools configuration."""
+    file_ops: FileOpsToolConfig = Field(default_factory=FileOpsToolConfig)
+    code_executor: CodeExecutorToolConfig = Field(default_factory=CodeExecutorToolConfig)
+    web_search: WebSearchToolConfig = Field(default_factory=WebSearchToolConfig)
+
+
+class ConversationConfig(BaseModel):
+    """Conversation configuration."""
+    max_history: int = Field(default=20, ge=1)
+    save_path: str = "./conversations/"
+    auto_save: bool = True
+
+
+class CLIConfig(BaseModel):
+    """CLI configuration."""
+    theme: str = "monokai"
+    show_timestamps: bool = True
+    syntax_highlight: bool = True
+    show_tool_output: bool = True
+
+
+class ProjectConfig(BaseModel):
+    """Project metadata."""
+    name: str = "Meton"
+    version: str = "0.1.0"
+    description: str = "Local AI Coding Assistant"
+
+
+class MetonConfig(BaseModel):
+    """Main Meton configuration."""
+    project: ProjectConfig = Field(default_factory=ProjectConfig)
+    models: ModelsConfig = Field(default_factory=ModelsConfig)
+    agent: AgentConfig = Field(default_factory=AgentConfig)
+    tools: ToolsConfig = Field(default_factory=ToolsConfig)
+    conversation: ConversationConfig = Field(default_factory=ConversationConfig)
+    cli: CLIConfig = Field(default_factory=CLIConfig)
+
+
+class ConfigLoader:
+    """Configuration loader and manager."""
+
+    def __init__(self, config_path: str = "config.yaml"):
+        """Initialize config loader.
+
+        Args:
+            config_path: Path to config YAML file
+        """
+        self.config_path = Path(config_path)
+        self.config: MetonConfig = self._load_config()
+
+    def _load_config(self) -> MetonConfig:
+        """Load configuration from YAML file.
+
+        Returns:
+            Parsed configuration object
+        """
+        if not self.config_path.exists():
+            raise FileNotFoundError(f"Config file not found: {self.config_path}")
+
+        with open(self.config_path, 'r') as f:
+            config_dict = yaml.safe_load(f)
+
+        return MetonConfig(**config_dict)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get configuration value by dot-notation key.
+
+        Args:
+            key: Dot-notation key (e.g., 'models.primary')
+            default: Default value if key not found
+
+        Returns:
+            Configuration value
+        """
+        parts = key.split('.')
+        value = self.config
+
+        for part in parts:
+            if hasattr(value, part):
+                value = getattr(value, part)
+            else:
+                return default
+
+        return value
+
+    def reload(self) -> None:
+        """Reload configuration from file."""
+        self.config = self._load_config()
+
+    def save(self) -> None:
+        """Save current configuration to file.
+
+        This writes the in-memory config object back to the YAML file,
+        preserving any runtime changes made during the session.
+        """
+        config_dict = self.to_dict()
+
+        with open(self.config_path, 'w') as f:
+            yaml.safe_dump(config_dict, f, default_flow_style=False, sort_keys=False)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert configuration to dictionary.
+
+        Returns:
+            Configuration as dictionary
+        """
+        return self.config.model_dump()
+
+
+# Simple alias for easier imports
+Config = ConfigLoader

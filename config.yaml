@@ -1,0 +1,45 @@
+project:
+  name: Meton
+  version: 0.1.0
+  description: Local AI Coding Assistant
+models:
+  primary: qwen2.5:32b-instruct-q5_K_M
+  fallback: llama3.1:8b
+  quick: mistral:latest
+  settings:
+    temperature: 0.0
+    max_tokens: 2048
+    top_p: 0.9
+    num_ctx: 4096
+agent:
+  max_iterations: 10
+  verbose: true
+  show_reasoning: true
+  timeout: 300
+tools:
+  file_ops:
+    enabled: true
+    allowed_paths:
+    - /media/development/projects/
+    blocked_paths:
+    - /etc/
+    - /sys/
+    - /proc/
+    max_file_size_mb: 10
+  code_executor:
+    enabled: true
+    timeout: 5
+    max_output_length: 10000
+  web_search:
+    enabled: false
+    max_results: 5
+    timeout: 10
+conversation:
+  max_history: 20
+  save_path: ./conversations/
+  auto_save: true
+cli:
+  theme: monokai
+  show_timestamps: true
+  syntax_highlight: true
+  show_tool_output: true

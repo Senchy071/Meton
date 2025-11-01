@@ -1,0 +1,21 @@
+# Core LangChain
+langchain>=0.1.20
+langgraph>=0.0.30
+langchain-community>=0.0.29
+
+# LLM Integration
+ollama>=0.1.6
+langchain-ollama>=0.1.0
+
+# CLI
+rich>=13.7.0
+
+# Config & Validation
+pyyaml>=6.0
+pydantic>=2.5.0
+
+# File Operations
+pathvalidate>=3.2.0
+
+# Web Search
+ddgs>=4.0.0
