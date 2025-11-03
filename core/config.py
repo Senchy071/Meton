@@ -71,11 +71,20 @@ class WebSearchToolConfig(BaseModel):
     timeout: int = Field(default=10, ge=1)
 
 
+class CodebaseSearchToolConfig(BaseModel):
+    """Codebase search tool configuration."""
+    enabled: bool = False  # DISABLED BY DEFAULT (enable after indexing)
+    top_k: int = Field(default=5, ge=1, le=50)
+    similarity_threshold: float = Field(default=0.3, ge=0.0, le=1.0)
+    max_code_length: int = Field(default=500, ge=100, le=10000)
+
+
 class ToolsConfig(BaseModel):
     """Tools configuration."""
     file_ops: FileOpsToolConfig = Field(default_factory=FileOpsToolConfig)
     code_executor: CodeExecutorToolConfig = Field(default_factory=CodeExecutorToolConfig)
     web_search: WebSearchToolConfig = Field(default_factory=WebSearchToolConfig)
+    codebase_search: CodebaseSearchToolConfig = Field(default_factory=CodebaseSearchToolConfig)
 
 
 class ConversationConfig(BaseModel):
