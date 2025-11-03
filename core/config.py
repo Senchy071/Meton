@@ -93,6 +93,17 @@ class CLIConfig(BaseModel):
     show_tool_output: bool = True
 
 
+class RAGConfig(BaseModel):
+    """RAG (Retrieval-Augmented Generation) configuration."""
+    enabled: bool = False
+    embedding_model: str = "sentence-transformers/all-mpnet-base-v2"
+    index_path: str = "./rag_index/"
+    metadata_path: str = "./rag_index/metadata.json"
+    dimensions: int = Field(default=768, ge=1)
+    top_k: int = Field(default=10, ge=1, le=100)
+    similarity_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+
+
 class ProjectConfig(BaseModel):
     """Project metadata."""
     name: str = "Meton"
@@ -108,6 +119,7 @@ class MetonConfig(BaseModel):
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
     conversation: ConversationConfig = Field(default_factory=ConversationConfig)
     cli: CLIConfig = Field(default_factory=CLIConfig)
+    rag: RAGConfig = Field(default_factory=RAGConfig)
 
 
 class ConfigLoader:

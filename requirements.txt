@@ -19,3 +19,7 @@ pathvalidate>=3.2.0
 
 # Web Search
 ddgs>=4.0.0
+
+# Phase 2 - RAG (Retrieval-Augmented Generation)
+faiss-cpu>=1.7.4
+sentence-transformers>=2.3.0

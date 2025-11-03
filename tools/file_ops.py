@@ -18,6 +18,7 @@ Example:
 
 import os
 import json
+import fnmatch
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 from pydantic import Field
@@ -80,6 +81,7 @@ Actions:
 - read: {"action": "read", "path": "/path/to/file"}
 - write: {"action": "write", "path": "/path/to/file", "content": "text"}
 - list: {"action": "list", "path": "/path/to/directory"}
+- find: {"action": "find", "path": "/path/to/directory", "pattern": "*.py", "recursive": true}
 - create_dir: {"action": "create_dir", "path": "/path/to/directory"}
 - exists: {"action": "exists", "path": "/path/to/file"}
 - get_info: {"action": "get_info", "path": "/path/to/file"}
@@ -137,7 +139,16 @@ Returns: Operation result or error message."""
                 return "✗ Missing 'action' in input"
 
             action = params.get("action")
+
+            # Validate that 'path' is provided for all actions
+            if "path" not in params:
+                return f"✗ Missing required parameter 'path' for action '{action}'"
+
             path_str = params.get("path", "")
+
+            # Validate path is not empty
+            if not path_str or not path_str.strip():
+                return f"✗ Parameter 'path' cannot be empty for action '{action}'"
 
             # Route to appropriate method
             if action == "read":
@@ -147,6 +158,10 @@ Returns: Operation result or error message."""
                 return self._write_file(Path(path_str), content)
             elif action == "list":
                 return self._list_directory(Path(path_str))
+            elif action == "find":
+                pattern = params.get("pattern", "*")
+                recursive = params.get("recursive", True)
+                return self._find_files(Path(path_str), pattern, recursive)
             elif action == "create_dir":
                 return self._create_directory(Path(path_str))
             elif action == "exists":
@@ -154,7 +169,7 @@ Returns: Operation result or error message."""
             elif action == "get_info":
                 return self._get_info(Path(path_str))
             else:
-                return f"✗ Unknown action: {action}. Valid actions: read, write, list, create_dir, exists, get_info"
+                return f"✗ Unknown action: {action}. Valid actions: read, write, list, find, create_dir, exists, get_info"
 
         except Exception as e:
             return self._handle_error(e, "executing file operation")
@@ -373,6 +388,95 @@ Returns: Operation result or error message."""
             return str(e)
         except Exception as e:
             return self._handle_error(e, f"listing directory {path}")
+
+    def _find_files(self, path: Path, pattern: str = "*", recursive: bool = True) -> str:
+        """Find files matching a pattern, optionally recursively.
+
+        Args:
+            path: Root directory to search from
+            pattern: Glob pattern to match (e.g., "*.py", "test_*.py")
+            recursive: If True, search recursively; if False, search only in path
+
+        Returns:
+            List of matching file paths (absolute) or error message
+
+        Example:
+            >>> result = self._find_files(Path("/path/to/dir"), "*.py", True)
+        """
+        # Directories to skip during recursive search
+        EXCLUDED_DIRS = {
+            '__pycache__',
+            'venv',
+            '.venv',
+            'env',
+            'ENV',
+            '.git',
+            'node_modules',
+            '.idea',
+            '.vscode',
+            'build',
+            'dist',
+            '.eggs',
+            '*.egg-info'
+        }
+
+        try:
+            self._log_execution("find_files", f"path={path}, pattern={pattern}, recursive={recursive}")
+
+            # Validate path
+            self._validate_path(path)
+
+            # Check if directory exists
+            if not path.exists():
+                return f"✗ Directory does not exist: {path}"
+
+            if not path.is_dir():
+                return f"✗ Path is not a directory: {path}"
+
+            matching_files = []
+
+            if recursive:
+                # Recursive search using os.walk
+                for root, dirs, files in os.walk(path):
+                    # Skip excluded directories (modify dirs in-place to prevent descent)
+                    dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS and not d.startswith('.')]
+
+                    # Find matching files in current directory
+                    for filename in files:
+                        if fnmatch.fnmatch(filename, pattern):
+                            full_path = Path(root) / filename
+                            matching_files.append(str(full_path.resolve()))
+            else:
+                # Non-recursive search (only immediate children)
+                for item in path.iterdir():
+                    if item.is_file() and fnmatch.fnmatch(item.name, pattern):
+                        matching_files.append(str(item.resolve()))
+
+            # Sort results for consistent output
+            matching_files.sort()
+
+            if not matching_files:
+                search_type = "recursively" if recursive else "in directory"
+                return f"✗ No files matching '{pattern}' found {search_type} in {path}"
+
+            if self.logger:
+                self.logger.info(f"Found {len(matching_files)} files matching '{pattern}' in {path}")
+
+            # Format output
+            header = f"✓ Found {len(matching_files)} file(s) matching '{pattern}'"
+            if recursive:
+                header += f" (recursive search from {path})"
+            else:
+                header += f" (in {path})"
+            header += "\n\n"
+
+            file_list = "\n".join(matching_files)
+            return header + file_list
+
+        except PathNotAllowedError as e:
+            return str(e)
+        except Exception as e:
+            return self._handle_error(e, f"finding files matching '{pattern}' in {path}")
 
     def _create_directory(self, path: Path) -> str:
         """Create directory (and parents if needed).

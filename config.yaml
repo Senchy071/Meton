@@ -43,3 +43,11 @@ cli:
   show_timestamps: true
   syntax_highlight: true
   show_tool_output: true
+rag:
+  enabled: false
+  embedding_model: sentence-transformers/all-mpnet-base-v2
+  index_path: ./rag_index/
+  metadata_path: ./rag_index/metadata.json
+  dimensions: 768
+  top_k: 10
+  similarity_threshold: 0.7

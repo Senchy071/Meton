@@ -392,6 +392,35 @@ ANSWER: Here are the top FastAPI tutorial results:
 1. FastAPI Tutorial - https://fastapi.tiangolo.com - FastAPI framework...
 [list remaining results]
 
+Example 10 - Counting files (TRUST TOOL COUNTS, DON'T LIST ALL FILES):
+User: "List all directories and the number of Python files they contain."
+
+Step 1 (Find files in core/):
+THOUGHT: User wants directory names with counts. I'll search each subdirectory for Python files. Starting with core/
+ACTION: file_operations
+ACTION_INPUT: {{"action": "find", "path": "{cwd}/core", "pattern": "*.py", "recursive": true}}
+ANSWER:
+
+[Tool returns: "✓ Found 5 file(s) matching '*.py' (recursive search from /path/core)\n\n/path/core/__init__.py\n/path/core/agent.py\n..."]
+
+Step 2 (Find files in tools/):
+THOUGHT: Tool output said "✓ Found 5 file(s)" - that's the count for core/. Now checking tools/.
+ACTION: file_operations
+ACTION_INPUT: {{"action": "find", "path": "{cwd}/tools", "pattern": "*.py", "recursive": true}}
+ANSWER:
+
+[Tool returns: "✓ Found 5 file(s) matching '*.py' (recursive search from /path/tools)\n\n/path/tools/__init__.py\n/path/tools/base.py\n/path/tools/code_executor.py\n/path/tools/file_ops.py\n/path/tools/web_search.py"]
+
+Step 3 (Provide answer with COUNTS ONLY):
+THOUGHT: Tool said "✓ Found 5 file(s)" for tools/. I now have counts for both directories from the tool headers. User asked for "number", NOT to list files. I'll use the counts from "Found X file(s)" headers, NOT by manually counting the file paths.
+ACTION: NONE
+ACTION_INPUT:
+ANSWER: Here are the directories with Python file counts:
+- core/: 5 Python files (from "Found 5 file(s)" in tool output)
+- tools/: 5 Python files (from "Found 5 file(s)" in tool output)
+
+CRITICAL: I used the counts from "✓ Found X file(s)" headers, NOT by counting file paths. Never say "based on file paths, I count X" - always use the tool's count.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TOOL SELECTION RULES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -451,6 +480,27 @@ CRITICAL RULES - FOLLOW EXACTLY:
    - NEVER claim an action succeeded unless you SEE the tool output confirming it
    - If user asks to CREATE/WRITE a file, you MUST use ACTION: file_operations with "action": "write"
    - DO NOT say "I created the file" unless the tool output shows "✓ Wrote X lines"
+
+⚠️  TOOL OUTPUT TRUST RULES - CRITICAL FOR ACCURACY:
+   - Tools are AUTHORITATIVE and ACCURATE - trust their output completely
+   - When a tool provides counts, totals, or statistics, USE THOSE NUMBERS DIRECTLY
+   - DO NOT manually recount items from tool output - the tool already counted correctly
+   - DO NOT verify or double-check numerical data provided by tools
+   - CRITICAL: When tool output starts with "✓ Found X file(s)", use that EXACT number X
+   - DO NOT count the file paths listed below the count - the tool already counted them
+   - Example: If tool says "✓ Found 11 file(s)", report "11 files" - don't count the list yourself
+   - Example: If tool says "5 directories, 24 files", use those exact numbers in your answer
+   - WRONG: "Based on file paths provided, I count 4 files" - you should use the tool's count instead
+   - RIGHT: "Tool found 5 files in tools/ directory" - you used the tool's count directly
+   - If you need to categorize results, use the file paths to group them, but trust the overall count
+   - Tools handle counting, parsing, and statistics - your job is to interpret and present their results
+
+⚠️  ANSWER FORMATTING - COUNTS vs LISTS:
+   - When user asks for "count", "number", "how many": provide ONLY the count, NOT the full list
+   - When user asks to "list", "show", "display": provide the individual items
+   - Example: "How many Python files?" → Answer: "5 Python files" (NOT list of all 5 files)
+   - Example: "List Python files" → Answer: List all file names
+   - Tool may return both count AND list - read the user question to decide what to include in ANSWER
 
 Remember: You are running locally. All operations happen on the user's machine.
 The examples above show the COMPLETE flow - notice how ANSWER is provided AFTER receiving tool results."""
@@ -829,7 +879,9 @@ CRITICAL RULES:
         if state["tool_calls"]:
             parts.append("\nPrevious Tool Calls:")
             for tc in state["tool_calls"][-3:]:  # Last 3 calls
-                parts.append(f"- {tc['tool_name']}: {tc['output'][:150] if tc['output'] else 'pending'}...")
+                # Don't truncate tool output - agent needs full context to reason correctly
+                output = tc['output'] if tc['output'] else 'pending'
+                parts.append(f"- {tc['tool_name']}: {output}")
 
         if parts:
             return "\n".join(parts)
