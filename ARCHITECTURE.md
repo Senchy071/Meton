@@ -284,6 +284,373 @@ self.tool_map = {tool.name: tool for tool in tools}
 # Agent parses ACTION and looks up tool in tool_map
 ```
 
+**Code Executor Tool** (`tools/code_executor.py`):
+
+**Features:**
+- Subprocess isolation for safety
+- AST-based import validation (27 allowed, 36 blocked)
+- Timeout protection (5 seconds default)
+- Output capture (stdout + stderr)
+- Execution time tracking
+
+**Web Search Tool** (`tools/web_search.py`):
+
+**Features:**
+- DuckDuckGo integration (no API key needed)
+- Disabled by default (explicit opt-in required)
+- Configurable max results (1-20)
+- Timeout protection
+- Runtime enable/disable via `/web on/off`
+
+**Codebase Search Tool** (`tools/codebase_search.py`):
+
+**Features:**
+- Semantic code search using RAG
+- Natural language queries
+- Returns ranked results with similarity scores
+- Lazy-loads indexer for performance
+- Configurable top_k, similarity_threshold, max_code_length
+
+---
+
+## RAG System (`rag/`)
+
+**Purpose:** Semantic code understanding via vector embeddings and retrieval
+
+**Architecture:**
+
+```
+┌──────────────────────────────────────────────────┐
+│              Indexing Pipeline                   │
+└──────────────────────────────────────────────────┘
+                     │
+   Python Files ─────┤
+                     │
+        ┌────────────▼────────────┐
+        │   CodeParser (AST)      │
+        │  - Parse Python files   │
+        │  - Extract functions    │
+        │  - Extract classes      │
+        │  - Extract imports      │
+        │  - Capture docstrings   │
+        └────────────┬────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │    CodeChunker          │
+        │  - 1 chunk per function │
+        │  - 1 chunk per class    │
+        │  - 1 chunk for imports  │
+        │  - 1 chunk for module   │
+        └────────────┬────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │  EmbeddingModel         │
+        │  - sentence-transformers│
+        │  - all-mpnet-base-v2    │
+        │  - 768-dim vectors      │
+        └────────────┬────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │    Storage Layer        │
+        │  ├─ VectorStore (FAISS) │
+        │  │   - IndexFlatL2      │
+        │  │   - L2 distance      │
+        │  └─ MetadataStore (JSON)│
+        │      - File paths       │
+        │      - Line numbers     │
+        │      - Chunk types      │
+        │      - Code snippets    │
+        └─────────────────────────┘
+
+
+┌──────────────────────────────────────────────────┐
+│              Query Pipeline                      │
+└──────────────────────────────────────────────────┘
+                     │
+Natural Language ────┤
+Query               │
+        ┌────────────▼────────────┐
+        │  EmbeddingModel         │
+        │  - Encode query         │
+        │  - 768-dim vector       │
+        └────────────┬────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │  FAISS Search           │
+        │  - Find nearest vectors │
+        │  - Calculate similarity │
+        │  - Return top-k         │
+        └────────────┬────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │  Retrieve Metadata      │
+        │  - Get file paths       │
+        │  - Get line numbers     │
+        │  - Get code snippets    │
+        │  - Calculate scores     │
+        └────────────┬────────────┘
+                     │
+                     ▼
+               Return Results
+```
+
+### RAG Components
+
+#### 1. EmbeddingModel (`rag/embeddings.py`)
+
+**Purpose:** Generate vector embeddings for code
+
+**Features:**
+- Sentence-transformers integration
+- Model: `all-mpnet-base-v2`
+- 768-dimensional vectors
+- Batch processing for efficiency
+- Local model (no API calls)
+
+**Usage:**
+```python
+model = EmbeddingModel()
+vectors = model.encode(["def hello(): pass", "class Foo: pass"])
+# Returns: numpy array of shape (2, 768)
+```
+
+#### 2. CodeParser (`rag/code_parser.py`)
+
+**Purpose:** AST-based Python code parsing
+
+**Features:**
+- Extracts functions with full metadata
+- Extracts classes with methods
+- Captures imports (standard, third-party)
+- Preserves docstrings
+- Tracks line numbers
+- Graceful error handling (syntax errors)
+
+**Metadata Extracted:**
+```python
+{
+    "name": "authenticate_user",
+    "type": "function",
+    "start_line": 45,
+    "end_line": 67,
+    "docstring": "Authenticate user credentials",
+    "code": "def authenticate_user(...)...",
+    "decorators": ["@require_auth"],
+    "args": ["username", "password"],
+    "returns": "bool"
+}
+```
+
+**AST Traversal:**
+```python
+1. Parse file with ast.parse()
+2. Walk AST tree with ast.walk()
+3. Identify FunctionDef, ClassDef, Import nodes
+4. Extract source code using ast.unparse() or direct slicing
+5. Capture metadata (decorators, args, docstrings)
+6. Handle nested structures (class methods)
+```
+
+#### 3. CodeChunker (`rag/chunker.py`)
+
+**Purpose:** Create semantic chunks for indexing
+
+**Chunking Strategy:**
+- **1 chunk per function** - Complete function with context
+- **1 chunk per class** - Class definition + methods
+- **1 chunk for imports** - All imports in file
+- **1 chunk for module** - Module-level docstring
+
+**Chunk Structure:**
+```python
+{
+    "id": "uuid4",
+    "file_path": "/path/to/file.py",
+    "chunk_type": "function|class|import|module",
+    "name": "function_name",
+    "start_line": 45,
+    "end_line": 67,
+    "code": "def authenticate_user(...)...",
+    "docstring": "Docstring text",
+    "metadata": {...}
+}
+```
+
+**Why Semantic Chunking?**
+- Each chunk is a logical unit (function/class)
+- Preserves code context and structure
+- Better search results than arbitrary splitting
+- Line numbers enable precise navigation
+
+#### 4. CodebaseIndexer (`rag/indexer.py`)
+
+**Purpose:** Orchestrate the indexing process
+
+**Features:**
+- Recursive directory traversal
+- Exclusion patterns (`__pycache__`, `.git`, `venv`, etc.)
+- Python file detection (`.py` extension)
+- Batch embedding generation
+- Progress tracking
+- Error handling per-file (continues on failure)
+
+**Indexing Flow:**
+```python
+1. Walk directory tree (exclude patterns)
+2. Filter Python files
+3. For each file:
+   a. CodeParser.parse(file) → elements
+   b. CodeChunker.chunk(elements) → chunks
+   c. Collect chunks
+4. Batch generate embeddings (all chunks)
+5. Store vectors in VectorStore
+6. Store metadata in MetadataStore
+7. Return statistics (files, chunks, time)
+```
+
+**Statistics Tracked:**
+```python
+{
+    "total_files": 127,
+    "total_chunks": 834,
+    "indexing_time": 18.2,
+    "last_indexed_path": "/path/to/project",
+    "timestamp": "2025-11-04T14:23:15"
+}
+```
+
+#### 5. VectorStore (`rag/vector_store.py`)
+
+**Purpose:** FAISS-based vector similarity search
+
+**Features:**
+- FAISS `IndexFlatL2` (exact L2 distance)
+- Fast nearest neighbor search
+- Persistent storage (saves to disk)
+- Index mapping (vector ID → chunk ID)
+
+**FAISS Configuration:**
+```python
+dimension = 768  # Embedding size
+index = faiss.IndexFlatL2(dimension)  # Exact search
+index.add(vectors)  # Add all embeddings
+```
+
+**Search:**
+```python
+distances, indices = index.search(query_vector, k=5)
+# distances: similarity scores (lower = more similar)
+# indices: vector IDs in the index
+```
+
+**Persistence:**
+```
+rag_index/
+├── faiss.index            # FAISS index file
+└── faiss.index.mappings   # Vector ID → Chunk ID mappings
+```
+
+#### 6. MetadataStore (`rag/metadata_store.py`)
+
+**Purpose:** Store chunk metadata as JSON
+
+**Features:**
+- JSON-based storage
+- Fast lookup by chunk ID
+- File path, line numbers, code snippets
+- Chunk type and name
+
+**Storage Format:**
+```json
+{
+  "chunk_uuid": {
+    "file_path": "auth/login.py",
+    "chunk_type": "function",
+    "name": "authenticate_user",
+    "start_line": 45,
+    "end_line": 67,
+    "code": "def authenticate_user(...)...",
+    "docstring": "Authenticate user credentials"
+  }
+}
+```
+
+**Persistence:**
+```
+rag_index/
+└── metadata.json  # All chunk metadata
+```
+
+### RAG Integration with Agent
+
+**Tool Selection Rules:**
+
+The agent automatically uses `codebase_search` when:
+- User asks "how does X work?"
+- User asks "where is X?"
+- User asks "find code that does X"
+- Questions about THIS project's code
+
+**System Prompt Examples:**
+```
+Example: Semantic Code Search
+
+USER: How does authentication work in this codebase?
+
+THOUGHT: This is a code understanding question about the indexed
+codebase. I should use codebase_search to find relevant code.
+
+ACTION: codebase_search
+ACTION_INPUT: {"query": "authentication login user credentials"}
+
+[Tool returns ranked results with file paths and line numbers]
+
+ANSWER: Based on auth/login.py:45-67, the authentication system
+uses bcrypt for password hashing and JWT tokens...
+```
+
+**Configuration Integration:**
+```yaml
+rag:
+  enabled: true                # Auto-enabled after indexing
+  last_indexed_path: /path/to/project
+  last_indexed_at: "2025-11-04T14:23:15"
+  index_stats:
+    total_files: 127
+    total_chunks: 834
+
+tools:
+  codebase_search:
+    enabled: true              # Auto-enabled with RAG
+    top_k: 5                   # Return top 5 results
+    similarity_threshold: 0.3  # Minimum similarity score
+    max_code_length: 500       # Truncate long code snippets
+```
+
+### CLI Index Management
+
+**Commands:**
+- `/index [path]` - Index a codebase
+- `/index status` - Show statistics
+- `/index clear` - Delete index
+- `/index refresh` - Re-index last path
+- `/csearch <query>` - Test semantic search
+
+**Indexing Process:**
+1. Validate path (exists, contains Python files)
+2. Initialize RAG components
+3. Call indexer with progress display
+4. Update configuration (enable RAG)
+5. Persist config to disk
+6. Display statistics
+
+**Auto-enablement:**
+After successful indexing:
+- `rag.enabled` → `true`
+- `tools.codebase_search.enabled` → `true`
+- Config saved to `config.yaml`
+- Agent gains semantic search capability
+
 ---
 
 ## Data Flow

@@ -9,9 +9,12 @@ Everything runs on your hardware - no external API calls, no data leaving your m
 
 - 🏠 **Fully Local** - All processing happens on your machine
 - 🤖 **Intelligent Agent** - Uses ReAct pattern for multi-step reasoning
+- 🔍 **Semantic Code Search** - Natural language queries on indexed codebases (RAG with FAISS)
 - 📁 **File Operations** - Read, write, and navigate your codebase
+- ⚙️ **Code Execution** - Safe Python code execution with sandboxing
+- 🌐 **Web Search** - DuckDuckGo integration for external information
 - 💬 **Conversation Memory** - Maintains context across interactions
-- 🔀 **Multi-Model** - Switch between CodeLlama models easily
+- 🔀 **Multi-Model** - Switch between models easily (CodeLlama, Qwen, Llama, Mistral)
 - 🎨 **Beautiful CLI** - Rich terminal interface with syntax highlighting
 
 ## Requirements
@@ -65,19 +68,37 @@ python meton.py
 - `/search <keyword>` - Search conversation history
 - `/reload` - Reload configuration without restart
 - `/tools` - List available tools
+- `/index [path]` - Index a codebase for semantic search
+- `/index status` - Show indexing statistics
+- `/index clear` - Delete the current index
+- `/index refresh` - Re-index the last path
+- `/csearch <query>` - Test semantic code search directly
+- `/web on/off` - Enable/disable web search tool
 - `/exit, /quit, /q` - Exit Meton
 
 ### Example Session
 
 ```
-You: Read the README.md file and summarize it
+You: /index /media/development/projects/meton
 
-💭 THOUGHT: I need to read the README.md file first
-🔧 ACTION: file_operations
-📥 INPUT: {"action": "read", "path": "README.md"}
+🔍 Indexing /media/development/projects/meton...
+Found 23 Python files
+
+Processing files... ━━━━━━━━━━ 100% 23/23 00:04
+
+✅ Complete! Indexed 23 files, 127 chunks in 4.8s
+RAG enabled ✅
+Codebase search enabled ✅
+
+You: How does authentication work in this codebase?
+
+💭 THOUGHT: This is a code understanding question, using codebase_search
+🔧 ACTION: codebase_search
+📥 INPUT: {"query": "authentication login user verify"}
 
 💬 Assistant:
-The README describes Meton, a local AI coding assistant...
+Based on auth/login.py:45-67, the system uses token-based
+authentication with JWT...
 
 You: /status
 
@@ -85,7 +106,9 @@ You: /status
 │ Model:        codellama:34b                      │
 │ Session:      3c8a9f2d-4b1e...                   │
 │ Messages:     4                                  │
-│ Tools:        file_operations                    │
+│ Tools:        file_operations, code_executor,    │
+│               web_search, codebase_search        │
+│ RAG:          ✅ enabled (127 chunks)            │
 ╰──────────────────────────────────────────────────╯
 
 You: /exit
@@ -96,7 +119,11 @@ You: /exit
 
 ```
 CLI (Rich) → Agent (LangGraph) → Models (Ollama) → Tools
-                                                     └─ File Operations
+                                                     ├─ File Operations
+                                                     ├─ Code Executor
+                                                     ├─ Web Search
+                                                     └─ Codebase Search (RAG)
+                                                         └─ FAISS Vector Store
 ```
 
 ## Configuration
@@ -155,13 +182,20 @@ Edit `config.yaml` to customize:
 - Graceful error handling and shutdown
 - Working integration with all components
 
-**📋 Phase 6: Advanced Features** (Future)
-- Codebase RAG with FAISS
-- Code execution tool
-- Web search tool
-- Advanced skills (debugger, refactoring, test generation)
-- Multi-agent planning
-- Self-reflection
+**✅ Phase 6: RAG & Advanced Tools** (Complete)
+- Codebase indexer with AST-based parsing (Task 14)
+- Semantic code search with FAISS vector store (Task 15)
+- RAG agent integration with automatic tool selection (Task 19)
+- CLI index management commands (/index, /csearch) (Task 20)
+- Code execution tool with subprocess isolation
+- Web search tool with DuckDuckGo integration
+- All 30+ tests passing
+
+**📋 Phase 7: Advanced Skills** (Future)
+- Advanced coding skills (debugger integration, refactoring engine)
+- Test generation and execution automation
+- Multi-agent collaboration and planning
+- Self-reflection and improvement loops
 
 ## Documentation
 

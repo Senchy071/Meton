@@ -21,13 +21,19 @@ python meton.py            # Direct launch
 | `/status` | Show current session info |
 | `/models` | List available models |
 | `/model <name>` | Switch model (primary/fallback/quick) |
-| `/tools` | List available tools |
+| `/tools` | List available tools with status |
 | `/verbose on\|off` | Toggle verbose mode |
 | `/history` | Show conversation history |
 | `/search <keyword>` | Search conversation history |
 | `/clear` or `/c` | Clear conversation |
 | `/save` | Save conversation |
 | `/reload` | Reload configuration |
+| `/index [path]` | Index codebase for semantic search |
+| `/index status` | Show indexing statistics |
+| `/index clear` | Delete current index |
+| `/index refresh` | Re-index last path |
+| `/csearch <query>` | Test semantic code search |
+| `/web on\|off\|status` | Control web search tool |
 | `/exit` or `/quit` or `/q` | Exit Meton |
 
 ---
@@ -68,6 +74,33 @@ What does ModelManager do?
 Describe the file operations tool
 Where is Config defined?
 Find error handling in agent.py
+```
+
+### Semantic Code Search (with /index)
+
+```
+/index /path/to/project                    # Index first
+How does authentication work?              # Natural language query
+Find database connection code
+Show me error handling patterns
+Where is user input validated?
+/csearch authentication                    # Direct search test
+```
+
+### Code Execution
+
+```
+Run this code: print(2 + 2)
+Execute: import math; print(math.pi)
+Calculate fibonacci of 10
+```
+
+### Web Search
+
+```
+/web on                                    # Enable first
+Search for Python asyncio best practices
+Find FAISS documentation
 ```
 
 ### Multi-Step

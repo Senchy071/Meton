@@ -196,19 +196,105 @@ Read both test_models.py and test_conversation.py and compare their testing appr
 
 ---
 
+## Semantic Code Search (After Indexing)
+
+### Index Your Codebase First
+```
+/index /path/to/your/project
+```
+
+### Natural Language Code Queries
+```
+How does authentication work in this codebase?
+Find all database connection code
+Show me error handling patterns
+Where is user input validated?
+What functions handle file uploads?
+Explain the caching mechanism
+Find all API endpoint definitions
+Where are database migrations defined?
+Show me the logging implementation
+```
+
+### Direct Search Testing
+```
+/csearch authentication
+/csearch database connection
+/csearch error handling
+/csearch validation
+```
+
+### Architecture Questions
+```
+How is the database layer structured?
+What's the request/response flow?
+Explain the middleware stack
+How does dependency injection work here?
+```
+
+---
+
+## Code Execution
+
+### Simple Calculations
+```
+Run this code: print(2 + 2)
+Execute: print(sum([1, 2, 3, 4, 5]))
+Calculate fibonacci of 10
+```
+
+### With Imports
+```
+Run: import math; print(math.pi)
+Execute: import json; print(json.dumps({"key": "value"}))
+Test: from datetime import datetime; print(datetime.now())
+```
+
+### Function Testing
+```
+Run this: def factorial(n): return 1 if n <= 1 else n * factorial(n-1); print(factorial(5))
+```
+
+---
+
+## Web Search (Opt-in)
+
+### Enable First
+```
+/web on
+```
+
+### Search Queries
+```
+Search for Python asyncio best practices
+Find information about FAISS vector databases
+Look up LangChain documentation
+Search for pytest fixtures guide
+Find SQLAlchemy relationship patterns
+```
+
+### Library Documentation
+```
+Search for FastAPI query parameters
+Find Pydantic validation examples
+Look up Rich table formatting docs
+```
+
+---
+
 ## What NOT to Ask
 
 ### Out of Scope
-- ❌ "Search the web for..."  (no web access)
-- ❌ "Execute this Python code..." (no code execution tool yet)
 - ❌ "Install package X..." (no package management)
-- ❌ "Make an API call to..." (local only)
+- ❌ "Make an API call to..." (local only, no network from code execution)
+- ❌ "Deploy this to production..." (local development tool)
+- ❌ "Modify system files..." (restricted for security)
 
 ### Better Alternatives
 - ✓ "Read README.md and find installation instructions"
 - ✓ "Show me the code in core/models.py that handles model loading"
 - ✓ "What packages are listed in requirements.txt?"
-- ✓ "Read the config and show me the API settings"
+- ✓ "Search for FastAPI documentation" (with /web on)
 
 ---
 

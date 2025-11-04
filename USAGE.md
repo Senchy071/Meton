@@ -24,7 +24,7 @@ The CLI will initialize all components and present you with an interactive promp
 
 ## Commands Reference
 
-Meton provides 12 interactive commands to control your session:
+Meton provides 18+ interactive commands to control your session:
 
 ### Information Commands
 
@@ -150,16 +150,112 @@ You: /save
 ### Tool Management
 
 #### `/tools`
-List all available tools with descriptions.
+List all available tools with descriptions and status.
 
 ```
 You: /tools
 
-╔═══════════════════════════════════════════════╗
-║  Available Tools                              ║
-╠═══════════════════════════════════════════════╣
-║  file_operations  Perform file operations...  ║
-╚═══════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════╗
+║  Tool Name          Status      Description           ║
+╠════════════════════════════════════════════════════════╣
+║  file_operations    ✅ enabled   Perform file ops...  ║
+║  code_executor      ✅ enabled   Execute Python...    ║
+║  web_search         ❌ disabled  Search the web...    ║
+║  codebase_search    ✅ enabled   Semantic search...   ║
+╚════════════════════════════════════════════════════════╝
+```
+
+#### `/web [on|off|status]`
+Control web search tool (disabled by default for privacy).
+
+```
+You: /web status
+Web search: disabled
+
+You: /web on
+✅ Web search enabled
+
+You: /web off
+✅ Web search disabled
+```
+
+### Codebase Indexing & Search
+
+#### `/index [path]`
+Index a Python codebase for semantic code search using FAISS.
+
+```
+You: /index /media/development/projects/my_project
+
+🔍 Indexing /media/development/projects/my_project...
+Found 45 Python files
+
+Processing files... ━━━━━━━━━━ 100% 45/45 00:08
+
+✅ Complete! Indexed 45 files, 234 chunks in 8.2s
+RAG enabled ✅
+Codebase search enabled ✅
+```
+
+**Features:**
+- AST-based Python file parsing (functions, classes, modules)
+- Semantic chunking (one chunk per function/class)
+- 768-dimensional embeddings using sentence-transformers
+- FAISS vector store for fast similarity search
+- Automatic RAG enablement after indexing
+
+#### `/index status`
+Show statistics about the current index.
+
+```
+You: /index status
+
+╭─── Codebase Index Status ─────────────────╮
+│ Indexed Path:  /path/to/project           │
+│ Files:         45                         │
+│ Chunks:        234                        │
+│ Last Indexed:  2025-11-04 14:23:15       │
+│ RAG Status:    ✅ enabled                 │
+╰───────────────────────────────────────────╯
+```
+
+#### `/index clear`
+Delete the current index (requires confirmation).
+
+```
+You: /index clear
+⚠️  This will delete the entire index. Continue? [y/n] (n): y
+✅ Index cleared successfully
+```
+
+#### `/index refresh`
+Re-index the last indexed path.
+
+```
+You: /index refresh
+🔄 Re-indexing /path/to/project...
+✅ Complete! Indexed 45 files, 234 chunks in 8.1s
+```
+
+#### `/csearch <query>`
+Test semantic code search directly without asking the agent.
+
+```
+You: /csearch authentication
+
+🔍 Searching for: "authentication"
+
+╔════════════════════════════════════════════════════╗
+║  File: auth/login.py                               ║
+║  Type: function | Lines: 45-67                     ║
+║  Name: authenticate_user                           ║
+║  Similarity: 0.8523                                ║
+╠════════════════════════════════════════════════════╣
+║  def authenticate_user(username, password):        ║
+║      # Verify user credentials...                  ║
+╚════════════════════════════════════════════════════╝
+
+Found 5 results in 0.3s
 ```
 
 ### Session Control
@@ -256,6 +352,84 @@ You: Where is the Config class defined?
 You: Show me all the error handling in core/agent.py
 You: Find the loop detection logic
 ```
+
+### Semantic Code Search (with Indexing)
+
+**First, index your codebase:**
+```
+You: /index /path/to/your/project
+```
+
+**Then ask natural language questions:**
+```
+You: How does authentication work in this codebase?
+You: Find code that handles database connections
+You: Show me error handling patterns
+You: Where is user input validated?
+You: What functions deal with file uploads?
+```
+
+**The agent automatically uses semantic search:**
+- Recognizes code understanding questions
+- Searches indexed codebase with embeddings
+- Returns relevant code chunks with file paths and line numbers
+- Provides context-aware explanations
+
+**Example workflow:**
+```
+You: How does the login system work?
+
+💭 THOUGHT: This is a code understanding question - using codebase_search
+🔧 ACTION: codebase_search
+📥 INPUT: {"query": "login authentication user credentials"}
+
+💬 Assistant:
+Based on the codebase search results:
+
+1. auth/login.py:45-67 (authenticate_user function):
+   - Validates user credentials against database
+   - Uses bcrypt for password hashing
+   - Returns JWT token on success
+
+2. auth/session.py:23-40 (create_session function):
+   - Creates session with 24-hour expiry
+   - Stores in Redis cache
+   - Returns session token
+
+The login flow: User submits credentials → authenticate_user validates
+→ create_session generates token → Token returned to client
+```
+
+### Code Execution
+
+**Run Python Code:**
+```
+You: Run this code: print(2 + 2)
+You: Execute: import math; print(math.pi)
+You: Test this function: def fib(n): return n if n < 2 else fib(n-1) + fib(n-2); print(fib(10))
+```
+
+**Features:**
+- Subprocess isolation for safety
+- Timeout protection (5 seconds default)
+- Allowed imports: math, json, datetime, collections, itertools, etc.
+- Blocked imports: os, sys, subprocess, socket (no file/network access)
+
+### Web Search (opt-in)
+
+**Enable web search first:**
+```
+You: /web on
+```
+
+**Then search:**
+```
+You: Search for Python asyncio best practices
+You: Find information about FAISS vector databases
+You: Look up LangChain documentation
+```
+
+**Note:** Web search is disabled by default for privacy. Enable only when needed.
 
 ### Multi-Step Workflows
 
