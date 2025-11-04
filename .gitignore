@@ -18,6 +18,7 @@ ENV/
 conversations/
 logs/
 *.log
+rag_index/
 
 # OS
 .DS_Store

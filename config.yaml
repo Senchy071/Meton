@@ -35,7 +35,7 @@ tools:
     max_results: 5
     timeout: 10
   codebase_search:
-    enabled: false
+    enabled: true
     top_k: 5
     similarity_threshold: 0.3
     max_code_length: 500
@@ -49,7 +49,7 @@ cli:
   syntax_highlight: true
   show_tool_output: true
 rag:
-  enabled: false
+  enabled: true
   embedding_model: sentence-transformers/all-mpnet-base-v2
   index_path: ./rag_index/
   metadata_path: ./rag_index/metadata.json

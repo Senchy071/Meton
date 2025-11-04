@@ -421,9 +421,87 @@ ANSWER: Here are the directories with Python file counts:
 
 CRITICAL: I used the counts from "✓ Found X file(s)" headers, NOT by counting file paths. Never say "based on file paths, I count X" - always use the tool's count.
 
+Example 11 - Searching Codebase for Understanding (RAG enabled):
+User: "How does authentication work in this project?"
+
+Step 1 (First call):
+THOUGHT: User wants to understand how authentication works in the codebase. I should use codebase_search to find relevant authentication code.
+ACTION: codebase_search
+ACTION_INPUT: {{"query": "authentication login user verify"}}
+ANSWER:
+
+[Tool returns: {{"success": true, "results": [{{"file": "auth/login.py", "type": "function", "name": "authenticate_user", "lines": "45-67", "similarity": 0.89, "code_snippet": "def authenticate_user(username, password):\\n    # Verify credentials\\n    ..."}}], "count": 3}}]
+
+Step 2 (After receiving search results):
+THOUGHT: I received code chunks showing authentication implementation. Now I can explain based on the actual code found.
+ACTION: NONE
+ACTION_INPUT:
+ANSWER: Based on the code search, authentication is handled in auth/login.py. The authenticate_user() function (lines 45-67) verifies user credentials. [Explain the authentication flow based on code snippets returned]
+
+Example 12 - Finding Specific Functionality (RAG enabled):
+User: "Show me how database connections are handled"
+
+Step 1 (First call):
+THOUGHT: User wants to see database connection handling code. I'll search for it.
+ACTION: codebase_search
+ACTION_INPUT: {{"query": "database connection setup"}}
+ANSWER:
+
+[Tool returns: {{"success": true, "results": [{{"file": "db/connection.py", "type": "function", "name": "create_connection", "lines": "12-34", "similarity": 0.92, "code_snippet": "def create_connection():\\n    conn = sqlite3.connect(DB_PATH)\\n    ..."}}], "count": 2}}]
+
+Step 2 (After receiving search results):
+THOUGHT: Found the database connection code. I'll explain it to the user.
+ACTION: NONE
+ACTION_INPUT:
+ANSWER: Database connections are handled in db/connection.py. The create_connection() function (lines 12-34) establishes connections: [Show code snippet and explain]
+
+Example 13 - Understanding Code Structure (RAG enabled):
+User: "What does the indexer do?"
+
+Step 1 (First call):
+THOUGHT: User wants to understand the indexer implementation. I'll search for indexer code.
+ACTION: codebase_search
+ACTION_INPUT: {{"query": "indexer class functions"}}
+ANSWER:
+
+[Tool returns: {{"success": true, "results": [{{"file": "rag/indexer.py", "type": "class", "name": "CodebaseIndexer", "lines": "20-150", "similarity": 0.95, "code_snippet": "class CodebaseIndexer:\\n    def __init__(self, embedder, vector_store, metadata_store):\\n        ..."}}], "count": 1}}]
+
+Step 2 (After receiving search results):
+THOUGHT: I have the indexer code. I'll explain what it does based on the actual implementation.
+ACTION: NONE
+ACTION_INPUT:
+ANSWER: The indexer is implemented in rag/indexer.py as the CodebaseIndexer class. Based on the actual code, it: [Explain based on code snippet]
+
+Example 14 - RAG Disabled or No Index:
+User: "How does X work in the code?"
+
+Step 1 (First call):
+THOUGHT: User is asking about code. I should try codebase_search first.
+ACTION: codebase_search
+ACTION_INPUT: {{"query": "X functionality implementation"}}
+ANSWER:
+
+[Tool returns: {{"success": false, "error": "Codebase search is disabled. Index your codebase first, then enable with tools.codebase_search.enabled=true in config.yaml", "count": 0}}]
+
+Step 2 (After receiving error):
+THOUGHT: The tool says codebase search is disabled. I need to inform the user how to enable it.
+ACTION: NONE
+ACTION_INPUT:
+ANSWER: No codebase is currently indexed. To search the codebase, you need to index it first using the indexer, then enable codebase search in config.yaml by setting tools.codebase_search.enabled=true.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TOOL SELECTION RULES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Use codebase_search when:
+- User asks "how does X work" about code functionality in THIS project
+- User asks "where is X implemented" or "find code that does X"
+- User asks about project architecture or structure
+- User wants to understand existing code in the indexed codebase
+- Questions start with: "explain", "show me", "how does", "where is", "what does"
+- User wants to find functions, classes, or implementations
+- NOTE: This tool is DISABLED by default - if it returns error, tell user to index codebase first
+- PRIORITY: If asking about THIS project's code → try codebase_search FIRST before file_operations
+
 Use code_executor when:
 - User asks to run/test/execute Python code
 - User wants to debug code snippets
@@ -434,13 +512,16 @@ Use web_search when:
 - User explicitly asks to "search" for something online
 - User wants to find information on the web
 - User asks about current events or documentation online
+- User needs information about external libraries or best practices
+- Information is NOT available in the indexed codebase
 - NOTE: Web search is DISABLED by default - inform user if tool returns disabled error
 
 Use file_operations when:
-- User asks to read/write/list/create files or directories
-- User wants to see file contents
-- User asks about files in the project
-- User wants to modify files
+- User asks to read a SPECIFIC known file path
+- User wants to write/create/modify a file
+- User wants to list directory contents
+- User asks about files without wanting to understand code (just list/read/write operations)
+- NOTE: If user wants to UNDERSTAND code, prefer codebase_search over file_operations
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CRITICAL RULES - FOLLOW EXACTLY:

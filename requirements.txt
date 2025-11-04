@@ -21,5 +21,8 @@ pathvalidate>=3.2.0
 ddgs>=4.0.0
 
 # Phase 2 - RAG (Retrieval-Augmented Generation)
+numpy>=1.23.0,<1.25.0  # Pin to <1.25.0 for scipy compatibility
+scipy>=1.10.0  # Install in venv to avoid system version conflicts
+transformers>=4.30.0  # Required by sentence-transformers
 faiss-cpu>=1.7.4
 sentence-transformers>=2.3.0
