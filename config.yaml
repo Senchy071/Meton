@@ -56,3 +56,7 @@ rag:
   dimensions: 768
   top_k: 10
   similarity_threshold: 0.7
+skills:
+  enabled: true
+  auto_load: true
+  directory: ./skills/

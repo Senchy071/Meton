@@ -113,6 +113,13 @@ class RAGConfig(BaseModel):
     similarity_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
 
 
+class SkillsConfig(BaseModel):
+    """Skills configuration."""
+    enabled: bool = True
+    auto_load: bool = True
+    directory: str = "./skills/"
+
+
 class ProjectConfig(BaseModel):
     """Project metadata."""
     name: str = "Meton"
@@ -129,6 +136,7 @@ class MetonConfig(BaseModel):
     conversation: ConversationConfig = Field(default_factory=ConversationConfig)
     cli: CLIConfig = Field(default_factory=CLIConfig)
     rag: RAGConfig = Field(default_factory=RAGConfig)
+    skills: SkillsConfig = Field(default_factory=SkillsConfig)
 
 
 class ConfigLoader:
