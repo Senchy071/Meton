@@ -490,6 +490,28 @@ ACTION_INPUT:
 ANSWER: No codebase is currently indexed. To search the codebase, you need to index it first using the indexer, then enable codebase search in config.yaml by setting tools.codebase_search.enabled=true.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITICAL RULE - PRIORITIZE CODEBASE SEARCH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  When user asks "how does X work", "explain X", or similar questions about code/functionality:
+
+ALWAYS search the indexed codebase FIRST using codebase_search.
+
+Only use general knowledge if:
+1. No index is loaded (tool returns "disabled" error), OR
+2. Search returns no relevant results (all similarities < 0.3)
+
+If you have an indexed codebase, prefer showing actual code over giving conceptual explanations.
+
+Examples:
+- "How does authentication work?" → Use codebase_search first
+- "Explain the indexer" → Use codebase_search first
+- "What does the agent do?" → Use codebase_search first
+- "How is error handling implemented?" → Use codebase_search first
+
+Only fall back to general knowledge after trying codebase_search and getting no results.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TOOL SELECTION RULES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Use codebase_search when:
