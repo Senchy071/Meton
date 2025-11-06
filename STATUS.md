@@ -1,15 +1,15 @@
 # Meton Development Status
 
-**Last Updated:** November 4, 2025
+**Last Updated:** November 6, 2025
 
 ---
 
 ## 📊 METON PROJECT STATUS
 
-**Overall Progress:** 35% complete (17/48 tasks)
-**Current Phase:** Phase 2 - Codebase Intelligence
-**Status:** ✅ COMPLETE (5/8 critical tasks)
-**Next Milestone:** Phase 3 - Advanced Skills
+**Overall Progress:** 39.6% complete (19/48 tasks)
+**Current Phase:** Phase 3 - Advanced Skills
+**Status:** 🚧 IN PROGRESS (2/8 tasks)
+**Next Milestone:** Complete remaining Phase 3 skills
 
 ---
 
@@ -168,16 +168,16 @@
 
 ---
 
-## 📋 PHASE 3: ADVANCED SKILLS
+## 🚧 PHASE 3: ADVANCED SKILLS
 
 **Goal:** Specialized coding capabilities
-**Status:** Not started
+**Status:** 🚧 IN PROGRESS (2/8 tasks complete)
 **Estimated Time:** ~6 hours
 
 ### Components
 
-- ⬜ **Task 21:** Skill Framework (base skill interface)
-- ⬜ **Task 22:** Code Explainer Skill
+- ✅ **Task 21:** Skill Framework (base skill interface) - COMPLETE
+- ✅ **Task 22:** Code Explainer Skill - COMPLETE
 - ⬜ **Task 23:** Debugger Assistant Skill
 - ⬜ **Task 24:** Refactoring Engine Skill
 - ⬜ **Task 25:** Test Generator Skill
@@ -234,11 +234,11 @@
 | Metric | Value |
 |--------|-------|
 | **Total Tasks** | 48 |
-| **Completed** | 17 (Phases 1, 1.5, and 2 core tasks) |
-| **Remaining** | 31 |
-| **Current Phase** | Phase 2 (Complete - core features) |
-| **Overall Progress** | 35% (17/48 tasks) |
-| **Next Milestone** | Phase 3 - Advanced Skills |
+| **Completed** | 19 (Phases 1, 1.5, 2, and Tasks 21-22) |
+| **Remaining** | 29 |
+| **Current Phase** | Phase 3 (In Progress - 2/8 tasks) |
+| **Overall Progress** | 39.6% (19/48 tasks) |
+| **Next Milestone** | Task 23 - Debugger Assistant Skill |
 
 ---
 
@@ -923,15 +923,204 @@ You: "Search for Python tutorials"
 
 ---
 
+### Task 21: Skill Framework (Complete)
+
+**Files Created/Enhanced:**
+- `skills/base.py` (176 lines) - BaseSkill abstract class and exceptions
+- `skills/__init__.py` (278 lines) - SkillRegistry for skill management
+- `test_skills.py` (496 lines) - Comprehensive test suite with 15 tests
+
+**Key Features:**
+
+**BaseSkill Class:**
+- Abstract base class for all skills
+- Required attributes: name, description, version, enabled
+- Abstract `execute()` method for skill logic
+- `validate_input()` for input validation
+- `get_info()` for skill metadata retrieval
+- Enable/disable functionality
+- Custom exceptions: SkillError, SkillValidationError, SkillExecutionError
+
+**SkillRegistry:**
+- Central registry for skill management
+- Methods: `register()`, `unregister()`, `get()`, `list_all()`, `execute_skill()`
+- Skill enable/disable at runtime
+- Validation before execution
+- Error handling and logging
+- Thread-safe operations
+
+**Custom Exceptions:**
+```python
+SkillError              # Base exception for all skill errors
+SkillValidationError    # Input validation failures
+SkillExecutionError     # Skill execution failures
+SkillRegistryError      # Registry operation failures
+```
+
+**Usage Example:**
+```python
+from skills import SkillRegistry
+from skills.base import BaseSkill
+
+# Define a skill
+class MySkill(BaseSkill):
+    name = "my_skill"
+    description = "Does something useful"
+    version = "1.0.0"
+
+    def execute(self, input_data):
+        return {"success": True, "result": "Done!"}
+
+# Register and use
+registry = SkillRegistry()
+skill = MySkill()
+registry.register(skill)
+result = registry.execute_skill("my_skill", {"task": "do_it"})
+```
+
+**Implementation Details:**
+- Skills are high-level capabilities built on top of tools
+- Skills can combine multiple tools for complex workflows
+- Registry provides centralized management and execution
+- Each skill is self-contained with clear input/output contracts
+- Validation ensures data integrity before execution
+- Comprehensive error handling with meaningful messages
+
+**Foundation for Future Skills:**
+This framework provides the foundation for implementing specialized coding skills:
+- Code Explainer (Task 22)
+- Debugger Assistant (Task 23)
+- Refactoring Engine (Task 24)
+- Test Generator (Task 25)
+- Documentation Generator (Task 26)
+- Code Review (Task 27)
+
+**Status:** Skill framework complete and ready for skill implementations ✅
+
+---
+
+### Task 22: Code Explainer Skill (Complete)
+
+**Files Created/Enhanced:**
+- `skills/code_explainer.py` (778 lines) - Comprehensive code explanation skill
+- `test_code_explainer.py` (496 lines) - Complete test suite with 15 tests
+
+**Test Results:**
+```
+✅ All Code Explainer tests passed! (15/15)
+
+✓ Skill Initialization: PASSED
+✓ Simple Function Explanation: PASSED
+✓ Complex Class Analysis: PASSED
+✓ Async Code Detection: PASSED
+✓ Recursive Function Detection: PASSED
+✓ Code with Imports: PASSED
+✓ Invalid Syntax Handling: PASSED
+✓ Input Validation: PASSED
+✓ Pattern Detection: PASSED
+✓ Complexity Assessment: PASSED
+✓ Suggestions Generation: PASSED
+✓ With Context: PASSED
+✓ Enable/Disable: PASSED
+✓ Generator Detection: PASSED
+✓ Decorator Detection: PASSED
+```
+
+**Key Features:**
+
+**AST-Based Code Analysis:**
+- Parses Python code using Python's ast module
+- Extracts functions, classes, imports with full metadata
+- Identifies function arguments, decorators, return types, docstrings
+- Analyzes class inheritance and method structure
+- Handles both sync and async code
+
+**Pattern Detection:**
+- Loops (for, while)
+- Recursion detection (function self-calls)
+- Async/await operations
+- List comprehensions
+- Generator functions
+- Context managers (with statements)
+- Exception handling (try/except)
+- Lambda functions
+- Decorators
+
+**Cyclomatic Complexity Calculation:**
+- Counts decision points (if, while, for, except, and, or)
+- Categorizes as: simple (≤5), moderate (6-10), complex (>10)
+- Helps assess code maintainability
+
+**Intelligent Explanations:**
+- Brief summary (1-2 sentences)
+- Detailed explanation with logic flow
+- Key programming concepts identification
+- Context-aware analysis
+
+**Improvement Suggestions:**
+- Missing docstrings detection
+- Type hints recommendations
+- Complexity reduction for complex code
+- Pattern-specific suggestions (e.g., recursion base case validation)
+- Error handling recommendations for async code
+
+**Output Format:**
+```python
+{
+    "success": bool,
+    "summary": str,  # Brief 1-2 sentence overview
+    "detailed_explanation": str,  # Comprehensive analysis
+    "key_concepts": List[str],  # Programming concepts used
+    "complexity": str,  # "simple"|"moderate"|"complex"
+    "suggestions": List[str],  # Improvement recommendations
+    "error": str  # Only if success=False
+}
+```
+
+**Integration:**
+- Inherits from BaseSkill
+- Compatible with SkillRegistry
+- Enable/disable functionality
+- Comprehensive input validation
+- Graceful error handling (syntax errors return structured results)
+
+**Usage Example:**
+```python
+from skills.code_explainer import CodeExplainerSkill
+
+skill = CodeExplainerSkill()
+result = skill.execute({
+    "code": "def factorial(n):\n    return 1 if n <= 1 else n * factorial(n-1)",
+    "context": "Recursive factorial implementation"
+})
+
+print(result["summary"])
+# Output: "This code defines 1 function with recursion."
+
+print(result["complexity"])
+# Output: "simple"
+
+print(result["key_concepts"])
+# Output: ["functions", "recursion"]
+```
+
+**Status:** Code Explainer Skill complete and tested ✅
+
+---
+
 ## 🚧 In Progress
 
-**Phase 1.5: Execution & Search - COMPLETE!**
-- ✅ Task 9: Code Execution Tool
-- ✅ Task 10: Web Search Tool
-- ✅ Task 11: Agent Integration
-- ✅ Task 12: CLI Commands for Tool Control
+**Phase 3: Advanced Skills - IN PROGRESS**
+- ✅ Task 21: Skill Framework - COMPLETE
+- ✅ Task 22: Code Explainer Skill - COMPLETE
+- ⬜ Task 23: Debugger Assistant Skill
+- ⬜ Task 24: Refactoring Engine Skill
+- ⬜ Task 25: Test Generator Skill
+- ⬜ Task 26: Documentation Generator Skill
+- ⬜ Task 27: Code Review Skill
+- ⬜ Task 28: Skill Manager
 
-**Next: Phase 2 - Codebase Intelligence**
+**Next: Task 23 - Debugger Assistant Skill**
 
 ---
 
@@ -1005,10 +1194,13 @@ None identified. All components are well-tested and documented.
 10. ✅ **High Test Coverage**: 100% test success rate (74/74 tests passing across all phases)
 11. ✅ **Agent Tool Integration**: Seamless multi-tool orchestration with ReAct pattern
 12. ✅ **Runtime Tool Control**: Enable/disable tools via CLI commands (/web on/off)
-13. ✅ **Clean Code**: Well-structured, documented, and maintainable
-14. ✅ **Production Ready**: Polished, documented, and ready for daily use
-15. ✅ **No Deprecation Warnings**: Updated to latest langchain-ollama package
-16. ✅ **User-Friendly Features**: Conversation search, config reload, tool control, convenience launcher
+13. ✅ **RAG System**: FAISS vector store with semantic code search and AST-based parsing
+14. ✅ **Codebase Intelligence**: Natural language queries on indexed Python codebases
+15. ✅ **Skill Framework**: Extensible architecture for high-level coding capabilities
+16. ✅ **Clean Code**: Well-structured, documented, and maintainable
+17. ✅ **Production Ready**: Polished, documented, and ready for daily use
+18. ✅ **No Deprecation Warnings**: Updated to latest langchain-ollama package
+19. ✅ **User-Friendly Features**: Conversation search, config reload, tool control, convenience launcher
 
 ---
 
