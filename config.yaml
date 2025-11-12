@@ -65,3 +65,11 @@ multi_agent:
   max_subtasks: 10
   max_revisions: 2
   parallel_execution: false
+reflection:
+  enabled: false
+  min_quality_threshold: 0.7
+  max_iterations: 2
+  auto_reflect_on:
+    complex_queries: true
+    multi_tool_usage: true
+    long_responses: true
