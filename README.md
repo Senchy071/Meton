@@ -217,4 +217,4 @@ Personal project - use as you wish
 
 ## Author
 
-Built with wisdom and action 🧠⚡
+Senad Arifhodzic w/ Claude Code⚡
