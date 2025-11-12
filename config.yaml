@@ -60,3 +60,8 @@ skills:
   enabled: true
   auto_load: true
   directory: ./skills/
+multi_agent:
+  enabled: false
+  max_subtasks: 10
+  max_revisions: 2
+  parallel_execution: false
