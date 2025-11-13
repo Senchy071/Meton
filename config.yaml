@@ -73,3 +73,9 @@ reflection:
     complex_queries: true
     multi_tool_usage: true
     long_responses: true
+iterative_improvement:
+  enabled: false
+  max_iterations: 3
+  quality_threshold: 0.85
+  convergence_threshold: 0.05
+  convergence_window: 2
