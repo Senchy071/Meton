@@ -6,9 +6,9 @@
 
 ## 📊 METON PROJECT STATUS
 
-**Overall Progress:** 58.3% complete (28/48 tasks)
+**Overall Progress:** 60.4% complete (29/48 tasks)
 **Current Phase:** Phase 4 - Agent Intelligence
-**Status:** 🔄 IN PROGRESS (3/8 tasks)
+**Status:** 🔄 IN PROGRESS (4/8 tasks)
 **Next Milestone:** Complete Phase 4
 
 ---
@@ -190,7 +190,7 @@
 ## 🔄 PHASE 4: AGENT INTELLIGENCE
 
 **Goal:** Multi-agent coordination and self-improvement
-**Status:** 🔄 IN PROGRESS (3/8 tasks complete)
+**Status:** 🔄 IN PROGRESS (4/8 tasks complete)
 **Estimated Time:** ~5 hours
 
 ### Components
@@ -198,7 +198,7 @@
 - ✅ **Task 29:** Multi-Agent Coordinator - COMPLETE
 - ✅ **Task 30:** Self-Reflection Module - COMPLETE
 - ✅ **Task 31:** Iterative Improvement Loop - COMPLETE
-- ⬜ **Task 32:** Feedback Learning System
+- ✅ **Task 32:** Feedback Learning System - COMPLETE
 - ⬜ **Task 33:** Parallel Tool Execution
 - ⬜ **Task 34:** Chain-of-Thought Reasoning
 - ⬜ **Task 35:** Task Planning & Decomposition
@@ -529,6 +529,196 @@ Improvement: +0.27
 - Includes: iteration number, original query, current response, issues, suggestions, focus areas
 - Emphasizes: fix identified issues, maintain correct info, don't add verbosity
 - Output: Only the improved response (no meta-commentary)
+
+### Task 32: Feedback Learning System - COMPLETE ✅
+
+**Implementation Date:** November 13, 2025
+**Files Created:**
+- `agent/feedback_learning.py` (733 lines) - User feedback learning system with semantic similarity
+- `test_feedback_learning.py` (806 lines) - 38 comprehensive tests
+
+**Features Implemented:**
+- Feedback recording (positive, negative, correction types)
+- Semantic similarity search using sentence embeddings
+- Automatic tag extraction from queries and feedback
+- Learning insights from feedback patterns
+- Feedback persistence with atomic writes
+- Export functionality (JSON and CSV formats)
+- Statistics and analytics tracking
+- Embedding caching for performance
+- Fallback word overlap similarity
+- Query filtering by type, tag, and ID
+
+**Feedback Types:**
+1. **Positive:** User explicitly approves response (marks as helpful)
+2. **Negative:** User indicates dissatisfaction (flags as incorrect/unhelpful)
+3. **Correction:** User provides corrected version (most valuable for learning)
+
+**Feedback Workflow:**
+```
+User Response → record_feedback(query, response, type, text, correction)
+             → Extract tags automatically
+             → Generate UUID
+             → Persist to feedback_db.json
+             → Cache embedding for similarity search
+
+Similar Query → get_relevant_feedback(query, top_k=5)
+             → Encode query to embedding vector
+             → FAISS/cosine similarity search
+             → Filter by threshold (0.7)
+             → Return top-k most relevant feedback
+
+Pattern Analysis → get_learning_insights(query_type, min_occurrences=3)
+                → Analyze negative/correction feedback
+                → Count pattern occurrences (e.g., "missing examples")
+                → Generate actionable insights
+                → Return ranked insights by frequency
+```
+
+**Semantic Similarity:**
+- Uses sentence-transformers/all-mpnet-base-v2 (768-dim embeddings)
+- Cosine similarity calculation for query matching
+- Embedding caching to avoid recomputation
+- Fallback to word overlap (Jaccard similarity) if embeddings unavailable
+- Similarity threshold filtering (default: 0.7)
+
+**Tag Extraction:**
+- Automatic categorization from query/response/feedback text
+- 10 tag categories: python, javascript, debugging, refactoring, explanation, examples, documentation, security, performance, testing
+- Language tags require explicit language name (prevents false positives)
+- Keyword matching for non-language tags
+- Sorted alphabetically for consistency
+
+**Learning Insights:**
+Pattern-based insight generation from feedback:
+- "missing examples" → "Include code examples when explaining concepts"
+- "too verbose" → "Users prefer concise responses over verbose explanations"
+- "security" keywords → "Emphasize security implications in code reviews"
+- "incomplete" → "Ensure responses fully address all parts of the query"
+- "unclear" → "Improve clarity and structure of explanations"
+
+**Configuration:**
+```yaml
+feedback_learning:
+  enabled: true                      # Always collect feedback
+  use_for_improvement: false         # Apply learnings to prompts (opt-in)
+  similarity_threshold: 0.7          # Min similarity for relevant feedback
+  max_relevant_feedback: 5           # Max results to return
+  storage_path: ./feedback_data      # Storage directory
+```
+
+**Test Results:**
+```
+✓ Record positive/negative/correction feedback
+✓ Invalid feedback type error handling
+✓ Feedback persistence (save/load)
+✓ Multiple records persistence
+✓ Tag extraction (single and multiple topics)
+✓ Feedback summary (empty and populated)
+✓ Common tags in summary
+✓ Recent feedback count (last 7 days)
+✓ Learning insights (no feedback, missing examples, verbosity, security)
+✓ Insights filtered by query type
+✓ Relevant feedback retrieval (empty, similarity, threshold, top-k)
+✓ Export (JSON, CSV, empty CSV, custom path)
+✓ Invalid export format error
+✓ Clear feedback
+✓ Get feedback by ID (found and not found)
+✓ Get feedback by type
+✓ Get feedback by tag
+✓ Word overlap similarity (with and without overlap)
+✓ UUID uniqueness
+✓ FeedbackRecord to_dict/from_dict conversion
+✓ Corrupt database recovery
+✓ Atomic write protection
+```
+
+**Test Coverage:**
+- Total tests: 38
+- Passed: 38 (100%)
+- Failed: 0
+
+**Key Methods:**
+- `record_feedback(query, response, type, text, correction, context)` - Store feedback with UUID
+- `get_relevant_feedback(query, top_k, threshold)` - Semantic similarity search
+- `get_feedback_summary()` - Aggregate statistics (total, ratios, common tags, recent count)
+- `get_learning_insights(query_type, min_occurrences)` - Extract actionable patterns
+- `_extract_tags(query, response, feedback_text)` - Auto-categorize feedback
+- `_calculate_similarity(query1, query2)` - Cosine/Jaccard similarity
+- `export_feedback(format, output_path)` - Export to JSON/CSV
+- `clear_feedback()` - Reset all feedback data
+- `get_feedback_by_id/type/tag()` - Filter feedback records
+
+**Data Structures:**
+- **FeedbackRecord:** Single feedback event (id, timestamp, query, response, feedback_type, feedback_text, correction, context, tags)
+
+**Statistics Tracked:**
+- Total feedback count
+- Positive/negative/correction counts and ratios
+- Common tags (top 10)
+- Recent feedback (last 7 days)
+- Pattern frequencies for insights
+
+**Storage Format:**
+```json
+[
+  {
+    "id": "uuid-here",
+    "timestamp": "2025-11-13T10:00:00",
+    "query": "Explain async/await",
+    "response": "...",
+    "feedback_type": "negative",
+    "feedback_text": "Missing examples",
+    "correction": null,
+    "context": {"tools_used": ["web_search"], "reflection_score": 0.65},
+    "tags": ["python", "examples", "explanation"]
+  }
+]
+```
+
+**Example Usage:**
+```python
+# Record feedback
+feedback_id = system.record_feedback(
+    query="Explain async/await in Python",
+    response="...",
+    feedback_type="negative",
+    feedback_text="Missing practical examples",
+    context={"tools_used": [], "reflection_score": 0.65}
+)
+
+# Find relevant feedback for similar queries
+relevant = system.get_relevant_feedback(
+    "How does Python handle concurrency?",
+    top_k=5,
+    similarity_threshold=0.7
+)
+
+# Get learning insights
+insights = system.get_learning_insights("python", min_occurrences=3)
+# → ["Include code examples when explaining concepts"]
+
+# Export feedback
+export_path = system.export_feedback(format="csv")
+```
+
+**Integration Points:**
+- Uses same embedding model as RAG system (sentence-transformers/all-mpnet-base-v2)
+- Designed for integration with `MetonAgent` to provide context from past feedback
+- Supports CLI commands via `/feedback` (future implementation)
+- Feedback can inform agent prompts when `use_for_improvement: true`
+- Thread-safe atomic writes prevent data corruption
+- Local storage only (privacy-preserving)
+
+**Future CLI Commands (Design):**
+```
+/feedback positive "Great explanation!"
+/feedback negative "Missing examples"
+/feedback correct "Actually, it should be X"
+/feedback stats     # Show statistics
+/feedback insights  # Show learning insights
+/feedback export    # Export feedback data
+```
 
 ---
 

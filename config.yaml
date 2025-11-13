@@ -79,3 +79,9 @@ iterative_improvement:
   quality_threshold: 0.85
   convergence_threshold: 0.05
   convergence_window: 2
+feedback_learning:
+  enabled: true
+  use_for_improvement: false
+  similarity_threshold: 0.7
+  max_relevant_feedback: 5
+  storage_path: ./feedback_data
