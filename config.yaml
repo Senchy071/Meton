@@ -85,3 +85,8 @@ feedback_learning:
   similarity_threshold: 0.7
   max_relevant_feedback: 5
   storage_path: ./feedback_data
+parallel_execution:
+  enabled: false
+  max_parallel_tools: 3
+  timeout_per_tool: 30
+  fallback_to_sequential: true
