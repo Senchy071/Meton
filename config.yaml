@@ -101,3 +101,8 @@ task_planning:
   visualize_plan: true
   allow_user_approval: false
   max_subtasks: 15
+analytics:
+  enabled: true
+  storage_path: ./analytics_data
+  auto_export_interval: 100
+  retention_days: 90
