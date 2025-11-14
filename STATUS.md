@@ -6,9 +6,9 @@
 
 ## 📊 METON PROJECT STATUS
 
-**Overall Progress:** 62.5% complete (30/48 tasks)
+**Overall Progress:** 64.6% complete (31/48 tasks)
 **Current Phase:** Phase 4 - Agent Intelligence
-**Status:** 🔄 IN PROGRESS (5/8 tasks)
+**Status:** 🔄 IN PROGRESS (6/8 tasks)
 **Next Milestone:** Complete Phase 4
 
 ---
@@ -190,7 +190,7 @@
 ## 🔄 PHASE 4: AGENT INTELLIGENCE
 
 **Goal:** Multi-agent coordination and self-improvement
-**Status:** 🔄 IN PROGRESS (5/8 tasks complete)
+**Status:** 🔄 IN PROGRESS (6/8 tasks complete)
 **Estimated Time:** ~5 hours
 
 ### Components
@@ -200,7 +200,7 @@
 - ✅ **Task 31:** Iterative Improvement Loop - COMPLETE
 - ✅ **Task 32:** Feedback Learning System - COMPLETE
 - ✅ **Task 33:** Parallel Tool Execution - COMPLETE
-- ⬜ **Task 34:** Chain-of-Thought Reasoning
+- ✅ **Task 34:** Chain-of-Thought Reasoning - COMPLETE
 - ⬜ **Task 35:** Task Planning & Decomposition
 - ⬜ **Task 36:** Performance Analytics
 
@@ -918,6 +918,264 @@ results = {
 /parallel off      # Disable parallel execution
 /parallel stats    # Show execution statistics and speedups
 /parallel status   # Show current configuration
+```
+
+### Task 34: Chain-of-Thought Reasoning - COMPLETE ✅
+
+**Implementation Date:** November 13, 2025
+**Files Created:**
+- `agent/chain_of_thought.py` (649 lines) - Explicit reasoning before action selection
+- `test_chain_of_thought.py` (611 lines) - 30 comprehensive tests
+
+**Features Implemented:**
+- Query decomposition into atomic sub-questions
+- Requirement analysis for tool and information needs
+- Step-by-step reasoning chain generation
+- Reasoning quality evaluation (0.0-1.0 scoring)
+- Complexity detection (simple, medium, high)
+- Proactive tool recommendation
+- Statistics tracking (reasonings, avg steps, avg confidence)
+- Configurable complexity threshold
+- LLM-based reasoning generation with fallback
+
+**Chain-of-Thought Workflow:**
+```
+Query: "Find authentication bugs and suggest fixes"
+    ↓
+Detect Complexity: HIGH
+    ↓
+Decompose Query:
+  - "Find authentication bugs"
+  - "Suggest fixes"
+    ↓
+Analyze Requirements:
+  - Information needed: [error information, source code, refactoring suggestions]
+  - Tools required: [debugger, codebase_search, code_reviewer]
+  - Complexity: high
+    ↓
+Generate Reasoning Chain (via LLM):
+  REASONING: Query requires finding bugs in authentication code,
+             analyzing security issues, and providing fixes.
+  STEPS:
+    - Search codebase for authentication implementation
+    - Review code for common security vulnerabilities
+    - Research best practices for fixes
+  TOOLS: codebase_search, code_reviewer, web_search
+  CONFIDENCE: 0.85
+    ↓
+Return recommended tools and reasoning for agent
+```
+
+**Complexity Detection:**
+
+**Simple (no CoT by default):**
+- "What is X?"
+- "Show me file Y"
+- "Display config"
+- Single-tool queries
+- Direct lookups
+
+**Medium (CoT with medium threshold):**
+- "Explain how X works"
+- "Why does this error occur?"
+- "Find code related to Y"
+- Research queries
+
+**High (always use CoT):**
+- "Compare X and Y"
+- "Analyze bugs and suggest fixes"
+- "Find and fix issues"
+- Multi-step workflows
+- Evaluation/assessment queries
+
+**Query Decomposition:**
+
+Examples:
+- "Compare FastAPI and Flask" →
+  ["What is FastAPI?", "What is Flask?", "How do they differ?"]
+
+- "Find bugs and suggest fixes" →
+  ["Find bugs", "Suggest fixes"]
+
+- "Research X and implement Y" →
+  ["Research X", "Implement Y"]
+
+**Tool Recommendation:**
+
+Analyzes query to recommend appropriate tools:
+- "code" keywords → codebase_search
+- "bug/error" keywords → debugger
+- "research/learn" keywords → web_search
+- "review/quality" keywords → code_reviewer
+- "refactor/improve" keywords → refactoring_engine
+- "run/execute" keywords → code_executor
+- "read/write file" keywords → file_operations
+
+**Reasoning Quality Evaluation:**
+
+**Criteria (0.0-1.0 scale):**
+1. Reasoning text quality (30%):
+   - Length > 50 chars: 0.3 points
+   - Length > 20 chars: 0.15 points
+
+2. Steps quality (30%):
+   - ≥3 steps: 0.3 points
+   - ≥1 step: 0.15 points
+
+3. Tool appropriateness (20%):
+   - 1-5 tools: 0.2 points
+   - >0 tools: 0.1 points
+
+4. Confidence calibration (20%):
+   - 0.6-0.9 (well-calibrated): 0.2 points
+   - >0 (present): 0.1 points
+
+**Configuration:**
+```yaml
+chain_of_thought:
+  enabled: false                    # Opt-in feature
+  min_complexity_threshold: medium  # Apply to: simple, medium, high, all
+  include_in_response: false        # Show reasoning to user
+  max_reasoning_steps: 10           # Maximum reasoning steps
+```
+
+**Test Results:**
+```
+✓ Detect complexity - simple queries
+✓ Detect complexity - medium queries
+✓ Detect complexity - high queries
+✓ Decompose simple query (no decomposition)
+✓ Decompose "and" query (multiple parts)
+✓ Decompose comparison query (3 sub-questions)
+✓ Analyze requirements - code search
+✓ Analyze requirements - debugging
+✓ Analyze requirements - research
+✓ Analyze requirements - code review
+✓ Generate reasoning chain
+✓ Generate reasoning chain - max steps enforcement
+✓ Evaluate reasoning quality - high quality
+✓ Evaluate reasoning quality - low quality
+✓ Should use CoT - simple threshold
+✓ Should use CoT - medium threshold
+✓ Should use CoT - all threshold
+✓ Parse reasoning output (structured)
+✓ Parse reasoning output (incomplete)
+✓ Reason about query (full workflow)
+✓ Reason about query - stores history
+✓ Get reasoning stats (empty)
+✓ Get reasoning stats (populated)
+✓ Fallback reasoning (LLM failure)
+✓ Format context (empty)
+✓ Format context (with data)
+✓ Reset history
+✓ ReasoningRecord dataclass
+✓ Config - include_in_response
+✓ Config - max_reasoning_steps
+```
+
+**Test Coverage:**
+- Total tests: 30
+- Passed: 30 (100%)
+- Failed: 0
+
+**Key Methods:**
+- `reason_about_query(query, context)` - Main entry point, generates complete reasoning
+- `decompose_query(query)` - Break query into sub-questions
+- `analyze_requirements(query)` - Determine info and tool needs
+- `generate_reasoning_chain(query, context)` - Create explicit reasoning steps
+- `evaluate_reasoning_quality(reasoning)` - Score reasoning quality (0.0-1.0)
+- `detect_complexity(query)` - Determine query complexity (simple/medium/high)
+- `should_use_cot(query)` - Decide if CoT is beneficial
+- `get_reasoning_stats()` - Return statistics (total, avg steps, avg confidence)
+- `_parse_reasoning_output(output)` - Parse LLM reasoning response
+- `_fallback_reasoning(query, complexity)` - Provide fallback when LLM fails
+
+**Data Structures:**
+- **ReasoningRecord:** Single reasoning event (query, reasoning, steps, recommended_tools, confidence, complexity, timestamp)
+
+**Statistics Tracked:**
+- Total reasonings performed
+- Average steps per reasoning
+- Average confidence score
+- Complexity distribution (simple/medium/high counts)
+- Tool recommendations (frequency by tool)
+
+**Example Usage:**
+```python
+# Create CoT reasoning
+cot = ChainOfThoughtReasoning(model_manager, config)
+
+# Reason about complex query
+reasoning = cot.reason_about_query(
+    "Find authentication bugs in the codebase and suggest fixes",
+    context={}
+)
+
+# Get recommended tools
+tools = reasoning["recommended_tools"]
+# → ["codebase_search", "code_reviewer", "debugger"]
+
+# Get reasoning steps
+steps = reasoning["steps"]
+# → ["Search for authentication code", "Review for vulnerabilities", ...]
+
+# Check confidence
+confidence = reasoning["confidence"]
+# → 0.85
+```
+
+**LLM Prompt Template:**
+```
+Think step-by-step about this query:
+
+Query: {query}
+Context: {context}
+
+Break down your reasoning:
+1. What is being asked?
+2. What information is needed?
+3. What tools should be used and why?
+4. What is the logical sequence of steps?
+
+Output format (MUST follow exactly):
+REASONING: [Your step-by-step thinking process]
+STEPS:
+- [Step 1]
+- [Step 2]
+- [Step 3]
+TOOLS: [Comma-separated list of tools to use]
+CONFIDENCE: [Score from 0.0 to 1.0]
+```
+
+**Integration Points:**
+- Uses ModelManager to get LLM for reasoning generation
+- Designed for integration with `MetonAgent` in `core/agent.py`
+- Provides proactive tool recommendations before execution
+- Can show reasoning to user (if `include_in_response: true`)
+- Supports CLI toggle via `/cot on|off|show|hide|stats` (future)
+- Fallback to requirement analysis if LLM fails
+
+**Performance Benefits:**
+- Better tool selection (proactive vs reactive)
+- Reduced trial-and-error in complex queries
+- Improved query understanding
+- Clearer action planning
+- Statistics for optimization
+
+**Complexity Threshold Behavior:**
+- `simple`: Only use CoT for high complexity queries
+- `medium`: Use CoT for medium and high (default)
+- `high`: Use CoT for all queries
+- `all`: Always use CoT
+
+**Future CLI Commands (Design):**
+```
+/cot on         # Enable chain-of-thought
+/cot off        # Disable chain-of-thought
+/cot show       # Show reasoning in responses
+/cot hide       # Keep reasoning internal
+/cot stats      # Show reasoning statistics
+/cot status     # Show current configuration
 ```
 
 ---

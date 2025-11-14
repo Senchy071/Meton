@@ -90,3 +90,8 @@ parallel_execution:
   max_parallel_tools: 3
   timeout_per_tool: 30
   fallback_to_sequential: true
+chain_of_thought:
+  enabled: false
+  min_complexity_threshold: medium
+  include_in_response: false
+  max_reasoning_steps: 10
