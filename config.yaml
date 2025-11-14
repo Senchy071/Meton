@@ -95,3 +95,9 @@ chain_of_thought:
   min_complexity_threshold: medium
   include_in_response: false
   max_reasoning_steps: 10
+task_planning:
+  enabled: false
+  auto_plan_threshold: medium
+  visualize_plan: true
+  allow_user_approval: false
+  max_subtasks: 15
