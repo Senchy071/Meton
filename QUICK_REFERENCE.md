@@ -7,8 +7,13 @@ One-page cheat sheet for Meton commands and common operations.
 ## Launch
 
 ```bash
+# CLI Mode
 ./meton                    # Using convenience script
 python meton.py            # Direct launch
+
+# Web UI Mode
+python launch_web.py       # Gradio interface
+python launch_web.py --share --port 8080  # With options
 ```
 
 ---
@@ -34,6 +39,14 @@ python meton.py            # Direct launch
 | `/index refresh` | Re-index last path |
 | `/csearch <query>` | Test semantic code search |
 | `/web on\|off\|status` | Control web search tool |
+| `/memory stats` | Show memory statistics |
+| `/memory search <query>` | Search memories semantically |
+| `/memory add <content>` | Manually add memory |
+| `/memory export [json\|csv]` | Export memories to file |
+| `/learn analyze` | Analyze sessions for patterns |
+| `/learn insights` | Show generated insights |
+| `/learn patterns` | Show detected patterns |
+| `/learn summary` | Learning statistics |
 | `/exit` or `/quit` or `/q` | Exit Meton |
 
 ---
@@ -42,9 +55,9 @@ python meton.py            # Direct launch
 
 | Alias | Model | Use Case |
 |-------|-------|----------|
-| `primary` | codellama:34b | Best quality (~15s) |
-| `fallback` | codellama:13b | Balanced (~7s) |
-| `quick` | codellama:7b | Fastest (~3s) |
+| `primary` | qwen2.5:32b-instruct-q5_K_M | Best quality (~15s) |
+| `fallback` | llama3.1:8b | Balanced (~7s) |
+| `quick` | mistral:latest | Fastest (~3s) |
 
 ```bash
 /model quick        # Switch to fast model
@@ -103,6 +116,25 @@ Search for Python asyncio best practices
 Find FAISS documentation
 ```
 
+### Long-Term Memory
+
+```
+/memory stats                              # View statistics
+/memory search authentication              # Search memories
+/memory add I prefer type hints            # Add manual memory
+/memory export json                        # Export to file
+```
+
+### Cross-Session Learning
+
+```
+/learn analyze                             # Analyze for patterns
+/learn insights                            # View insights
+/learn patterns                            # Show detected patterns
+/learn apply insight_123                   # Apply insight
+/learn summary                             # Statistics
+```
+
 ### Multi-Step
 
 ```
@@ -144,6 +176,25 @@ Read config.yaml and explain the settings
 4. Get detailed answer
 ```
 
+### Memory & Learning
+
+```
+1. /memory stats
+2. /learn analyze
+3. /learn insights
+4. /learn apply <id>
+5. /memory export json
+```
+
+### Web UI Workflow
+
+```
+1. python launch_web.py
+2. Open http://localhost:7860
+3. Chat, upload files, view analytics
+4. Export session data
+```
+
 ---
 
 ## Keyboard Shortcuts
@@ -171,7 +222,7 @@ nano config.yaml
 ```yaml
 # Change primary model
 models:
-  primary_model: "deepseek-coder:33b"
+  primary: "deepseek-coder:33b"
 
 # Add allowed path
 tools:
@@ -205,6 +256,9 @@ meton/
 ├── config.yaml              # Configuration
 ├── logs/                    # Daily log files
 ├── conversations/           # Saved conversations
+├── memory/                  # Long-term memory storage
+├── analytics_data/          # Performance analytics
+├── web_sessions/            # Web UI session data
 ├── venv/                    # Python environment
 └── meton                    # Convenience launcher
 ```
@@ -215,7 +269,7 @@ meton/
 
 ```
 ╭─── Current Status ────────────────────╮
-│ Model:        codellama:34b           │  ← Active model
+│ Model:        qwen2.5:32b-instruct... │  ← Active model
 │ Session:      3c8a9f2d...             │  ← Current session ID
 │ Messages:     12                      │  ← Conversation length
 │ Tools:        file_operations         │  ← Available tools
@@ -242,11 +296,14 @@ meton/
 
 1. **Start broad**: `What files can you see?`
 2. **Check status**: `/status` to confirm context
-3. **Search first**: `/search keyword` before re-asking
+3. **Search first**: `/search keyword` or `/memory search` before re-asking
 4. **Save work**: `/save` after important findings
 5. **Clear context**: `/clear` when changing topics
 6. **Use verbose**: `/verbose on` to understand agent
 7. **Choose model**: `quick` for testing, `primary` for quality
+8. **Build memory**: Regular use builds cross-session intelligence
+9. **Monitor learning**: `/learn summary` to see patterns
+10. **Use Web UI**: `python launch_web.py` for visual analytics
 
 ---
 
@@ -256,18 +313,20 @@ meton/
 $ ./meton
 
 🧠 METON - Local Coding Assistant
-Model: codellama:34b
-Tools: file_operations
+Model: qwen2.5:32b-instruct-q5_K_M
+Tools: file_operations, codebase_search
 
 You: What files can you see?
 💬 Assistant: I can see 16 files...
 
-You: /search agent
-Search Results for 'agent' (3 matches)
-2. ASSISTANT: ...agent system...
+You: /memory search testing
+🔍 Found 2 memories about testing patterns
+
+You: /learn summary
+Total Patterns: 5 | Learning Velocity: 1.2/week
 
 You: /model quick
-✓ Switched to model: codellama:7b
+✓ Switched to model: mistral:latest
 
 You: quick test query
 💬 Assistant: [faster response]
