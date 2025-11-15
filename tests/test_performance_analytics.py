@@ -24,7 +24,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from agent.performance_analytics import PerformanceAnalytics, MetricRecord
 

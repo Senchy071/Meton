@@ -17,7 +17,7 @@ from pathlib import Path
 from unittest.mock import Mock, MagicMock
 
 # Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from agent.self_reflection import SelfReflectionModule, ReflectionRecord
 

@@ -13,7 +13,7 @@ from pathlib import Path
 import yaml
 
 # Add project root to path
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from cli import MetonCLI
 from utils.formatting import *

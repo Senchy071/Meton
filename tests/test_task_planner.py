@@ -22,7 +22,7 @@ from unittest.mock import Mock
 import json
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from agent.task_planner import TaskPlanner, TaskPlan, SubTask
 
