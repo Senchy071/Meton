@@ -2,20 +2,29 @@
 
 **Local AI Coding Assistant** - Wisdom in Action (Metis + Ergon)
 
-A fully local coding assistant powered by LangChain, LangGraph, and CodeLlama.
+A fully local coding assistant powered by LangChain, LangGraph, and Ollama.
 Everything runs on your hardware - no external API calls, no data leaving your machine.
 
 ## Features
 
+### Core Capabilities
 - 🏠 **Fully Local** - All processing happens on your machine
 - 🤖 **Intelligent Agent** - Uses ReAct pattern for multi-step reasoning
 - 🔍 **Semantic Code Search** - Natural language queries on indexed codebases (RAG with FAISS)
 - 📁 **File Operations** - Read, write, and navigate your codebase
 - ⚙️ **Code Execution** - Safe Python code execution with sandboxing
-- 🌐 **Web Search** - DuckDuckGo integration for external information
+- 🌐 **Web Search** - DuckDuckGo integration for external information (opt-in)
 - 💬 **Conversation Memory** - Maintains context across interactions
-- 🔀 **Multi-Model** - Switch between models easily (CodeLlama, Qwen, Llama, Mistral)
+- 🔀 **Multi-Model** - Switch between models easily (Qwen, Llama, Mistral)
+
+### Advanced Features
+- 🧠 **Long-Term Memory** - Persistent semantic memory across sessions (10k capacity)
+- 📊 **Cross-Session Learning** - Pattern detection and insight generation
+- 🌐 **Web UI** - Gradio-based browser interface with analytics
 - 🎨 **Beautiful CLI** - Rich terminal interface with syntax highlighting
+- 🔧 **7 Production Skills** - Code explainer, debugger, refactoring, testing, docs, review
+- 📈 **Performance Analytics** - Real-time monitoring and bottleneck detection
+- 🔄 **Git Integration** - AI-powered code review and commit analysis
 
 ## Requirements
 
@@ -47,33 +56,60 @@ source venv/bin/activate
 
 ## Usage
 
+### CLI Mode
 ```bash
-# Start Meton
+# Start Meton CLI
 python meton.py
 
 # Or use the shortcut
-./meton.py
+./meton
 ```
 
-### Interactive Commands
+### Web UI Mode
+```bash
+# Launch Gradio web interface
+python launch_web.py
 
+# With options
+python launch_web.py --share --port 8080 --auth user:pass
+```
+
+### Interactive Commands (30+)
+
+**Basic:**
 - `/help, /h` - Show available commands
-- `/clear, /c` - Clear conversation history
-- `/model <name>` - Switch model (primary/fallback/quick or full name)
-- `/models` - List available models
 - `/status` - Show current configuration and session info
+- `/models` - List available models
+- `/model <name>` - Switch model (primary/fallback/quick or full name)
+- `/tools` - List available tools
 - `/verbose on/off` - Toggle verbose mode (show agent thinking)
-- `/save` - Save current conversation
+
+**Conversation:**
 - `/history` - Show conversation history
 - `/search <keyword>` - Search conversation history
-- `/reload` - Reload configuration without restart
-- `/tools` - List available tools
+- `/clear, /c` - Clear conversation history
+- `/save` - Save current conversation
+
+**Code Search (RAG):**
 - `/index [path]` - Index a codebase for semantic search
 - `/index status` - Show indexing statistics
 - `/index clear` - Delete the current index
 - `/index refresh` - Re-index the last path
 - `/csearch <query>` - Test semantic code search directly
+
+**Memory & Learning:**
+- `/memory stats` - Show memory statistics
+- `/memory search <query>` - Search memories semantically
+- `/memory add <content>` - Add manual memory
+- `/memory export [json|csv]` - Export memories
+- `/learn analyze` - Analyze sessions for patterns
+- `/learn insights` - Show generated insights
+- `/learn patterns` - Show detected patterns
+- `/learn summary` - Learning statistics
+
+**Tools:**
 - `/web on/off` - Enable/disable web search tool
+- `/reload` - Reload configuration without restart
 - `/exit, /quit, /q` - Exit Meton
 
 ### Example Session
@@ -103,11 +139,11 @@ authentication with JWT...
 You: /status
 
 ╭─── Current Status ───────────────────────────────╮
-│ Model:        codellama:34b                      │
+│ Model:        qwen2.5:32b-instruct-q5_K_M        │
 │ Session:      3c8a9f2d-4b1e...                   │
 │ Messages:     4                                  │
 │ Tools:        file_operations, code_executor,    │
-│               web_search, codebase_search        │
+│               web_search, codebase_search, git   │
 │ RAG:          ✅ enabled (127 chunks)            │
 ╰──────────────────────────────────────────────────╯
 
@@ -136,80 +172,77 @@ Edit `config.yaml` to customize:
 
 ## Current Status
 
-**✅ Phase 0: Infrastructure** (Complete)
-- Core configuration system with validation
-- Rich-integrated logging with color-coded levels
-- 22 formatting helpers for consistent CLI output
-- All infrastructure tests passing
+**Progress:** 81.2% complete (39/48 tasks) | **Phase 5:** Integration & Polish (5/12 complete)
 
-**✅ Phase 1: Model Manager** (Complete)
-- Full Ollama integration with CodeLlama 34B/13B/7B
-- Streaming and non-streaming generation
-- Chat with message history
-- Model switching without restart
-- Comprehensive error handling
-- All 9 tests passing
+### ✅ Completed Phases
 
-**✅ Phase 2: Conversation Manager** (Complete)
-- Thread-safe message storage
-- Context window management with auto-trimming
-- Conversation persistence (save/load)
-- UUID-based session management
-- LangChain integration
-- All 11 tests passing
+**Phase 1: Foundation** (8/8 tasks)
+- Core agent with ReAct pattern and loop detection
+- Model Manager (Ollama: Qwen 2.5 32B, Llama 3.1, Mistral)
+- Conversation Manager (thread-safe, auto-save)
+- File Operations Tool (security, validation)
+- CLI Interface (Rich, 30+ commands)
+- 74/74 tests passing
 
-**✅ Phase 3: Agent System** (Complete)
-- LangGraph ReAct agent with StateGraph architecture
-- Multi-step reasoning (Think → Act → Observe loop)
-- Tool integration and orchestration
-- Verbose mode for debugging
-- Iteration limits and error handling
-- 7/8 tests passing
+**Phase 1.5: Execution & Search** (4/4 tasks)
+- Code Execution Tool (subprocess isolation, AST validation)
+- Web Search Tool (DuckDuckGo, opt-in)
+- Agent integration
+- Runtime tool control
 
-**✅ Phase 4: File Operations Tool** (Complete)
-- Safe file system operations (read/write/list)
-- Path validation and security constraints
-- Directory management
-- JSON-based tool input routing
-- All 13 tests passing
+**Phase 2: Codebase Intelligence** (5/8 tasks)
+- RAG infrastructure (FAISS, sentence-transformers)
+- Code Parser (AST-based extraction)
+- Code Chunker (semantic chunking)
+- Codebase Indexer (orchestration)
+- Semantic Code Search Tool (natural language queries)
 
-**✅ Phase 5: Interactive CLI** (Complete)
-- Beautiful Rich-based terminal interface
-- Real-time agent feedback display
-- Command system with 10+ commands
-- Syntax highlighting for code blocks
-- Model switching and conversation management
-- Graceful error handling and shutdown
-- Working integration with all components
+**Phase 3: Advanced Skills** (8/8 tasks)
+- Skill Framework (BaseSkill, auto-loading)
+- Code Explainer, Debugger Assistant, Refactoring Engine
+- Test Generator, Documentation Generator, Code Review
+- Skill Manager (load/unload dynamically)
+- 194 tests passing (100% success rate)
 
-**✅ Phase 6: RAG & Advanced Tools** (Complete)
-- Codebase indexer with AST-based parsing (Task 14)
-- Semantic code search with FAISS vector store (Task 15)
-- RAG agent integration with automatic tool selection (Task 19)
-- CLI index management commands (/index, /csearch) (Task 20)
-- Code execution tool with subprocess isolation
-- Web search tool with DuckDuckGo integration
-- All 30+ tests passing
+**Phase 4: Agent Intelligence** (8/8 tasks)
+- Multi-Agent Coordinator (task decomposition)
+- Self-Reflection Module (quality analysis)
+- Iterative Improvement Loop (convergence detection)
+- Feedback Learning System (pattern matching)
+- Parallel Tool Execution, Chain-of-Thought Reasoning
+- Task Planning & Decomposition
+- Performance Analytics (metrics, bottleneck detection)
+- 163 tests passing
 
-**📋 Phase 7: Advanced Skills** (Future)
-- Advanced coding skills (debugger integration, refactoring engine)
-- Test generation and execution automation
-- Multi-agent collaboration and planning
-- Self-reflection and improvement loops
+**Phase 5: Integration & Polish** (5/12 tasks) - IN PROGRESS
+- ✅ Gradio Web UI (chat, file upload, analytics)
+- ✅ Multi-Session & Visualization (Plotly charts)
+- ✅ Git Integration (AI review, commit analysis)
+- ✅ Long-Term Memory (semantic storage, 10k capacity)
+- ✅ Cross-Session Learning (pattern detection, insights)
+- ⬜ VS Code Extension, LSP Integration
+- ⬜ Export/Import, Analytics Dashboard
+- ⬜ Documentation, Optimization, Final Testing
+
+### Key Achievements
+- 25,000+ lines of production Python
+- 194+ comprehensive tests (100% pass rate)
+- 7 production-ready skills
+- 8 integrated tools
+- Dual interface (CLI + Web UI)
+- Cross-session intelligence with pattern learning
+- Semantic memory system
 
 ## Documentation
 
 ### User Guides
 - [USAGE.md](USAGE.md) - Complete usage guide with examples and troubleshooting
 - [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - One-page command cheat sheet
-- [examples/](examples/) - Example queries and workflows
 
 ### Technical Documentation
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design and extension guide
-- [STATUS.md](STATUS.md) - Development status and features
-- [INFRASTRUCTURE.md](INFRASTRUCTURE.md) - Configuration, logging, and formatting systems
-- [MODEL_MANAGER.md](MODEL_MANAGER.md) - Complete Model Manager API and usage guide
-- [CONVERSATION_MANAGER.md](CONVERSATION_MANAGER.md) - Conversation Manager API and persistence guide
+- [STATUS.md](STATUS.md) - Development status and features (updated)
+- [CLAUDE.md](CLAUDE.md) - Development guidance for Claude Code
 
 ## License
 
