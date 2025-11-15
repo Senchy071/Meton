@@ -127,3 +127,12 @@ web_ui:
     enabled: true
     refresh_interval: 30
     max_chart_points: 50
+long_term_memory:
+  enabled: true
+  storage_path: ./memory
+  max_memories: 10000
+  consolidation_threshold: 0.95
+  decay_rate: 0.1
+  auto_consolidate: true
+  auto_decay: true
+  min_importance_for_retrieval: 0.3

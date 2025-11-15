@@ -28,6 +28,13 @@ from core.conversation import ConversationManager
 from core.config import ConfigLoader
 from utils.logger import setup_logger
 
+try:
+    from memory.long_term_memory import LongTermMemory
+    MEMORY_AVAILABLE = True
+except ImportError:
+    MEMORY_AVAILABLE = False
+    LongTermMemory = None
+
 
 # Custom Exceptions
 class AgentError(Exception):
@@ -114,6 +121,26 @@ class MetonAgent:
 
         # Setup logger
         self.logger = setup_logger(name="meton_agent", console_output=False)
+
+        # Initialize long-term memory if enabled
+        self.long_term_memory = None
+        if MEMORY_AVAILABLE and config.config.long_term_memory.enabled:
+            try:
+                memory_config = config.config.long_term_memory
+                self.long_term_memory = LongTermMemory(
+                    storage_path=memory_config.storage_path,
+                    max_memories=memory_config.max_memories,
+                    consolidation_threshold=memory_config.consolidation_threshold,
+                    decay_rate=memory_config.decay_rate,
+                    auto_consolidate=memory_config.auto_consolidate,
+                    auto_decay=memory_config.auto_decay,
+                    min_importance_for_retrieval=memory_config.min_importance_for_retrieval
+                )
+                if self.logger:
+                    self.logger.info("Long-term memory system initialized")
+            except Exception as e:
+                if self.logger:
+                    self.logger.warning(f"Failed to initialize long-term memory: {e}")
 
         # Build the LangGraph StateGraph
         # Set recursion limit higher than default (25) to allow multi-step reasoning
@@ -718,9 +745,38 @@ Tool Result:
 You already have the result. DO NOT call this tool again.
 You MUST provide an ANSWER now based on the tool result you received."""
 
+            # Retrieve relevant memories if enabled
+            memory_context = ""
+            if self.long_term_memory:
+                try:
+                    user_query = state['messages'][-1] if state['messages'] else ''
+                    relevant_memories = self.long_term_memory.retrieve_relevant(
+                        query=user_query,
+                        top_k=5,
+                        min_importance=0.3
+                    )
+
+                    if relevant_memories:
+                        memory_lines = []
+                        for mem in relevant_memories:
+                            memory_lines.append(
+                                f"  • [{mem.memory_type}] {mem.content} (importance: {mem.importance:.2f})"
+                            )
+
+                        memory_context = f"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RELEVANT MEMORIES (from previous sessions):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{chr(10).join(memory_lines)}
+
+"""
+                except Exception as e:
+                    if self.logger:
+                        self.logger.warning(f"Failed to retrieve memories: {e}")
+
             prompt = f"""{self._get_system_prompt()}
 
-{conversation_context}
+{memory_context}{conversation_context}
 
 {state_context}{recent_tool_result}
 
@@ -1065,6 +1121,38 @@ CRITICAL RULES:
             }
             self.conversation.add_assistant_message(output, metadata)
 
+            # Store important interactions in long-term memory
+            if self.long_term_memory and self._is_important_interaction(user_input, output, metadata):
+                try:
+                    importance = self._calculate_interaction_importance(user_input, output, metadata)
+                    tags = self._extract_tags_from_query(user_input)
+
+                    # Create memory content
+                    memory_content = f"Q: {user_input[:200]}"
+                    if len(output) > 200:
+                        memory_content += f"\nA: {output[:200]}..."
+                    else:
+                        memory_content += f"\nA: {output}"
+
+                    # Store memory
+                    self.long_term_memory.store_memory(
+                        content=memory_content,
+                        memory_type="conversation",
+                        context={
+                            "tool_calls": metadata["tool_calls"],
+                            "iterations": metadata["iterations"],
+                            "model": metadata["model"]
+                        },
+                        importance=importance,
+                        tags=tags
+                    )
+
+                    if self.logger:
+                        self.logger.debug(f"Stored interaction in long-term memory (importance: {importance:.2f})")
+                except Exception as e:
+                    if self.logger:
+                        self.logger.warning(f"Failed to store memory: {e}")
+
             if self.verbose:
                 print(f"\n{'='*60}")
                 print(f"✅ Agent Finished")
@@ -1173,3 +1261,114 @@ CRITICAL RULES:
             "verbose": self.verbose,
             "conversation_messages": self.conversation.get_message_count()
         }
+
+    # Long-term memory helper methods
+
+    def _is_important_interaction(self, query: str, response: str, metadata: Dict) -> bool:
+        """Determine if interaction should be stored in long-term memory.
+
+        Args:
+            query: User query
+            response: Agent response
+            metadata: Interaction metadata
+
+        Returns:
+            True if interaction is important enough to store
+        """
+        # Always store if user explicitly asks to remember
+        if any(phrase in query.lower() for phrase in ['remember', 'don\'t forget', 'keep in mind']):
+            return True
+
+        # Store questions (learning opportunities)
+        if any(word in query.lower() for word in ['what', 'how', 'why', 'when', 'where', 'explain']):
+            return True
+
+        # Store if user corrects or provides feedback
+        if any(phrase in query.lower() for phrase in ['actually', 'incorrect', 'wrong', 'correct', 'prefer']):
+            return True
+
+        # Store if multiple tools were used (complex task)
+        if metadata.get('tool_calls', 0) >= 2:
+            return True
+
+        # Store if it took multiple iterations (challenging task)
+        if metadata.get('iterations', 0) >= 3:
+            return True
+
+        # Otherwise, don't store (routine interactions)
+        return False
+
+    def _calculate_interaction_importance(self, query: str, response: str, metadata: Dict) -> float:
+        """Calculate importance score for interaction.
+
+        Args:
+            query: User query
+            response: Agent response
+            metadata: Interaction metadata
+
+        Returns:
+            Importance score (0.0 to 1.0)
+        """
+        importance = 0.5  # Base importance
+
+        # Explicit remember request: high importance
+        if any(phrase in query.lower() for phrase in ['remember', 'don\'t forget']):
+            importance += 0.3
+
+        # User feedback/corrections: high importance
+        if any(phrase in query.lower() for phrase in ['actually', 'incorrect', 'prefer']):
+            importance += 0.2
+
+        # Complex queries: medium importance
+        if len(query.split()) > 20:
+            importance += 0.1
+
+        # Multiple tool calls: indicates complexity
+        tool_calls = metadata.get('tool_calls', 0)
+        if tool_calls >= 3:
+            importance += 0.2
+        elif tool_calls >= 2:
+            importance += 0.1
+
+        # Many iterations: challenging problem
+        iterations = metadata.get('iterations', 0)
+        if iterations >= 5:
+            importance += 0.1
+
+        # Cap at 1.0
+        return min(1.0, importance)
+
+    def _extract_tags_from_query(self, query: str) -> List[str]:
+        """Extract tags from query for categorization.
+
+        Args:
+            query: User query
+
+        Returns:
+            List of tags
+        """
+        tags = []
+        query_lower = query.lower()
+
+        # Programming languages
+        languages = ['python', 'javascript', 'java', 'rust', 'go', 'c++', 'typescript']
+        for lang in languages:
+            if lang in query_lower:
+                tags.append(lang)
+
+        # Common topics
+        topics = {
+            'file': ['file', 'directory', 'folder', 'path'],
+            'code': ['function', 'class', 'method', 'variable'],
+            'web': ['http', 'api', 'request', 'endpoint'],
+            'database': ['sql', 'database', 'query', 'table'],
+            'test': ['test', 'testing', 'unittest'],
+            'debug': ['debug', 'error', 'bug', 'fix'],
+            'documentation': ['docs', 'documentation', 'readme'],
+        }
+
+        for tag, keywords in topics.items():
+            if any(keyword in query_lower for keyword in keywords):
+                tags.append(tag)
+
+        return list(set(tags))  # Remove duplicates

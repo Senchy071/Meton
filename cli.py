@@ -162,6 +162,16 @@ class MetonCLI:
         table.add_row("/index refresh", "Re-index the last indexed path")
         table.add_row("/csearch <query>", "Test semantic code search")
 
+        # Add memory commands section
+        table.add_section()
+        table.add_row("[bold cyan]Long-Term Memory:[/]", "")
+        table.add_row("/memory stats", "Show memory statistics")
+        table.add_row("/memory search <query>", "Search memories")
+        table.add_row("/memory add <content>", "Manually add memory")
+        table.add_row("/memory export [format]", "Export memories (json/csv)")
+        table.add_row("/memory consolidate", "Merge similar memories")
+        table.add_row("/memory decay", "Apply decay to old memories")
+
         table.add_section()
         table.add_row("/exit, /quit, /q", "Exit Meton")
 
@@ -310,6 +320,12 @@ class MetonCLI:
                 self.search_codebase(args[0])
             else:
                 self.console.print("[yellow]Usage: /csearch <query>[/yellow]")
+        elif cmd == '/memory':
+            # Memory management command
+            if args:
+                self.handle_memory_command(args[0])
+            else:
+                self.console.print("[yellow]Usage: /memory [stats|search|add|export|consolidate|decay][/yellow]")
         elif cmd in ['/exit', '/quit', '/q']:
             self.exit_cli()
         else:
@@ -895,6 +911,164 @@ class MetonCLI:
                 self.logger.error(f"Search error: {e}")
 
     # ========== End RAG Commands ==========
+
+    # ========== Memory Commands ==========
+
+    def handle_memory_command(self, command_str: str):
+        """Handle /memory subcommands."""
+        if not self.agent:
+            self.console.print("[red]❌ Agent not initialized[/red]")
+            return
+
+        if not self.agent.long_term_memory:
+            self.console.print("[yellow]⚠️  Long-term memory is not enabled[/yellow]")
+            self.console.print("[dim]Enable it in config.yaml: long_term_memory.enabled = true[/dim]")
+            return
+
+        parts = command_str.split(maxsplit=1)
+        subcmd = parts[0].lower()
+        args = parts[1] if len(parts) > 1 else None
+
+        try:
+            if subcmd == 'stats':
+                self.display_memory_stats()
+            elif subcmd == 'search':
+                if args:
+                    self.search_memories(args)
+                else:
+                    self.console.print("[yellow]Usage: /memory search <query>[/yellow]")
+            elif subcmd == 'add':
+                if args:
+                    self.add_memory(args)
+                else:
+                    self.console.print("[yellow]Usage: /memory add <content>[/yellow]")
+            elif subcmd == 'export':
+                format_type = args if args in ['json', 'csv'] else 'json'
+                self.export_memories(format_type)
+            elif subcmd == 'consolidate':
+                self.consolidate_memories()
+            elif subcmd == 'decay':
+                self.decay_memories()
+            else:
+                self.console.print(f"[red]❌ Unknown memory command: {subcmd}[/red]")
+                self.console.print("[dim]Available: stats, search, add, export, consolidate, decay[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Memory operation failed: {str(e)}[/red]")
+            if self.logger:
+                self.logger.error(f"Memory operation error: {e}")
+
+    def display_memory_stats(self):
+        """Display memory system statistics."""
+        stats = self.agent.long_term_memory.get_memory_stats()
+
+        self.console.print("\n[bold cyan]═══ Long-Term Memory Statistics ═══[/bold cyan]\n")
+
+        # Basic stats
+        self.console.print(f"[yellow]Total Memories:[/yellow] {stats['total_memories']}")
+        self.console.print(f"[yellow]Average Importance:[/yellow] {stats['avg_importance']:.2f}")
+
+        # By type
+        if stats['by_type']:
+            self.console.print("\n[bold]Memories by Type:[/bold]")
+            for mem_type, count in stats['by_type'].items():
+                self.console.print(f"  • {mem_type}: {count}")
+
+        # Most accessed
+        if stats['most_accessed']:
+            self.console.print("\n[bold]Most Accessed:[/bold]")
+            for mem in stats['most_accessed']:
+                self.console.print(f"  • {mem['content']}")
+                self.console.print(f"    [dim]Accessed: {mem['access_count']} times, Importance: {mem['importance']:.2f}[/dim]")
+
+        # Recent memories
+        if stats['recent_memories']:
+            self.console.print("\n[bold]Recent Memories:[/bold]")
+            for mem in stats['recent_memories']:
+                self.console.print(f"  • [{mem['type']}] {mem['content']}")
+                self.console.print(f"    [dim]{mem['timestamp']}[/dim]")
+
+        self.console.print()
+
+    def search_memories(self, query: str):
+        """Search memories."""
+        self.console.print(f"\n[cyan]🔍 Searching memories for:[/cyan] {query}\n")
+
+        memories = self.agent.long_term_memory.retrieve_relevant(
+            query=query,
+            top_k=10,
+            min_importance=0.0  # Show all results
+        )
+
+        if not memories:
+            self.console.print("[yellow]No memories found[/yellow]\n")
+            return
+
+        for i, mem in enumerate(memories, 1):
+            self.console.print(f"[bold]{i}. [{mem.memory_type}][/bold] (importance: {mem.importance:.2f})")
+            self.console.print(f"   {mem.content}")
+            self.console.print(f"   [dim]Accessed: {mem.access_count} times | {mem.timestamp}[/dim]")
+            if mem.tags:
+                self.console.print(f"   [dim]Tags: {', '.join(mem.tags)}[/dim]")
+            self.console.print()
+
+        self.console.print(f"[dim]Found {len(memories)} memories[/dim]\n")
+
+    def add_memory(self, content: str):
+        """Manually add a memory."""
+        self.console.print(f"\n[cyan]➕ Adding memory...[/cyan]\n")
+
+        # Determine memory type based on content
+        content_lower = content.lower()
+        if any(word in content_lower for word in ['prefer', 'like', 'hate', 'favorite']):
+            memory_type = 'preference'
+        elif any(word in content_lower for word in ['how to', 'pattern', 'technique']):
+            memory_type = 'skill'
+        else:
+            memory_type = 'fact'
+
+        memory_id = self.agent.long_term_memory.store_memory(
+            content=content,
+            memory_type=memory_type,
+            importance=0.7,  # Manual additions are moderately important
+            tags=self.agent._extract_tags_from_query(content)
+        )
+
+        self.console.print(f"[green]✅ Memory added[/green]")
+        self.console.print(f"[dim]ID: {memory_id} | Type: {memory_type}[/dim]\n")
+
+    def export_memories(self, format_type: str):
+        """Export memories to file."""
+        self.console.print(f"\n[cyan]💾 Exporting memories to {format_type.upper()}...[/cyan]\n")
+
+        export_path = self.agent.long_term_memory.export_memories(format=format_type)
+
+        self.console.print(f"[green]✅ Memories exported[/green]")
+        self.console.print(f"[dim]File: {export_path}[/dim]\n")
+
+    def consolidate_memories(self):
+        """Consolidate similar memories."""
+        self.console.print("\n[cyan]🔄 Consolidating similar memories...[/cyan]\n")
+
+        count = self.agent.long_term_memory.consolidate_memories()
+
+        if count > 0:
+            self.console.print(f"[green]✅ Consolidated {count} duplicate memories[/green]\n")
+        else:
+            self.console.print("[dim]No duplicates found[/dim]\n")
+
+    def decay_memories(self):
+        """Apply decay to old memories."""
+        self.console.print("\n[cyan]⏰ Applying decay to old memories...[/cyan]\n")
+
+        count = self.agent.long_term_memory.decay_memories()
+
+        if count > 0:
+            self.console.print(f"[green]✅ Applied decay to {count} memories[/green]\n")
+        else:
+            self.console.print("[dim]No memories needed decay[/dim]\n")
+
+    # ========== End Memory Commands ==========
 
     def exit_cli(self):
         """Exit the CLI."""
