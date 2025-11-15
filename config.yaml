@@ -39,6 +39,11 @@ tools:
     top_k: 5
     similarity_threshold: 0.3
     max_code_length: 500
+  git_operations:
+    enabled: true
+    auto_detect_repo: true
+    max_diff_size: 5000
+    commit_message_style: conventional
 conversation:
   max_history: 20
   save_path: ./conversations/
