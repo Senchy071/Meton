@@ -22,9 +22,41 @@ The CLI will initialize all components and present you with an interactive promp
 
 ---
 
+## Launch Options
+
+### CLI Mode (Default)
+```bash
+# Launch Meton CLI
+./meton
+# Or with full path
+python meton.py
+```
+
+### Web UI Mode
+```bash
+# Launch Gradio-based web interface
+python launch_web.py
+
+# With options
+python launch_web.py --share           # Enable public sharing
+python launch_web.py --port 8080       # Custom port
+python launch_web.py --auth user:pass  # With authentication
+```
+
+**Web UI Features:**
+- Chat interface with message history
+- File upload and download
+- Multi-session management
+- Real-time analytics with Plotly visualizations
+- Settings management
+- Export conversations to JSON/CSV
+- Session statistics and performance metrics
+
+---
+
 ## Commands Reference
 
-Meton provides 18+ interactive commands to control your session:
+Meton provides 30+ interactive commands to control your session:
 
 ### Information Commands
 
@@ -56,7 +88,7 @@ Display current session information including:
 You: /status
 
 ╭─── Current Status ────────────────────╮
-│ Model:        codellama:34b           │
+│ Model:        qwen2.5:32b-instruct... │
 │ Session:      3c8a9f2d-4b1e...        │
 │ Messages:     12                      │
 │ Tools:        file_operations         │
@@ -73,27 +105,32 @@ List all available Ollama models and show which one is currently active.
 ```
 You: /models
 
-╔════════════════════════════════════╗
-║  Available Models                  ║
-╠════════════════════════════════════╣
-║  codellama:34b    ✓ Current        ║
-║  codellama:13b                     ║
-║  codellama:7b                      ║
-╚════════════════════════════════════╝
+╔════════════════════════════════════════════╗
+║  Available Models                          ║
+╠════════════════════════════════════════════╣
+║  qwen2.5:32b-instruct-q5_K_M  ✓ Current    ║
+║  llama3.1:8b                               ║
+║  mistral:latest                            ║
+╠════════════════════════════════════════════╣
+║  Aliases:                                  ║
+║    primary  → qwen2.5:32b-instruct-q5_K_M  ║
+║    fallback → llama3.1:8b                  ║
+║    quick    → mistral:latest               ║
+╚════════════════════════════════════════════╝
 ```
 
 #### `/model <name>`
 Switch to a different model. Accepts full model names or aliases:
-- `primary` → codellama:34b (best quality)
-- `fallback` → codellama:13b (balanced)
-- `quick` → codellama:7b (fastest)
+- `primary` → qwen2.5:32b-instruct-q5_K_M (best quality, reasoning)
+- `fallback` → llama3.1:8b (balanced)
+- `quick` → mistral:latest (fastest)
 
 ```
 You: /model quick
-✓ Switched to model: codellama:7b
+✓ Switched to model: mistral:latest
 
-You: /model codellama:34b
-✓ Switched to model: codellama:34b
+You: /model primary
+✓ Switched to model: qwen2.5:32b-instruct-q5_K_M
 ```
 
 ### Conversation Management
@@ -257,6 +294,232 @@ You: /csearch authentication
 
 Found 5 results in 0.3s
 ```
+
+### Long-Term Memory
+
+Meton maintains a persistent semantic memory system across sessions. Memories are automatically captured from conversations and can be managed manually.
+
+#### `/memory stats`
+Show memory system statistics.
+
+```
+You: /memory stats
+
+═══ Long-Term Memory Statistics ═══
+
+Total Memories: 42
+Average Importance: 0.68
+
+Memories by Type:
+  • fact: 23
+  • preference: 12
+  • skill: 7
+
+Most Accessed:
+  • User prefers async/await patterns
+    Accessed: 8 times, Importance: 0.85
+  • Project uses pytest for testing
+    Accessed: 5 times, Importance: 0.72
+
+Recent Memories:
+  • [skill] How to implement retry logic with exponential backoff
+    2025-11-14T10:23:15
+```
+
+#### `/memory search <query>`
+Search memories semantically.
+
+```
+You: /memory search authentication
+
+🔍 Searching memories for: authentication
+
+1. [preference] (importance: 0.85)
+   User prefers JWT tokens over session cookies for API auth
+   Accessed: 3 times | 2025-11-12T14:30:22
+   Tags: auth, jwt, api
+
+2. [fact] (importance: 0.73)
+   Project uses bcrypt for password hashing
+   Accessed: 2 times | 2025-11-10T09:15:44
+   Tags: auth, security, password
+
+Found 2 memories
+```
+
+#### `/memory add <content>`
+Manually add a memory.
+
+```
+You: /memory add I prefer using type hints for all function parameters
+
+➕ Adding memory...
+
+✅ Memory added
+ID: mem_abc123... | Type: preference
+```
+
+#### `/memory export [json|csv]`
+Export all memories to a file.
+
+```
+You: /memory export json
+
+💾 Exporting memories to JSON...
+
+✅ Memories exported
+File: /media/development/projects/meton/memory/memories_export_20251114.json
+```
+
+#### `/memory consolidate`
+Merge similar or duplicate memories.
+
+```
+You: /memory consolidate
+
+🔄 Consolidating similar memories...
+
+✅ Consolidated 3 duplicate memories
+```
+
+#### `/memory decay`
+Apply decay to old, rarely accessed memories.
+
+```
+You: /memory decay
+
+⏰ Applying decay to old memories...
+
+✅ Applied decay to 5 memories
+```
+
+**Memory System Features:**
+- Automatic capture from conversations
+- Semantic similarity search using embeddings
+- Importance scoring based on access frequency
+- Auto-consolidation of duplicates (threshold: 0.95)
+- Time-based decay for old memories
+- Type classification: fact, preference, skill
+- Tag extraction for easy retrieval
+- 10,000 memory capacity
+
+### Cross-Session Learning
+
+Learn patterns across sessions to improve future interactions. Analyzes query types, tool usage, errors, and successes.
+
+#### `/learn analyze`
+Analyze recent sessions for patterns and generate insights.
+
+```
+You: /learn analyze
+
+🔍 Analyzing recent sessions for patterns...
+
+✅ Generated 3 new insights
+
+Frequent Testing Queries Detected
+  Impact: MEDIUM
+  User frequently asks about testing strategies and pytest usage.
+  Consider proactively suggesting testing patterns.
+  ID: insight_xyz789...
+
+High Error Rate with File Paths
+  Impact: HIGH
+  Multiple file path errors detected in last 30 days.
+  Recommend verifying paths before file operations.
+  ID: insight_abc456...
+```
+
+#### `/learn insights`
+Show all generated insights.
+
+```
+You: /learn insights
+
+═══ Learning Insights ═══
+
+High Error Rate with File Paths ⏳ Pending
+  Type: warning | Impact: high
+  Multiple file path errors detected. Verify paths first.
+  → Apply with: /learn apply insight_abc456
+  ID: insight_abc456 | Created: 2025-11-14T11:20:33
+
+Frequent Testing Queries ✅ APPLIED
+  Type: improvement | Impact: medium
+  User frequently asks about testing. Proactive suggestions enabled.
+  ID: insight_xyz789 | Created: 2025-11-13T09:15:22
+```
+
+#### `/learn patterns`
+Show detected patterns by type.
+
+```
+You: /learn patterns
+
+═══ Detected Patterns ═══
+
+QUERY Patterns:
+  • User frequently asks about async programming
+    Occurrences: 8 | Confidence: 0.85
+    Examples: How to handle async errors in Python?...
+
+  • User often requests testing advice
+    Occurrences: 6 | Confidence: 0.78
+    Examples: Best practices for pytest fixtures...
+
+TOOL_USAGE Patterns:
+  • High usage of file_operations tool
+    Occurrences: 45 | Confidence: 0.92
+    Examples: file_operations called 45 times...
+```
+
+#### `/learn apply <id>`
+Apply a specific insight.
+
+```
+You: /learn apply insight_abc456
+
+📝 Applying insight...
+
+✅ Insight applied: High Error Rate with File Paths
+Paths will now be verified before file operations.
+```
+
+#### `/learn summary`
+Show learning summary and statistics.
+
+```
+You: /learn summary
+
+═══ Cross-Session Learning Summary ═══
+
+Total Patterns: 12
+Insights Generated: 5
+Insights Applied: 2
+Learning Velocity: 2.4 patterns/week
+
+Top Patterns (by confidence):
+  • High usage of file_operations tool
+    Confidence: 0.92 | Occurrences: 45
+  • User frequently asks about async programming
+    Confidence: 0.85 | Occurrences: 8
+
+Recent Insights:
+  ⏳ High Error Rate with File Paths
+    Impact: high | Type: warning
+  ✅ Frequent Testing Queries
+    Impact: medium | Type: improvement
+```
+
+**Learning System Features:**
+- Pattern detection across 4 types: queries, tool usage, errors, successes
+- Confidence scoring based on frequency and consistency
+- Impact assessment (high, medium, low)
+- Actionable insights with recommendations
+- Auto-application of high-confidence, low-risk insights (configurable)
+- Learning velocity tracking (patterns/week)
+- 30-day lookback window (configurable)
+- Minimum 5 occurrences for pattern detection
 
 ### Session Control
 
@@ -487,7 +750,7 @@ You: Read config.yaml
 [Shows config file contents with models, tools, conversation settings...]
 
 You: /model quick
-✓ Switched to model: codellama:7b
+✓ Switched to model: mistral:latest
 
 You: test query with quick model
 
@@ -495,10 +758,96 @@ You: test query with quick model
 [Faster response with smaller model]
 
 You: /model primary
-✓ Switched to model: codellama:34b
+✓ Switched to model: qwen2.5:32b-instruct-q5_K_M
 
 You: /reload
 ✓ Configuration reloaded successfully
+```
+
+### Session 3: Using Long-Term Memory
+
+```
+You: /memory stats
+
+═══ Long-Term Memory Statistics ═══
+Total Memories: 15
+Average Importance: 0.71
+
+You: Show me how to implement authentication
+
+💬 Assistant:
+[Provides authentication implementation guidance]
+
+You: /memory search auth
+
+🔍 Searching memories for: auth
+
+1. [preference] User prefers JWT tokens for API auth
+   Importance: 0.82
+
+2. [fact] Project uses bcrypt for password hashing
+   Importance: 0.75
+
+You: /memory add I prefer using refresh tokens with 7-day expiry
+
+✅ Memory added
+Type: preference
+```
+
+### Session 4: Cross-Session Learning
+
+```
+You: /learn analyze
+
+🔍 Analyzing recent sessions for patterns...
+
+✅ Generated 2 new insights
+
+Frequent Authentication Questions
+  Impact: MEDIUM
+  Consider creating authentication templates
+
+You: /learn patterns
+
+═══ Detected Patterns ═══
+
+QUERY Patterns:
+  • User frequently asks about authentication
+    Occurrences: 7 | Confidence: 0.82
+
+  • User often requests async patterns
+    Occurrences: 5 | Confidence: 0.75
+
+You: /learn insights
+
+High File Operations Usage ⏳ Pending
+  Type: optimization | Impact: medium
+  → Apply with: /learn apply insight_123
+
+You: /learn apply insight_123
+
+✅ Insight applied
+File operations will be optimized
+```
+
+### Session 5: Web UI Workflow
+
+```bash
+# Terminal 1: Launch Web UI
+python launch_web.py --port 7860
+
+# Terminal 2: Or with authentication
+python launch_web.py --auth admin:secretpass --share
+
+# Browser: Navigate to http://localhost:7860
+# Features available:
+#   - Chat with Meton
+#   - Upload files for analysis
+#   - View conversation history
+#   - Export sessions to JSON/CSV
+#   - Real-time analytics with charts
+#   - Multi-session management
+#   - Settings configuration
 ```
 
 ---
@@ -512,9 +861,9 @@ When agent behavior seems strange, enable verbose mode to see its reasoning:
 ```
 
 ### 2. Model Selection Strategy
-- **codellama:34b** (primary) - Best quality, slower (~10-20s per response)
-- **codellama:13b** (fallback) - Good balance (~5-10s per response)
-- **codellama:7b** (quick) - Fastest, adequate quality (~2-5s per response)
+- **qwen2.5:32b-instruct-q5_K_M** (primary) - Best quality, reasoning (~10-20s per response)
+- **llama3.1:8b** (fallback) - Good balance (~5-10s per response)
+- **mistral:latest** (quick) - Fastest, adequate quality (~2-5s per response)
 
 ### 3. Search Before Re-Asking
 If you think you asked something similar before, use `/search` to find it:
@@ -635,9 +984,9 @@ Add new Ollama models to config.yaml:
 
 ```yaml
 models:
-  primary_model: "deepseek-coder:33b"     # Use different model
-  fallback_model: "codellama:13b"
-  quick_model: "codellama:7b"
+  primary: "deepseek-coder:33b"     # Use different model
+  fallback: "llama3.1:8b"
+  quick: "mistral:latest"
 ```
 
 Pull the model first:
@@ -700,6 +1049,30 @@ Then reload Meton:
    # See how agent thinks
    ```
 
+7. **Leverage Long-Term Memory**
+   ```
+   /memory search <topic>
+   # Find relevant memories before asking
+   ```
+
+8. **Monitor Learning Patterns**
+   ```
+   /learn summary
+   # Check what patterns Meton has learned
+   ```
+
+9. **Use Web UI for Visualization**
+   ```bash
+   python launch_web.py
+   # Visual interface with charts and multi-session support
+   ```
+
+10. **Export Your Work**
+    ```
+    /memory export json
+    # Save memories for backup or analysis
+    ```
+
 ---
 
 ## Getting Help
@@ -715,10 +1088,21 @@ Then reload Meton:
 
 Now that you know how to use Meton:
 
-1. Try exploring your own codebase
-2. Experiment with different models
-3. Test multi-step queries
-4. Check out example workflows in examples/
-5. Read ARCHITECTURE.md to understand the system
+1. **Index your codebase** - Run `/index /path/to/project` for semantic search
+2. **Experiment with models** - Try `primary`, `fallback`, and `quick` models
+3. **Test multi-step queries** - Let Meton break down complex tasks
+4. **Explore the Web UI** - Launch `python launch_web.py` for visual interface
+5. **Build memory** - Use Meton regularly to build cross-session intelligence
+6. **Monitor learning** - Check `/learn summary` to see pattern detection
+7. **Export sessions** - Save memories and conversations for analysis
+8. **Read the docs** - Check ARCHITECTURE.md and STATUS.md for details
+
+**Advanced Features to Explore:**
+- **Long-Term Memory**: Builds understanding of your preferences and project patterns
+- **Cross-Session Learning**: Improves recommendations based on usage patterns
+- **Web UI Analytics**: Visual charts showing tool usage, response times, patterns
+- **Git Integration**: AI-powered code review and commit message generation
+- **Multi-Agent System**: Coordinate multiple specialized agents (configurable)
+- **Self-Reflection**: Automatic quality analysis and improvement (configurable)
 
 Happy coding with Meton! 🧠⚡
