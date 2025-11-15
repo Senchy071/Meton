@@ -172,6 +172,15 @@ class MetonCLI:
         table.add_row("/memory consolidate", "Merge similar memories")
         table.add_row("/memory decay", "Apply decay to old memories")
 
+        # Add learning commands section
+        table.add_section()
+        table.add_row("[bold cyan]Cross-Session Learning:[/]", "")
+        table.add_row("/learn analyze", "Analyze recent sessions for patterns")
+        table.add_row("/learn insights", "Show generated insights")
+        table.add_row("/learn patterns", "Show detected patterns")
+        table.add_row("/learn apply <id>", "Apply specific insight")
+        table.add_row("/learn summary", "Learning summary and statistics")
+
         table.add_section()
         table.add_row("/exit, /quit, /q", "Exit Meton")
 
@@ -326,6 +335,12 @@ class MetonCLI:
                 self.handle_memory_command(args[0])
             else:
                 self.console.print("[yellow]Usage: /memory [stats|search|add|export|consolidate|decay][/yellow]")
+        elif cmd == '/learn':
+            # Cross-session learning command
+            if args:
+                self.handle_learn_command(args[0])
+            else:
+                self.console.print("[yellow]Usage: /learn [analyze|insights|patterns|apply|summary][/yellow]")
         elif cmd in ['/exit', '/quit', '/q']:
             self.exit_cli()
         else:
@@ -1069,6 +1084,186 @@ class MetonCLI:
             self.console.print("[dim]No memories needed decay[/dim]\n")
 
     # ========== End Memory Commands ==========
+
+    # ========== Cross-Session Learning Commands ==========
+
+    def handle_learn_command(self, command_str: str):
+        """Handle /learn subcommands."""
+        if not self.agent:
+            self.console.print("[red]❌ Agent not initialized[/red]")
+            return
+
+        # Cross-session learning requires memory, feedback, and analytics
+        if not hasattr(self.agent, 'long_term_memory') or not self.agent.long_term_memory:
+            self.console.print("[yellow]⚠️  Cross-session learning requires long-term memory[/yellow]")
+            self.console.print("[dim]Enable long_term_memory in config.yaml[/dim]")
+            return
+
+        # Initialize cross-session learning if not already done
+        if not hasattr(self, 'cross_session_learning'):
+            try:
+                from memory.cross_session_learning import CrossSessionLearning
+
+                self.cross_session_learning = CrossSessionLearning(
+                    long_term_memory=self.agent.long_term_memory,
+                    feedback_system=getattr(self.agent, 'feedback_system', None),
+                    analytics=getattr(self.agent, 'performance_analytics', None),
+                    storage_path=self.config.config.long_term_memory.storage_path,
+                    min_occurrences=self.config.config.cross_session_learning.min_occurrences_for_pattern,
+                    min_confidence=self.config.config.cross_session_learning.min_confidence,
+                    auto_apply_insights=self.config.config.cross_session_learning.auto_apply_insights
+                )
+            except Exception as e:
+                self.console.print(f"[red]❌ Failed to initialize cross-session learning: {e}[/red]")
+                return
+
+        parts = command_str.split(maxsplit=1)
+        subcmd = parts[0].lower()
+        args = parts[1] if len(parts) > 1 else None
+
+        try:
+            if subcmd == 'analyze':
+                self.analyze_learning_sessions()
+            elif subcmd == 'insights':
+                self.show_learning_insights()
+            elif subcmd == 'patterns':
+                self.show_learning_patterns()
+            elif subcmd == 'apply':
+                if args:
+                    self.apply_learning_insight(args)
+                else:
+                    self.console.print("[yellow]Usage: /learn apply <insight_id>[/yellow]")
+            elif subcmd == 'summary':
+                self.show_learning_summary()
+            else:
+                self.console.print(f"[red]❌ Unknown learn command: {subcmd}[/red]")
+                self.console.print("[dim]Available: analyze, insights, patterns, apply, summary[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Learning operation failed: {str(e)}[/red]")
+            if self.logger:
+                self.logger.error(f"Learning operation error: {e}")
+
+    def analyze_learning_sessions(self):
+        """Analyze recent sessions for patterns."""
+        self.console.print("\n[cyan]🔍 Analyzing recent sessions for patterns...[/cyan]\n")
+
+        lookback_days = self.config.config.cross_session_learning.lookback_days
+
+        with self.console.status(f"[cyan]Analyzing last {lookback_days} days...[/cyan]"):
+            insights = self.cross_session_learning.analyze_sessions(lookback_days=lookback_days)
+
+        if insights:
+            self.console.print(f"[green]✅ Generated {len(insights)} new insights[/green]\n")
+
+            for insight in insights[:5]:  # Show first 5
+                impact_color = {"high": "red", "medium": "yellow", "low": "dim"}[insight.impact]
+                self.console.print(f"[bold]{insight.title}[/bold]")
+                self.console.print(f"  [{impact_color}]Impact: {insight.impact.upper()}[/{impact_color}]")
+                self.console.print(f"  {insight.description}")
+                self.console.print(f"  [dim]ID: {insight.id}[/dim]")
+                self.console.print()
+
+            if len(insights) > 5:
+                self.console.print(f"[dim]... and {len(insights)-5} more. Use /learn insights to see all.[/dim]\n")
+        else:
+            self.console.print("[dim]No new insights generated[/dim]\n")
+
+    def show_learning_insights(self):
+        """Show all generated insights."""
+        self.console.print("\n[bold cyan]═══ Learning Insights ═══[/bold cyan]\n")
+
+        insights = list(self.cross_session_learning.insights.values())
+
+        if not insights:
+            self.console.print("[dim]No insights yet. Run /learn analyze first.[/dim]\n")
+            return
+
+        # Sort by applied status and impact
+        insights.sort(key=lambda i: (i.applied, {"high": 0, "medium": 1, "low": 2}[i.impact]))
+
+        for insight in insights:
+            status = "✅ APPLIED" if insight.applied else "⏳ Pending"
+            impact_color = {"high": "red", "medium": "yellow", "low": "dim"}[insight.impact]
+
+            self.console.print(f"[bold]{insight.title}[/bold] [{impact_color}]{status}[/{impact_color}]")
+            self.console.print(f"  Type: {insight.insight_type} | Impact: {insight.impact}")
+            self.console.print(f"  {insight.description}")
+            if insight.actionable and not insight.applied:
+                self.console.print(f"  [cyan]→ Apply with: /learn apply {insight.id}[/cyan]")
+            self.console.print(f"  [dim]ID: {insight.id} | Created: {insight.created_at}[/dim]")
+            self.console.print()
+
+    def show_learning_patterns(self):
+        """Show detected patterns."""
+        self.console.print("\n[bold cyan]═══ Detected Patterns ═══[/bold cyan]\n")
+
+        patterns = list(self.cross_session_learning.patterns.values())
+
+        if not patterns:
+            self.console.print("[dim]No patterns yet. Run /learn analyze first.[/dim]\n")
+            return
+
+        # Group by type
+        from collections import defaultdict
+        by_type = defaultdict(list)
+        for pattern in patterns:
+            by_type[pattern.pattern_type].append(pattern)
+
+        for pattern_type, type_patterns in by_type.items():
+            self.console.print(f"[bold yellow]{pattern_type.upper()} Patterns:[/bold yellow]")
+
+            for pattern in sorted(type_patterns, key=lambda p: p.confidence, reverse=True)[:5]:
+                self.console.print(f"  • {pattern.description}")
+                self.console.print(f"    Occurrences: {pattern.occurrences} | Confidence: {pattern.confidence:.2f}")
+                if pattern.examples:
+                    self.console.print(f"    Examples: {pattern.examples[0][:80]}...")
+                self.console.print()
+
+    def apply_learning_insight(self, insight_id: str):
+        """Apply a specific insight."""
+        self.console.print(f"\n[cyan]📝 Applying insight...[/cyan]\n")
+
+        result = self.cross_session_learning.apply_insight(insight_id)
+
+        if result:
+            insight = self.cross_session_learning.insights.get(insight_id)
+            if insight:
+                self.console.print(f"[green]✅ Insight applied: {insight.title}[/green]")
+                self.console.print(f"[dim]{insight.description}[/dim]\n")
+        else:
+            self.console.print(f"[red]❌ Insight not found: {insight_id}[/red]\n")
+
+    def show_learning_summary(self):
+        """Show learning summary and statistics."""
+        summary = self.cross_session_learning.get_learning_summary()
+
+        self.console.print("\n[bold cyan]═══ Cross-Session Learning Summary ═══[/bold cyan]\n")
+
+        # Basic stats
+        self.console.print(f"[yellow]Total Patterns:[/yellow] {summary['total_patterns']}")
+        self.console.print(f"[yellow]Insights Generated:[/yellow] {summary['insights_generated']}")
+        self.console.print(f"[yellow]Insights Applied:[/yellow] {summary['insights_applied']}")
+        self.console.print(f"[yellow]Learning Velocity:[/yellow] {summary['learning_velocity']:.2f} patterns/week")
+
+        # Top patterns
+        if summary['top_patterns']:
+            self.console.print("\n[bold]Top Patterns (by confidence):[/bold]")
+            for pattern in summary['top_patterns'][:3]:
+                self.console.print(f"  • {pattern['description']}")
+                self.console.print(f"    Confidence: {pattern['confidence']:.2f} | Occurrences: {pattern['occurrences']}")
+
+        # Recent insights
+        if summary['recent_insights']:
+            self.console.print("\n[bold]Recent Insights:[/bold]")
+            for insight in summary['recent_insights'][:3]:
+                status = "✅" if insight['applied'] else "⏳"
+                self.console.print(f"  {status} {insight['title']}")
+                self.console.print(f"    Impact: {insight['impact']} | Type: {insight['insight_type']}")
+
+        self.console.print()
+
+    # ========== End Cross-Session Learning Commands ==========
 
     def exit_cli(self):
         """Exit the CLI."""

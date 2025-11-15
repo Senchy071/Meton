@@ -136,3 +136,10 @@ long_term_memory:
   auto_consolidate: true
   auto_decay: true
   min_importance_for_retrieval: 0.3
+cross_session_learning:
+  enabled: true
+  analysis_interval_hours: 24
+  min_occurrences_for_pattern: 5
+  min_confidence: 0.7
+  auto_apply_insights: false
+  lookback_days: 30
