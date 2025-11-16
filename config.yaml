@@ -149,3 +149,8 @@ templates:
   default_author: null  # Set default author name
   default_email: null  # Set default email
   auto_setup: true  # Run setup commands after creation
+profiles:
+  enabled: true
+  profiles_dir: "config/profiles"
+  default_profile: null  # Use default config if null
+  auto_switch: false  # Auto-suggest profiles based on query

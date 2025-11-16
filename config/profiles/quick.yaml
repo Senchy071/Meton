@@ -1,0 +1,111 @@
+id: quick
+name: Quick Response
+description: Fast responses with minimal overhead using lightweight model and reduced features
+category: general
+created_at: "2025-11-15T00:00:00"
+last_used: "2025-11-15T19:00:00"
+usage_count: 0
+is_builtin: true
+
+config:
+  models:
+    primary: "mistral:latest"
+    fallback: "llama3.1:8b"
+    quick: "mistral:latest"
+    settings:
+      temperature: 0.0
+      max_tokens: 1024
+      top_p: 0.9
+      num_ctx: 2048
+
+  agent:
+    max_iterations: 5
+    verbose: false
+    show_reasoning: false
+    timeout: 120
+
+  tools:
+    file_ops:
+      enabled: true
+      max_file_size_mb: 5
+
+    code_executor:
+      enabled: true
+      timeout: 3
+      max_output_length: 5000
+
+    web_search:
+      enabled: false
+      max_results: 3
+      timeout: 5
+
+    codebase_search:
+      enabled: true
+      top_k: 3
+      similarity_threshold: 0.5
+      max_code_length: 300
+
+    git_operations:
+      enabled: false
+      auto_detect_repo: true
+      max_diff_size: 2000
+      commit_message_style: "conventional"
+
+  skills:
+    enabled: true
+    auto_load: false
+    directory: "./skills/"
+
+  reflection:
+    enabled: false
+    min_quality_threshold: 0.70
+    max_iterations: 1
+    auto_reflect_on:
+      complex_queries: false
+      multi_tool_usage: false
+      long_responses: false
+
+  chain_of_thought:
+    enabled: false
+    min_complexity_threshold: "high"
+    include_in_response: false
+    max_reasoning_steps: 5
+
+  parallel_execution:
+    enabled: false
+    max_parallel_tools: 2
+    timeout_per_tool: 15
+    fallback_to_sequential: true
+
+  task_planning:
+    enabled: false
+    auto_plan_threshold: "high"
+    visualize_plan: false
+    allow_user_approval: false
+    max_subtasks: 5
+
+  iterative_improvement:
+    enabled: false
+    max_iterations: 1
+    quality_threshold: 0.70
+    convergence_threshold: 0.05
+    convergence_window: 1
+
+  analytics:
+    enabled: false
+    storage_path: "./analytics_data"
+    auto_export_interval: 100
+    retention_days: 30
+
+  long_term_memory:
+    enabled: false
+    storage_path: "./memory"
+    max_memories: 1000
+    auto_consolidate: false
+    auto_decay: false
+
+  cross_session_learning:
+    enabled: false
+    analysis_interval_hours: 24
+    min_occurrences_for_pattern: 5
+    auto_apply_insights: false

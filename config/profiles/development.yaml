@@ -1,0 +1,104 @@
+id: development
+name: Development
+description: Optimized for software development tasks with full tooling and reflection
+category: development
+created_at: "2025-11-15T00:00:00"
+last_used: "2025-11-15T19:00:00"
+usage_count: 0
+is_builtin: true
+
+config:
+  models:
+    primary: "qwen2.5:32b-instruct-q5_K_M"
+    fallback: "llama3.1:8b"
+    quick: "mistral:latest"
+    settings:
+      temperature: 0.0
+      max_tokens: 2048
+      top_p: 0.9
+      num_ctx: 4096
+
+  agent:
+    max_iterations: 10
+    verbose: true
+    show_reasoning: true
+    timeout: 300
+
+  tools:
+    file_ops:
+      enabled: true
+      max_file_size_mb: 10
+
+    code_executor:
+      enabled: true
+      timeout: 5
+      max_output_length: 10000
+
+    web_search:
+      enabled: true
+      max_results: 5
+      timeout: 10
+
+    codebase_search:
+      enabled: true
+      top_k: 5
+      similarity_threshold: 0.3
+      max_code_length: 500
+
+    git_operations:
+      enabled: true
+      auto_detect_repo: true
+      max_diff_size: 5000
+      commit_message_style: "conventional"
+
+  skills:
+    enabled: true
+    auto_load: true
+    directory: "./skills/"
+
+  reflection:
+    enabled: true
+    min_quality_threshold: 0.75
+    max_iterations: 2
+    auto_reflect_on:
+      complex_queries: true
+      multi_tool_usage: true
+      long_responses: true
+
+  chain_of_thought:
+    enabled: true
+    min_complexity_threshold: "medium"
+    include_in_response: false
+    max_reasoning_steps: 10
+
+  parallel_execution:
+    enabled: true
+    max_parallel_tools: 3
+    timeout_per_tool: 30
+    fallback_to_sequential: true
+
+  task_planning:
+    enabled: false
+    auto_plan_threshold: "medium"
+    visualize_plan: true
+    allow_user_approval: false
+    max_subtasks: 15
+
+  analytics:
+    enabled: true
+    storage_path: "./analytics_data"
+    auto_export_interval: 100
+    retention_days: 90
+
+  long_term_memory:
+    enabled: true
+    storage_path: "./memory"
+    max_memories: 10000
+    auto_consolidate: true
+    auto_decay: true
+
+  cross_session_learning:
+    enabled: true
+    analysis_interval_hours: 24
+    min_occurrences_for_pattern: 5
+    auto_apply_insights: false

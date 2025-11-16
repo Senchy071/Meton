@@ -189,6 +189,16 @@ class MetonCLI:
         table.add_row("/template preview <id>", "Show template structure")
         table.add_row("/template categories", "List template categories")
 
+        # Add profile commands section
+        table.add_section()
+        table.add_row("[bold cyan]Configuration Profiles:[/]", "")
+        table.add_row("/profile list [category]", "List available profiles")
+        table.add_row("/profile use <id>", "Activate profile")
+        table.add_row("/profile current", "Show active profile")
+        table.add_row("/profile save <name>", "Save current config as profile")
+        table.add_row("/profile compare <id1> <id2>", "Compare two profiles")
+        table.add_row("/profile preview <id>", "Show profile details")
+
         table.add_section()
         table.add_row("/exit, /quit, /q", "Exit Meton")
 
@@ -355,6 +365,12 @@ class MetonCLI:
                 self.handle_template_command(args[0])
             else:
                 self.console.print("[yellow]Usage: /template [list|create|preview|categories][/yellow]")
+        elif cmd == '/profile':
+            # Profile management command
+            if args:
+                self.handle_profile_command(args[0])
+            else:
+                self.console.print("[yellow]Usage: /profile [list|use|current|save|compare|preview][/yellow]")
         elif cmd in ['/exit', '/quit', '/q']:
             self.exit_cli()
         else:
@@ -1421,6 +1437,210 @@ class MetonCLI:
         self.console.print()
 
     # ========== End Project Template Commands ==========
+
+    # ========== Configuration Profile Commands ==========
+
+    def handle_profile_command(self, command_str: str):
+        """Handle /profile subcommands."""
+        # Initialize profile manager if not already done
+        if not hasattr(self, 'profile_manager'):
+            from config.profile_manager import ProfileManager
+            self.profile_manager = ProfileManager(config_manager=self.config)
+
+        parts = command_str.split(maxsplit=3)
+        subcmd = parts[0].lower()
+
+        if subcmd == 'list':
+            # /profile list [category]
+            category = parts[1] if len(parts) > 1 else None
+            self.list_profiles(category)
+        elif subcmd == 'use':
+            # /profile use <id>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /profile use <id>[/yellow]")
+                return
+            self.activate_profile(parts[1])
+        elif subcmd == 'current':
+            # /profile current
+            self.show_current_profile()
+        elif subcmd == 'save':
+            # /profile save <name> [description] [category]
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /profile save <name> [description] [category][/yellow]")
+                return
+            name = parts[1]
+            description = input("Profile description (press Enter to skip): ").strip() or f"Custom profile: {name}"
+            category = input("Profile category (development/research/writing/general/custom) [custom]: ").strip() or "custom"
+            self.save_current_profile(name, description, category)
+        elif subcmd == 'compare':
+            # /profile compare <id1> <id2>
+            if len(parts) < 3:
+                self.console.print("[yellow]Usage: /profile compare <id1> <id2>[/yellow]")
+                return
+            self.compare_profiles(parts[1], parts[2])
+        elif subcmd == 'preview':
+            # /profile preview <id>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /profile preview <id>[/yellow]")
+                return
+            self.preview_profile(parts[1])
+        else:
+            self.console.print(f"[red]Unknown profile command: {subcmd}[/red]")
+            self.console.print("[yellow]Usage: /profile [list|use|current|save|compare|preview][/yellow]")
+
+    def list_profiles(self, category: Optional[str] = None):
+        """List available profiles."""
+        self.console.print("\n[bold cyan]═══ Available Profiles ═══[/bold cyan]\n")
+
+        profiles = self.profile_manager.list_profiles(category=category)
+
+        if not profiles:
+            msg = f"No profiles found"
+            if category:
+                msg += f" in category '{category}'"
+            self.console.print(f"[yellow]{msg}[/yellow]\n")
+            return
+
+        # Create table
+        table = Table(show_header=True, header_style="bold cyan", show_lines=True)
+        table.add_column("ID", style="yellow")
+        table.add_column("Name", style="green")
+        table.add_column("Category", style="magenta")
+        table.add_column("Description", style="dim")
+        table.add_column("Usage", style="cyan", justify="right")
+
+        for profile in profiles:
+            # Mark active profile
+            profile_id = f"[bold]{profile.id}[/bold]" if self.profile_manager.active_profile == profile.id else profile.id
+
+            # Truncate description if too long
+            desc = profile.description
+            if len(desc) > 50:
+                desc = desc[:47] + "..."
+
+            # Built-in badge
+            if profile.is_builtin:
+                desc = f"🔒 {desc}"
+
+            table.add_row(
+                profile_id,
+                profile.name,
+                profile.category,
+                desc,
+                str(profile.usage_count)
+            )
+
+        self.console.print(table)
+        self.console.print()
+
+    def activate_profile(self, profile_id: str):
+        """Activate a profile."""
+        self.console.print(f"\n[cyan]📝 Activating profile '{profile_id}'...[/cyan]\n")
+
+        try:
+            self.profile_manager.activate_profile(profile_id)
+            profile = self.profile_manager.get_profile(profile_id)
+
+            self.console.print(f"[green]✅ Profile '{profile.name}' activated![/green]")
+            self.console.print(f"[dim]Category: {profile.category}[/dim]")
+            self.console.print(f"[dim]Description: {profile.description}[/dim]\n")
+
+            # Show key configuration changes
+            config = profile.config
+            self.console.print("[bold]Configuration Highlights:[/bold]")
+            self.console.print(f"  • Primary model: {config.get('models', {}).get('primary', 'N/A')}")
+            self.console.print(f"  • Temperature: {config.get('models', {}).get('settings', {}).get('temperature', 'N/A')}")
+            self.console.print(f"  • Web search: {'enabled' if config.get('tools', {}).get('web_search', {}).get('enabled') else 'disabled'}")
+            self.console.print(f"  • Skills: {'enabled' if config.get('skills', {}).get('enabled') else 'disabled'}")
+            self.console.print(f"  • Reflection: {'enabled' if config.get('reflection', {}).get('enabled') else 'disabled'}")
+            self.console.print()
+
+            self.console.print("[yellow]Note: Restart Meton for full profile changes to take effect[/yellow]\n")
+
+        except ValueError as e:
+            self.console.print(f"[red]❌ {str(e)}[/red]\n")
+
+    def show_current_profile(self):
+        """Show currently active profile."""
+        active_profile = self.profile_manager.get_active_profile()
+
+        if active_profile:
+            self.console.print(f"\n[bold cyan]═══ Active Profile ═══[/bold cyan]\n")
+            self.console.print(f"[green]✓ {active_profile.name}[/green]")
+            self.console.print(f"  ID: {active_profile.id}")
+            self.console.print(f"  Category: {active_profile.category}")
+            self.console.print(f"  Description: {active_profile.description}")
+            self.console.print(f"  Used {active_profile.usage_count} times")
+            self.console.print(f"  Last used: {active_profile.last_used}\n")
+        else:
+            self.console.print("\n[yellow]No profile active - using default configuration[/yellow]\n")
+
+    def save_current_profile(self, name: str, description: str, category: str):
+        """Save current configuration as profile."""
+        self.console.print(f"\n[cyan]💾 Saving current configuration as '{name}'...[/cyan]\n")
+
+        try:
+            # Get current config as dict
+            current_config = self.config.config.__dict__.copy()
+
+            profile_id = self.profile_manager.save_current_as_profile(
+                name=name,
+                description=description,
+                category=category,
+                current_config=current_config
+            )
+
+            self.console.print(f"[green]✅ Profile saved![/green]")
+            self.console.print(f"[dim]Profile ID: {profile_id}[/dim]")
+            self.console.print(f"[dim]Use '/profile use {profile_id}' to activate[/dim]\n")
+
+        except ValueError as e:
+            self.console.print(f"[red]❌ {str(e)}[/red]\n")
+
+    def compare_profiles(self, profile_id1: str, profile_id2: str):
+        """Compare two profiles."""
+        self.console.print(f"\n[bold cyan]═══ Comparing Profiles ═══[/bold cyan]\n")
+
+        try:
+            differences = self.profile_manager.compare_profiles(profile_id1, profile_id2)
+
+            profile1_name = differences["profile1"]["name"]
+            profile2_name = differences["profile2"]["name"]
+
+            self.console.print(f"[yellow]{profile1_name}[/yellow] vs [green]{profile2_name}[/green]\n")
+
+            changes = differences["changes"]
+
+            if not changes:
+                self.console.print("[dim]No differences found[/dim]\n")
+                return
+
+            # Create table for differences
+            table = Table(show_header=True, header_style="bold cyan")
+            table.add_column("Setting", style="yellow")
+            table.add_column(profile1_name, style="magenta")
+            table.add_column(profile2_name, style="green")
+
+            for path, values in sorted(changes.items()):
+                val1 = str(values["profile1"]) if values["profile1"] is not None else "[dim]not set[/dim]"
+                val2 = str(values["profile2"]) if values["profile2"] is not None else "[dim]not set[/dim]"
+                table.add_row(path, val1, val2)
+
+            self.console.print(table)
+            self.console.print()
+
+        except ValueError as e:
+            self.console.print(f"[red]❌ {str(e)}[/red]\n")
+
+    def preview_profile(self, profile_id: str):
+        """Show profile preview."""
+        try:
+            preview = self.profile_manager.get_profile_preview(profile_id)
+            self.console.print("\n" + preview + "\n")
+        except ValueError as e:
+            self.console.print(f"[red]❌ {str(e)}[/red]\n")
+
+    # ========== End Configuration Profile Commands ==========
 
     def exit_cli(self):
         """Exit the CLI."""
