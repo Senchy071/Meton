@@ -1,0 +1,116 @@
+{
+  "name": "meton",
+  "displayName": "Meton AI Assistant",
+  "description": "Local AI coding assistant powered by Meton",
+  "version": "0.1.0",
+  "publisher": "meton",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "meton.explainCode",
+        "title": "Meton: Explain Selected Code"
+      },
+      {
+        "command": "meton.reviewCode",
+        "title": "Meton: Review Selected Code"
+      },
+      {
+        "command": "meton.generateTests",
+        "title": "Meton: Generate Tests"
+      },
+      {
+        "command": "meton.refactor",
+        "title": "Meton: Suggest Refactorings"
+      },
+      {
+        "command": "meton.chat",
+        "title": "Meton: Open Chat"
+      },
+      {
+        "command": "meton.indexWorkspace",
+        "title": "Meton: Index Workspace"
+      }
+    ],
+    "configuration": {
+      "title": "Meton",
+      "properties": {
+        "meton.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "Meton server URL"
+        },
+        "meton.autoIndex": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically index workspace on open"
+        },
+        "meton.enableInlineAssist": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inline code assistance"
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "meton-sidebar",
+          "title": "Meton",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "meton-sidebar": [
+        {
+          "id": "metonChat",
+          "name": "Chat"
+        },
+        {
+          "id": "metonStatus",
+          "name": "Status"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "meton.explainCode",
+        "key": "ctrl+shift+e",
+        "mac": "cmd+shift+e",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "meton.chat",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0",
+    "@vscode/vsce": "^2.19.0"
+  },
+  "dependencies": {
+    "axios": "^1.5.0"
+  }
+}

@@ -27,9 +27,11 @@ transformers>=4.30.0  # Required by sentence-transformers
 faiss-cpu>=1.7.4
 sentence-transformers>=2.3.0
 
-# Phase 5 - Web UI & Git Integration
+# Phase 5 - Web UI, Git Integration & HTTP API
 gradio>=4.0.0
 markdown2>=2.4.0
 plotly>=5.0.0
 pandas>=1.3.0
 GitPython>=3.1.0
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
