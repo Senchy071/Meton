@@ -41,6 +41,18 @@
       {
         "command": "meton.indexWorkspace",
         "title": "Meton: Index Workspace"
+      },
+      {
+        "command": "meton.suggestFix",
+        "title": "Meton: Suggest Fix"
+      },
+      {
+        "command": "meton.extractMethod",
+        "title": "Meton: Extract Method"
+      },
+      {
+        "command": "meton.simplifyCode",
+        "title": "Meton: Simplify Code"
       }
     ],
     "configuration": {
@@ -75,6 +87,7 @@
     "views": {
       "meton-sidebar": [
         {
+          "type": "webview",
           "id": "metonChat",
           "name": "Chat"
         },
