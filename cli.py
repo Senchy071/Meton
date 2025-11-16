@@ -199,6 +199,18 @@ class MetonCLI:
         table.add_row("/profile compare <id1> <id2>", "Compare two profiles")
         table.add_row("/profile preview <id>", "Show profile details")
 
+        # Add export/import commands section
+        table.add_section()
+        table.add_row("[bold cyan]Export/Import:[/]", "")
+        table.add_row("/export all [file]", "Export complete state")
+        table.add_row("/export config [file]", "Export configuration")
+        table.add_row("/export memories [file]", "Export memories")
+        table.add_row("/export conversations [file]", "Export conversations")
+        table.add_row("/export backup [name]", "Create backup archive")
+        table.add_row("/import all <file> [--merge]", "Import complete state")
+        table.add_row("/import config <file>", "Import configuration")
+        table.add_row("/import backup <file>", "Restore from backup")
+
         table.add_section()
         table.add_row("/exit, /quit, /q", "Exit Meton")
 
@@ -371,6 +383,18 @@ class MetonCLI:
                 self.handle_profile_command(args[0])
             else:
                 self.console.print("[yellow]Usage: /profile [list|use|current|save|compare|preview][/yellow]")
+        elif cmd == '/export':
+            # Export data command
+            if args:
+                self.handle_export_command(args[0])
+            else:
+                self.console.print("[yellow]Usage: /export [all|config|memories|conversations|backup][/yellow]")
+        elif cmd == '/import':
+            # Import data command
+            if args:
+                self.handle_import_command(args[0])
+            else:
+                self.console.print("[yellow]Usage: /import [all|config|memories|conversations|backup][/yellow]")
         elif cmd in ['/exit', '/quit', '/q']:
             self.exit_cli()
         else:
@@ -1641,6 +1665,307 @@ class MetonCLI:
             self.console.print(f"[red]❌ {str(e)}[/red]\n")
 
     # ========== End Configuration Profile Commands ==========
+
+    # ========== Export/Import Commands ==========
+
+    def handle_export_command(self, command_str: str):
+        """Handle /export subcommands."""
+        # Initialize export manager if not already done
+        if not hasattr(self, 'export_manager'):
+            from export.export_manager import ExportManager
+            self.export_manager = ExportManager()
+
+        parts = command_str.split(maxsplit=1)
+        subcmd = parts[0].lower()
+
+        if subcmd == 'all':
+            # /export all [output_file]
+            output_file = parts[1] if len(parts) > 1 else None
+            self.export_all_data(output_file)
+        elif subcmd == 'config':
+            # /export config [output_file]
+            output_file = parts[1] if len(parts) > 1 else None
+            self.export_config(output_file)
+        elif subcmd == 'memories':
+            # /export memories [output_file]
+            output_file = parts[1] if len(parts) > 1 else None
+            self.export_memories(output_file)
+        elif subcmd == 'conversations':
+            # /export conversations [output_file]
+            output_file = parts[1] if len(parts) > 1 else None
+            self.export_conversations(output_file)
+        elif subcmd == 'analytics':
+            # /export analytics [output_file]
+            output_file = parts[1] if len(parts) > 1 else None
+            self.export_analytics(output_file)
+        elif subcmd == 'backup':
+            # /export backup [name]
+            backup_name = parts[1] if len(parts) > 1 else None
+            self.create_backup(backup_name)
+        else:
+            self.console.print(f"[red]Unknown export command: {subcmd}[/red]")
+            self.console.print("[yellow]Usage: /export [all|config|memories|conversations|analytics|backup][/yellow]")
+
+    def handle_import_command(self, command_str: str):
+        """Handle /import subcommands."""
+        # Initialize import manager if not already done
+        if not hasattr(self, 'import_manager'):
+            from export.import_manager import ImportManager
+            self.import_manager = ImportManager()
+
+        parts = command_str.split(maxsplit=2)
+        subcmd = parts[0].lower()
+
+        if subcmd == 'all':
+            # /import all <file> [--merge]
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /import all <file> [--merge][/yellow]")
+                return
+            import_file = parts[1]
+            merge = '--merge' in command_str.lower()
+            self.import_all_data(import_file, merge)
+        elif subcmd == 'config':
+            # /import config <file>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /import config <file>[/yellow]")
+                return
+            import_file = parts[1]
+            self.import_config(import_file)
+        elif subcmd == 'memories':
+            # /import memories <file> [--merge]
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /import memories <file> [--merge][/yellow]")
+                return
+            import_file = parts[1]
+            merge = '--merge' in command_str.lower()
+            self.import_memories(import_file, merge)
+        elif subcmd == 'conversations':
+            # /import conversations <file>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /import conversations <file>[/yellow]")
+                return
+            import_file = parts[1]
+            self.import_conversations(import_file)
+        elif subcmd == 'backup':
+            # /import backup <file>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /import backup <file>[/yellow]")
+                return
+            backup_file = parts[1]
+            self.restore_backup(backup_file)
+        elif subcmd == 'validate':
+            # /import validate <file>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /import validate <file>[/yellow]")
+                return
+            import_file = parts[1]
+            self.validate_import(import_file)
+        else:
+            self.console.print(f"[red]Unknown import command: {subcmd}[/red]")
+            self.console.print("[yellow]Usage: /import [all|config|memories|conversations|backup|validate][/yellow]")
+
+    def export_all_data(self, output_file: Optional[str]):
+        """Export all Meton data."""
+        self.console.print("\n[cyan]📦 Exporting complete Meton state...[/cyan]\n")
+
+        try:
+            with self.console.status("[cyan]Exporting data...[/cyan]"):
+                export_path = self.export_manager.export_all(output_file)
+
+            self.console.print(f"[green]✅ Export complete![/green]")
+            self.console.print(f"[dim]Saved to: {export_path}[/dim]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Export failed: {str(e)}[/red]\n")
+
+    def export_config(self, output_file: Optional[str]):
+        """Export configuration."""
+        self.console.print("\n[cyan]📦 Exporting configuration...[/cyan]\n")
+
+        try:
+            export_path = self.export_manager.export_configuration(output_file)
+
+            self.console.print(f"[green]✅ Configuration exported![/green]")
+            self.console.print(f"[dim]Saved to: {export_path}[/dim]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Export failed: {str(e)}[/red]\n")
+
+    def export_memories(self, output_file: Optional[str]):
+        """Export memories."""
+        self.console.print("\n[cyan]📦 Exporting memories...[/cyan]\n")
+
+        try:
+            with self.console.status("[cyan]Exporting memories...[/cyan]"):
+                export_path = self.export_manager.export_memories(output_file)
+
+            self.console.print(f"[green]✅ Memories exported![/green]")
+            self.console.print(f"[dim]Saved to: {export_path}[/dim]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Export failed: {str(e)}[/red]\n")
+
+    def export_conversations(self, output_file: Optional[str]):
+        """Export conversations."""
+        self.console.print("\n[cyan]📦 Exporting conversations...[/cyan]\n")
+
+        try:
+            with self.console.status("[cyan]Exporting conversations...[/cyan]"):
+                export_path = self.export_manager.export_conversations(output_file)
+
+            self.console.print(f"[green]✅ Conversations exported![/green]")
+            self.console.print(f"[dim]Saved to: {export_path}[/dim]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Export failed: {str(e)}[/red]\n")
+
+    def export_analytics(self, output_file: Optional[str]):
+        """Export analytics."""
+        self.console.print("\n[cyan]📦 Exporting analytics...[/cyan]\n")
+
+        try:
+            with self.console.status("[cyan]Exporting analytics...[/cyan]"):
+                export_path = self.export_manager.export_analytics(output_file)
+
+            self.console.print(f"[green]✅ Analytics exported![/green]")
+            self.console.print(f"[dim]Saved to: {export_path}[/dim]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Export failed: {str(e)}[/red]\n")
+
+    def create_backup(self, backup_name: Optional[str]):
+        """Create backup archive."""
+        self.console.print("\n[cyan]💾 Creating backup...[/cyan]\n")
+
+        try:
+            with self.console.status("[cyan]Creating backup archive...[/cyan]"):
+                backup_path = self.export_manager.create_backup(backup_name)
+
+            self.console.print(f"[green]✅ Backup created![/green]")
+            self.console.print(f"[dim]Saved to: {backup_path}[/dim]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Backup failed: {str(e)}[/red]\n")
+
+    def import_all_data(self, import_file: str, merge: bool):
+        """Import all Meton data."""
+        self.console.print(f"\n[cyan]📥 Importing from {import_file}...[/cyan]\n")
+
+        if merge:
+            self.console.print("[yellow]Merge mode: Combining with existing data[/yellow]\n")
+        else:
+            self.console.print("[yellow]Replace mode: Overwriting existing data[/yellow]\n")
+
+        try:
+            with self.console.status("[cyan]Importing data...[/cyan]"):
+                summary = self.import_manager.import_all(import_file, merge)
+
+            self.console.print(f"[green]✅ Import complete![/green]\n")
+
+            # Display summary
+            self.console.print("[bold]Import Summary:[/bold]")
+            for key, count in summary.get("counts", {}).items():
+                self.console.print(f"  • {key}: {count} items")
+            self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Import failed: {str(e)}[/red]\n")
+
+    def import_config(self, import_file: str):
+        """Import configuration."""
+        self.console.print(f"\n[cyan]📥 Importing configuration from {import_file}...[/cyan]\n")
+
+        try:
+            config = self.import_manager.import_configuration(import_file, apply=True)
+
+            self.console.print(f"[green]✅ Configuration imported![/green]")
+            self.console.print(f"[yellow]Note: Restart Meton for changes to take full effect[/yellow]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Import failed: {str(e)}[/red]\n")
+
+    def import_memories(self, import_file: str, merge: bool):
+        """Import memories."""
+        self.console.print(f"\n[cyan]📥 Importing memories from {import_file}...[/cyan]\n")
+
+        try:
+            count = self.import_manager.import_memories(import_file, merge)
+
+            self.console.print(f"[green]✅ Imported {count} memories![/green]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Import failed: {str(e)}[/red]\n")
+
+    def import_conversations(self, import_file: str):
+        """Import conversations."""
+        self.console.print(f"\n[cyan]📥 Importing conversations from {import_file}...[/cyan]\n")
+
+        try:
+            count = self.import_manager.import_conversations(import_file, merge=True)
+
+            self.console.print(f"[green]✅ Imported {count} conversations![/green]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Import failed: {str(e)}[/red]\n")
+
+    def restore_backup(self, backup_file: str):
+        """Restore from backup."""
+        self.console.print(f"\n[cyan]📥 Restoring from backup {backup_file}...[/cyan]\n")
+        self.console.print("[yellow]⚠️  This will replace existing data![/yellow]\n")
+
+        # Ask for confirmation
+        confirm = input("Continue? (yes/no): ").strip().lower()
+        if confirm != 'yes':
+            self.console.print("[yellow]Restore cancelled[/yellow]\n")
+            return
+
+        try:
+            with self.console.status("[cyan]Restoring backup...[/cyan]"):
+                summary = self.import_manager.restore_backup(backup_file)
+
+            self.console.print(f"[green]✅ Backup restored![/green]\n")
+
+            # Display summary
+            self.console.print("[bold]Restore Summary:[/bold]")
+            for key, count in summary.get("counts", {}).items():
+                self.console.print(f"  • {key}: {count} items")
+            self.console.print()
+
+            self.console.print("[yellow]⚠️  Restart Meton for changes to take full effect[/yellow]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Restore failed: {str(e)}[/red]\n")
+
+    def validate_import(self, import_file: str):
+        """Validate import file."""
+        self.console.print(f"\n[cyan]🔍 Validating {import_file}...[/cyan]\n")
+
+        try:
+            result = self.import_manager.validate_import_file(import_file)
+
+            if result["valid"]:
+                self.console.print("[green]✅ Import file is valid![/green]\n")
+            else:
+                self.console.print("[red]❌ Import file is invalid![/red]\n")
+
+            # Show errors
+            if result["errors"]:
+                self.console.print("[bold red]Errors:[/bold red]")
+                for error in result["errors"]:
+                    self.console.print(f"  • {error}")
+                self.console.print()
+
+            # Show warnings
+            if result["warnings"]:
+                self.console.print("[bold yellow]Warnings:[/bold yellow]")
+                for warning in result["warnings"]:
+                    self.console.print(f"  • {warning}")
+                self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Validation failed: {str(e)}[/red]\n")
+
+    # ========== End Export/Import Commands ==========
 
     def exit_cli(self):
         """Exit the CLI."""

@@ -154,3 +154,11 @@ profiles:
   profiles_dir: "config/profiles"
   default_profile: null  # Use default config if null
   auto_switch: false  # Auto-suggest profiles based on query
+export:
+  export_dir: "./exports"
+  backup_dir: "./backups"
+  auto_backup: false
+  auto_backup_interval_days: 7
+  compression: "gzip"  # gzip, zip, none
+  include_conversations: true
+  include_analytics: true
