@@ -143,3 +143,9 @@ cross_session_learning:
   min_confidence: 0.7
   auto_apply_insights: false
   lookback_days: 30
+templates:
+  enabled: true
+  templates_dir: "templates/templates"
+  default_author: null  # Set default author name
+  default_email: null  # Set default email
+  auto_setup: true  # Run setup commands after creation

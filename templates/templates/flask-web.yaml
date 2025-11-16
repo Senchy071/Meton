@@ -1,0 +1,420 @@
+id: flask-web
+name: Flask Web Application
+description: Web application with Flask, SQLAlchemy, and Jinja2 templates
+category: web
+version: "1.0"
+
+files:
+  - path: app/__init__.py
+    content: |
+      """{{project_name}} Flask application."""
+      from flask import Flask
+      from flask_sqlalchemy import SQLAlchemy
+      import os
+
+      db = SQLAlchemy()
+
+      def create_app():
+          """Application factory."""
+          app = Flask(__name__)
+
+          # Configuration
+          app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
+          app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+              'DATABASE_URL',
+              'sqlite:///{{project_name}}.db'
+          )
+          app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+          # Initialize extensions
+          db.init_app(app)
+
+          # Register blueprints
+          from app.routes import main
+          app.register_blueprint(main)
+
+          # Create tables
+          with app.app_context():
+              db.create_all()
+
+          return app
+
+  - path: app/routes.py
+    content: |
+      """Application routes."""
+      from flask import Blueprint, render_template, request, redirect, url_for, flash
+      from app import db
+      from app.models import Item
+
+      main = Blueprint('main', __name__)
+
+      @main.route('/')
+      def index():
+          """Home page."""
+          items = Item.query.all()
+          return render_template('index.html', items=items)
+
+      @main.route('/add', methods=['POST'])
+      def add_item():
+          """Add new item."""
+          name = request.form.get('name')
+          description = request.form.get('description')
+
+          if name:
+              item = Item(name=name, description=description)
+              db.session.add(item)
+              db.session.commit()
+              flash('Item added successfully!', 'success')
+          else:
+              flash('Name is required!', 'error')
+
+          return redirect(url_for('main.index'))
+
+      @main.route('/delete/<int:item_id>')
+      def delete_item(item_id):
+          """Delete item."""
+          item = Item.query.get_or_404(item_id)
+          db.session.delete(item)
+          db.session.commit()
+          flash('Item deleted successfully!', 'success')
+          return redirect(url_for('main.index'))
+
+  - path: app/models.py
+    content: |
+      """Database models."""
+      from app import db
+      from datetime import datetime
+
+      class Item(db.Model):
+          """Item model."""
+          id = db.Column(db.Integer, primary_key=True)
+          name = db.Column(db.String(100), nullable=False)
+          description = db.Column(db.Text)
+          created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+          def __repr__(self):
+              return f'<Item {self.name}>'
+
+  - path: app/templates/base.html
+    content: |
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>{% block title %}{{project_name}}{% endblock %}</title>
+          <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+      </head>
+      <body>
+          <header>
+              <h1>{{project_name}}</h1>
+              <p>{{description|A Flask web application}}</p>
+          </header>
+
+          <main>
+              {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                      <div class="messages">
+                          {% for category, message in messages %}
+                              <div class="message {{ category }}">{{ message }}</div>
+                          {% endfor %}
+                      </div>
+                  {% endif %}
+              {% endwith %}
+
+              {% block content %}{% endblock %}
+          </main>
+
+          <footer>
+              <p>Built with Flask | {{author|Unknown}}</p>
+          </footer>
+      </body>
+      </html>
+
+  - path: app/templates/index.html
+    content: |
+      {% extends "base.html" %}
+
+      {% block content %}
+      <div class="container">
+          <h2>Add Item</h2>
+          <form method="POST" action="{{ url_for('main.add_item') }}">
+              <input type="text" name="name" placeholder="Item name" required>
+              <textarea name="description" placeholder="Description"></textarea>
+              <button type="submit">Add Item</button>
+          </form>
+
+          <h2>Items</h2>
+          {% if items %}
+              <ul class="items-list">
+                  {% for item in items %}
+                      <li>
+                          <strong>{{ item.name }}</strong>
+                          {% if item.description %}
+                              <p>{{ item.description }}</p>
+                          {% endif %}
+                          <small>Created: {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                          <a href="{{ url_for('main.delete_item', item_id=item.id) }}"
+                             onclick="return confirm('Delete this item?')">Delete</a>
+                      </li>
+                  {% endfor %}
+              </ul>
+          {% else %}
+              <p>No items yet. Add one above!</p>
+          {% endif %}
+      </div>
+      {% endblock %}
+
+  - path: app/static/style.css
+    content: |
+      * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+      }
+
+      body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          background: #f4f4f4;
+      }
+
+      header {
+          background: #2c3e50;
+          color: white;
+          padding: 2rem;
+          text-align: center;
+      }
+
+      main {
+          max-width: 800px;
+          margin: 2rem auto;
+          padding: 0 1rem;
+      }
+
+      .container {
+          background: white;
+          padding: 2rem;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+
+      form {
+          margin-bottom: 2rem;
+      }
+
+      input, textarea {
+          width: 100%;
+          padding: 0.5rem;
+          margin-bottom: 1rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+      }
+
+      button {
+          background: #3498db;
+          color: white;
+          padding: 0.75rem 1.5rem;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+      }
+
+      button:hover {
+          background: #2980b9;
+      }
+
+      .items-list {
+          list-style: none;
+      }
+
+      .items-list li {
+          padding: 1rem;
+          margin-bottom: 1rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+      }
+
+      .messages .message {
+          padding: 1rem;
+          margin-bottom: 1rem;
+          border-radius: 4px;
+      }
+
+      .messages .success {
+          background: #d4edda;
+          color: #155724;
+      }
+
+      .messages .error {
+          background: #f8d7da;
+          color: #721c24;
+      }
+
+      footer {
+          text-align: center;
+          padding: 2rem;
+          color: #666;
+      }
+
+  - path: config.py
+    content: |
+      """Flask configuration."""
+      import os
+
+      class Config:
+          """Base configuration."""
+          SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+          SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///{{project_name}}.db')
+          SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+      class DevelopmentConfig(Config):
+          """Development configuration."""
+          DEBUG = True
+
+      class ProductionConfig(Config):
+          """Production configuration."""
+          DEBUG = False
+
+      config = {
+          'development': DevelopmentConfig,
+          'production': ProductionConfig,
+          'default': DevelopmentConfig
+      }
+
+  - path: run.py
+    content: |
+      #!/usr/bin/env python3
+      """Run the Flask application."""
+      from app import create_app
+
+      app = create_app()
+
+      if __name__ == '__main__':
+          app.run(debug=True, host='0.0.0.0', port=5000)
+    is_executable: true
+
+  - path: tests/__init__.py
+    content: ""
+
+  - path: tests/test_app.py
+    content: |
+      import pytest
+      from app import create_app, db
+
+      @pytest.fixture
+      def app():
+          """Create test application."""
+          app = create_app()
+          app.config['TESTING'] = True
+          app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+
+          with app.app_context():
+              db.create_all()
+              yield app
+              db.session.remove()
+              db.drop_all()
+
+      @pytest.fixture
+      def client(app):
+          """Create test client."""
+          return app.test_client()
+
+      def test_index(client):
+          """Test index page."""
+          response = client.get('/')
+          assert response.status_code == 200
+
+      def test_add_item(client):
+          """Test adding item."""
+          response = client.post('/add', data={
+              'name': 'Test Item',
+              'description': 'Test Description'
+          }, follow_redirects=True)
+          assert response.status_code == 200
+          assert b'Test Item' in response.data
+
+  - path: requirements.txt
+    content: |
+      Flask==3.0.0
+      Flask-SQLAlchemy==3.1.1
+      python-dotenv==1.0.0
+      pytest==7.4.3
+
+  - path: .env.example
+    content: |
+      SECRET_KEY=your-secret-key-here
+      DATABASE_URL=sqlite:///{{project_name}}.db
+      FLASK_ENV=development
+
+  - path: .gitignore
+    content: |
+      __pycache__/
+      *.py[cod]
+      *$py.class
+      .Python
+      env/
+      venv/
+      instance/
+      *.db
+      .env
+      .vscode/
+      .idea/
+      *.log
+
+  - path: README.md
+    content: |
+      # {{project_name}}
+
+      {{description|A Flask web application}}
+
+      ## Features
+
+      - Flask web framework
+      - SQLAlchemy ORM
+      - Jinja2 templates
+      - Bootstrap-style CSS
+      - CRUD operations
+
+      ## Setup
+
+      ```bash
+      # Install dependencies
+      pip install -r requirements.txt
+
+      # Copy environment file
+      cp .env.example .env
+
+      # Run development server
+      python run.py
+      ```
+
+      Visit http://localhost:5000
+
+      ## Testing
+
+      ```bash
+      pytest tests/
+      ```
+
+      ## Author
+
+      {{author|Unknown}}
+
+configuration:
+  tools:
+    web_search:
+      enabled: true
+  skills:
+    auto_load: true
+
+dependencies:
+  - Flask
+  - Flask-SQLAlchemy
+  - python-dotenv
+
+setup_commands:
+  - pip install -r requirements.txt
+  - cp .env.example .env
+  - chmod +x run.py

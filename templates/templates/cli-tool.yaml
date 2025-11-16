@@ -1,0 +1,182 @@
+id: cli-tool
+name: CLI Application
+description: Command-line tool with Click and Rich for beautiful terminal interfaces
+category: cli
+version: "1.0"
+
+files:
+  - path: "main.py"
+    content: |
+      #!/usr/bin/env python3
+      """{{project_name}} - {{description|A CLI application}}"""
+
+      import click
+      from rich.console import Console
+      from rich.table import Table
+
+      console = Console()
+
+      @click.group()
+      @click.version_option(version="{{version|0.1.0}}")
+      def cli():
+          """{{project_name}} - {{description|A CLI application}}"""
+          pass
+
+      @cli.command()
+      @click.option('--name', '-n', default='World', help='Name to greet')
+      def greet(name):
+          """Greet someone."""
+          console.print(f"[bold green]Hello, {name}![/bold green]")
+
+      @cli.command()
+      def info():
+          """Show application information."""
+          table = Table(title="{{project_name}} Information")
+          table.add_column("Property", style="cyan")
+          table.add_column("Value", style="green")
+
+          table.add_row("Version", "{{version|0.1.0}}")
+          table.add_row("Author", "{{author|Unknown}}")
+          table.add_row("Description", "{{description|A CLI application}}")
+
+          console.print(table)
+
+      if __name__ == '__main__':
+          cli()
+    is_executable: true
+
+  - path: commands/__init__.py
+    content: ""
+
+  - path: commands/utils.py
+    content: |
+      """Utility functions for CLI commands."""
+      from rich.console import Console
+      from rich.progress import Progress, SpinnerColumn, TextColumn
+
+      console = Console()
+
+      def show_progress(description: str):
+          """Show a progress spinner.
+
+          Usage:
+              with show_progress("Processing..."):
+                  # do work
+                  pass
+          """
+          return Progress(
+              SpinnerColumn(),
+              TextColumn("[progress.description]{task.description}"),
+              console=console
+          )
+
+  - path: tests/__init__.py
+    content: ""
+
+  - path: tests/test_cli.py
+    content: |
+      import pytest
+      from click.testing import CliRunner
+      import sys
+      from pathlib import Path
+
+      # Add parent directory to path
+      sys.path.insert(0, str(Path(__file__).parent.parent))
+
+      def test_greet_default():
+          """Test greet command with default name."""
+          from main import cli
+          runner = CliRunner()
+          result = runner.invoke(cli, ['greet'])
+          assert result.exit_code == 0
+          assert 'Hello' in result.output
+
+      def test_greet_custom():
+          """Test greet command with custom name."""
+          from main import cli
+          runner = CliRunner()
+          result = runner.invoke(cli, ['greet', '--name', 'Alice'])
+          assert result.exit_code == 0
+          assert 'Alice' in result.output
+
+      def test_info():
+          """Test info command."""
+          from main import cli
+          runner = CliRunner()
+          result = runner.invoke(cli, ['info'])
+          assert result.exit_code == 0
+
+  - path: requirements.txt
+    content: |
+      click==8.1.7
+      rich==13.7.0
+      pytest==7.4.3
+
+  - path: .gitignore
+    content: |
+      __pycache__/
+      *.py[cod]
+      *$py.class
+      .Python
+      env/
+      venv/
+      .vscode/
+      .idea/
+      *.log
+
+  - path: README.md
+    content: |
+      # {{project_name}}
+
+      {{description|A CLI application}}
+
+      ## Features
+
+      - Click framework for elegant command-line interfaces
+      - Rich library for beautiful terminal output
+      - Command structure ready for expansion
+      - Built-in testing with pytest
+
+      ## Installation
+
+      ```bash
+      pip install -r requirements.txt
+      ```
+
+      ## Usage
+
+      ```bash
+      # Make executable
+      chmod +x main.py
+
+      # Run commands
+      ./main.py greet --name Alice
+      ./main.py info
+
+      # Or with Python
+      python main.py greet
+      ```
+
+      ## Testing
+
+      ```bash
+      pytest tests/
+      ```
+
+      ## Author
+
+      {{author|Unknown}}
+
+configuration:
+  tools:
+    file_ops:
+      enabled: true
+
+dependencies:
+  - click
+  - rich
+  - pytest
+
+setup_commands:
+  - pip install -r requirements.txt
+  - chmod +x main.py

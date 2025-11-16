@@ -1,0 +1,350 @@
+id: python-general
+name: General Python Project
+description: General-purpose Python project with best practices
+category: general
+version: "1.0"
+
+files:
+  - path: src/{{project_name}}/__init__.py
+    content: |
+      """{{project_name}} - {{description|A Python project}}"""
+      __version__ = "{{version|0.1.0}}"
+
+  - path: src/{{project_name}}/main.py
+    content: |
+      """Main module for {{project_name}}."""
+
+      def main():
+          """Main entry point."""
+          print("Hello from {{project_name}}!")
+          print("Version: {{version|0.1.0}}")
+
+      if __name__ == '__main__':
+          main()
+
+  - path: src/{{project_name}}/utils.py
+    content: |
+      """Utility functions."""
+
+      def example_function(x: int, y: int) -> int:
+          """Example function that adds two numbers.
+
+          Args:
+              x: First number
+              y: Second number
+
+          Returns:
+              Sum of x and y
+          """
+          return x + y
+
+  - path: tests/__init__.py
+    content: ""
+
+  - path: tests/test_main.py
+    content: |
+      """Tests for main module."""
+      import sys
+      from pathlib import Path
+
+      # Add src to path
+      sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+
+      from {{project_name}}.utils import example_function
+
+      def test_example_function():
+          """Test example function."""
+          assert example_function(2, 3) == 5
+          assert example_function(0, 0) == 0
+          assert example_function(-1, 1) == 0
+
+  - path: requirements.txt
+    content: |
+      # Add your dependencies here
+      pytest==7.4.3
+
+  - path: requirements-dev.txt
+    content: |
+      # Development dependencies
+      -r requirements.txt
+      pytest==7.4.3
+      pytest-cov==4.1.0
+      black==23.12.0
+      flake8==6.1.0
+      mypy==1.7.1
+
+  - path: setup.py
+    content: |
+      """Setup script for {{project_name}}."""
+      from setuptools import setup, find_packages
+
+      with open("README.md", "r", encoding="utf-8") as fh:
+          long_description = fh.read()
+
+      with open("requirements.txt", "r", encoding="utf-8") as fh:
+          requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+
+      setup(
+          name="{{project_name}}",
+          version="{{version|0.1.0}}",
+          author="{{author|Unknown}}",
+          author_email="{{email|}}",
+          description="{{description|A Python project}}",
+          long_description=long_description,
+          long_description_content_type="text/markdown",
+          url="https://github.com/{{author|unknown}}/{{project_name}}",
+          package_dir={"": "src"},
+          packages=find_packages(where="src"),
+          classifiers=[
+              "Development Status :: 3 - Alpha",
+              "Intended Audience :: Developers",
+              "Programming Language :: Python :: 3",
+              "Programming Language :: Python :: 3.11",
+              "Programming Language :: Python :: 3.12",
+          ],
+          python_requires=">=3.11",
+          install_requires=requirements,
+          entry_points={
+              "console_scripts": [
+                  "{{project_name}}={{project_name}}.main:main",
+              ],
+          },
+      )
+
+  - path: .gitignore
+    content: |
+      # Byte-compiled / optimized / DLL files
+      __pycache__/
+      *.py[cod]
+      *$py.class
+
+      # C extensions
+      *.so
+
+      # Distribution / packaging
+      .Python
+      build/
+      develop-eggs/
+      dist/
+      downloads/
+      eggs/
+      .eggs/
+      lib/
+      lib64/
+      parts/
+      sdist/
+      var/
+      wheels/
+      *.egg-info/
+      .installed.cfg
+      *.egg
+
+      # PyInstaller
+      *.manifest
+      *.spec
+
+      # Unit test / coverage reports
+      htmlcov/
+      .tox/
+      .coverage
+      .coverage.*
+      .cache
+      nosetests.xml
+      coverage.xml
+      *.cover
+      .hypothesis/
+      .pytest_cache/
+
+      # Virtual environments
+      venv/
+      env/
+      ENV/
+
+      # IDEs
+      .vscode/
+      .idea/
+      *.swp
+      *.swo
+      *~
+
+      # OS
+      .DS_Store
+      Thumbs.db
+
+      # Logs
+      *.log
+
+  - path: .flake8
+    content: |
+      [flake8]
+      max-line-length = 100
+      exclude = .git,__pycache__,build,dist
+      ignore = E203,W503
+
+  - path: pyproject.toml
+    content: |
+      [tool.black]
+      line-length = 100
+      target-version = ['py311']
+
+      [tool.mypy]
+      python_version = "{{python_version|3.11}}"
+      warn_return_any = true
+      warn_unused_configs = true
+      disallow_untyped_defs = false
+
+      [tool.pytest.ini_options]
+      testpaths = ["tests"]
+      python_files = ["test_*.py"]
+      python_classes = ["Test*"]
+      python_functions = ["test_*"]
+
+  - path: README.md
+    content: |
+      # {{project_name}}
+
+      {{description|A Python project}}
+
+      ## Features
+
+      - Modern Python project structure
+      - Configured for testing with pytest
+      - Code formatting with black
+      - Linting with flake8
+      - Type checking with mypy
+      - Ready for package distribution
+
+      ## Installation
+
+      ### Development
+
+      ```bash
+      # Clone repository
+      git clone https://github.com/{{author|unknown}}/{{project_name}}.git
+      cd {{project_name}}
+
+      # Create virtual environment
+      python -m venv venv
+      source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+      # Install development dependencies
+      pip install -r requirements-dev.txt
+
+      # Install package in editable mode
+      pip install -e .
+      ```
+
+      ### Production
+
+      ```bash
+      pip install {{project_name}}
+      ```
+
+      ## Usage
+
+      ```python
+      from {{project_name}} import example_function
+
+      result = example_function(2, 3)
+      print(result)  # Output: 5
+      ```
+
+      Or run from command line:
+
+      ```bash
+      {{project_name}}
+      ```
+
+      ## Development
+
+      ### Running Tests
+
+      ```bash
+      # Run all tests
+      pytest
+
+      # Run with coverage
+      pytest --cov={{project_name}} --cov-report=html
+      ```
+
+      ### Code Quality
+
+      ```bash
+      # Format code
+      black src/ tests/
+
+      # Check formatting
+      black --check src/ tests/
+
+      # Lint
+      flake8 src/ tests/
+
+      # Type check
+      mypy src/
+      ```
+
+      ## Project Structure
+
+      ```
+      {{project_name}}/
+      ├── src/{{project_name}}/    # Source code
+      ├── tests/                   # Unit tests
+      ├── README.md                # This file
+      ├── requirements.txt         # Production dependencies
+      ├── requirements-dev.txt     # Development dependencies
+      ├── setup.py                 # Package setup
+      └── pyproject.toml           # Tool configurations
+      ```
+
+      ## Contributing
+
+      1. Fork the repository
+      2. Create a feature branch
+      3. Make your changes
+      4. Run tests and linters
+      5. Submit a pull request
+
+      ## License
+
+      MIT License - see LICENSE file for details
+
+      ## Author
+
+      {{author|Unknown}} <{{email|}}>
+
+  - path: LICENSE
+    content: |
+      MIT License
+
+      Copyright (c) {{year|2025}} {{author|Unknown}}
+
+      Permission is hereby granted, free of charge, to any person obtaining a copy
+      of this software and associated documentation files (the "Software"), to deal
+      in the Software without restriction, including without limitation the rights
+      to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+      copies of the Software, and to permit persons to whom the Software is
+      furnished to do so, subject to the following conditions:
+
+      The above copyright notice and this permission notice shall be included in all
+      copies or substantial portions of the Software.
+
+      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+      IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+      FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+      AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+      LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+      OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+      SOFTWARE.
+
+configuration:
+  tools:
+    file_ops:
+      enabled: true
+  skills:
+    auto_load: true
+
+dependencies: []
+
+setup_commands:
+  - pip install -r requirements-dev.txt
+  - pip install -e .

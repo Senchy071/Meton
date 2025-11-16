@@ -181,6 +181,14 @@ class MetonCLI:
         table.add_row("/learn apply <id>", "Apply specific insight")
         table.add_row("/learn summary", "Learning summary and statistics")
 
+        # Add template commands section
+        table.add_section()
+        table.add_row("[bold cyan]Project Templates:[/]", "")
+        table.add_row("/template list [category]", "List available templates")
+        table.add_row("/template create <id> <name>", "Create project from template")
+        table.add_row("/template preview <id>", "Show template structure")
+        table.add_row("/template categories", "List template categories")
+
         table.add_section()
         table.add_row("/exit, /quit, /q", "Exit Meton")
 
@@ -341,6 +349,12 @@ class MetonCLI:
                 self.handle_learn_command(args[0])
             else:
                 self.console.print("[yellow]Usage: /learn [analyze|insights|patterns|apply|summary][/yellow]")
+        elif cmd == '/template':
+            # Template management command
+            if args:
+                self.handle_template_command(args[0])
+            else:
+                self.console.print("[yellow]Usage: /template [list|create|preview|categories][/yellow]")
         elif cmd in ['/exit', '/quit', '/q']:
             self.exit_cli()
         else:
@@ -1264,6 +1278,149 @@ class MetonCLI:
         self.console.print()
 
     # ========== End Cross-Session Learning Commands ==========
+
+    # ========== Project Template Commands ==========
+
+    def handle_template_command(self, command_str: str):
+        """Handle /template subcommands."""
+        # Initialize template manager if not already done
+        if not hasattr(self, 'template_manager'):
+            from templates.template_manager import TemplateManager
+            self.template_manager = TemplateManager()
+
+        parts = command_str.split(maxsplit=2)
+        subcmd = parts[0].lower()
+        args = parts[1:] if len(parts) > 1 else []
+
+        try:
+            if subcmd == 'list':
+                category = args[0] if args else None
+                self.list_templates(category)
+            elif subcmd == 'create':
+                if len(args) >= 2:
+                    template_id = args[0]
+                    project_name = args[1]
+                    self.create_from_template(template_id, project_name)
+                else:
+                    self.console.print("[yellow]Usage: /template create <template_id> <project_name>[/yellow]")
+            elif subcmd == 'preview':
+                if args:
+                    self.preview_template(args[0])
+                else:
+                    self.console.print("[yellow]Usage: /template preview <template_id>[/yellow]")
+            elif subcmd == 'categories':
+                self.list_template_categories()
+            else:
+                self.console.print(f"[red]❌ Unknown template command: {subcmd}[/red]")
+                self.console.print("[dim]Available: list, create, preview, categories[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Template operation failed: {str(e)}[/red]")
+            if self.logger:
+                self.logger.error(f"Template operation error: {e}")
+
+    def list_templates(self, category: str = None):
+        """List available templates."""
+        self.console.print("\n[bold cyan]═══ Available Templates ═══[/bold cyan]\n")
+
+        templates = self.template_manager.list_templates(category=category)
+
+        if not templates:
+            msg = f"No templates found"
+            if category:
+                msg += f" in category '{category}'"
+            self.console.print(f"[dim]{msg}[/dim]\n")
+            return
+
+        # Group by category
+        from collections import defaultdict
+        by_category = defaultdict(list)
+        for template in templates:
+            by_category[template.category].append(template)
+
+        for cat in sorted(by_category.keys()):
+            cat_templates = by_category[cat]
+            self.console.print(f"[bold yellow]{cat.upper()}[/bold yellow]")
+
+            for template in cat_templates:
+                self.console.print(f"  [cyan]{template.id}[/cyan] - {template.name}")
+                self.console.print(f"    {template.description}")
+                if template.dependencies:
+                    deps = ', '.join(template.dependencies[:3])
+                    if len(template.dependencies) > 3:
+                        deps += f", +{len(template.dependencies)-3} more"
+                    self.console.print(f"    [dim]Dependencies: {deps}[/dim]")
+                self.console.print()
+
+    def create_from_template(self, template_id: str, project_name: str):
+        """Create project from template."""
+        self.console.print(f"\n[cyan]📦 Creating project '{project_name}' from template '{template_id}'...[/cyan]\n")
+
+        # Prompt for variables
+        variables = {}
+        variables['author'] = input("Author name (press Enter to skip): ").strip() or None
+        variables['email'] = input("Author email (press Enter to skip): ").strip() or None
+        variables['description'] = input("Project description (press Enter to skip): ").strip() or None
+
+        # Remove None values
+        variables = {k: v for k, v in variables.items() if v}
+
+        # Get output directory
+        import os
+        output_dir = input(f"Output directory (default: {os.getcwd()}): ").strip()
+        if not output_dir:
+            output_dir = os.getcwd()
+
+        try:
+            with self.console.status(f"[cyan]Creating project...[/cyan]"):
+                project_path = self.template_manager.create_project(
+                    template_id=template_id,
+                    project_name=project_name,
+                    output_dir=output_dir,
+                    variables=variables
+                )
+
+            self.console.print(f"[green]✅ Project created successfully![/green]")
+            self.console.print(f"[dim]Location: {project_path}[/dim]\n")
+
+            # Show next steps
+            template = self.template_manager.get_template(template_id)
+            if template.setup_commands:
+                self.console.print("[bold]Next steps:[/bold]")
+                self.console.print(f"  cd {project_name}")
+                for cmd in template.setup_commands:
+                    self.console.print(f"  {cmd}")
+                self.console.print()
+
+        except ValueError as e:
+            self.console.print(f"[red]❌ {str(e)}[/red]\n")
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to create project: {str(e)}[/red]\n")
+            if self.logger:
+                self.logger.error(f"Project creation failed: {e}")
+
+    def preview_template(self, template_id: str):
+        """Show template preview."""
+        try:
+            preview = self.template_manager.get_template_preview(template_id)
+            self.console.print("\n" + preview + "\n")
+        except ValueError as e:
+            self.console.print(f"[red]❌ {str(e)}[/red]\n")
+
+    def list_template_categories(self):
+        """List template categories."""
+        categories = self.template_manager.get_categories()
+
+        self.console.print("\n[bold cyan]═══ Template Categories ═══[/bold cyan]\n")
+
+        for category in categories:
+            templates = self.template_manager.list_templates(category=category)
+            count = len(templates)
+            self.console.print(f"  [yellow]{category}[/yellow] ({count} template{'s' if count != 1 else ''})")
+
+        self.console.print()
+
+    # ========== End Project Template Commands ==========
 
     def exit_cli(self):
         """Exit the CLI."""

@@ -1,0 +1,209 @@
+id: fastapi-api
+name: FastAPI Web API
+description: REST API with FastAPI, SQLAlchemy, and Pydantic
+category: api
+version: "1.0"
+
+files:
+  - path: app/__init__.py
+    content: |
+      """{{project_name}} - A FastAPI web API."""
+      __version__ = "{{version|0.1.0}}"
+
+  - path: app/main.py
+    content: |
+      from fastapi import FastAPI
+      from fastapi.middleware.cors import CORSMiddleware
+
+      app = FastAPI(
+          title="{{project_name}}",
+          description="{{description|A FastAPI web API}}",
+          version="{{version|0.1.0}}"
+      )
+
+      # CORS middleware
+      app.add_middleware(
+          CORSMiddleware,
+          allow_origins=["*"],
+          allow_credentials=True,
+          allow_methods=["*"],
+          allow_headers=["*"],
+      )
+
+      @app.get("/")
+      async def root():
+          """Root endpoint."""
+          return {
+              "message": "Welcome to {{project_name}}",
+              "version": "{{version|0.1.0}}"
+          }
+
+      @app.get("/health")
+      async def health():
+          """Health check endpoint."""
+          return {"status": "healthy"}
+
+  - path: app/models.py
+    content: |
+      from pydantic import BaseModel, Field
+      from typing import Optional
+      from datetime import datetime
+
+      class ItemBase(BaseModel):
+          """Base item model."""
+          name: str = Field(..., description="Item name")
+          description: Optional[str] = Field(None, description="Item description")
+
+      class ItemCreate(ItemBase):
+          """Item creation model."""
+          pass
+
+      class Item(ItemBase):
+          """Item model with ID."""
+          id: int
+          created_at: datetime
+
+          class Config:
+              from_attributes = True
+
+  - path: app/database.py
+    content: |
+      from sqlalchemy import create_engine
+      from sqlalchemy.ext.declarative import declarative_base
+      from sqlalchemy.orm import sessionmaker
+      import os
+
+      DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./{{project_name}}.db")
+
+      engine = create_engine(
+          DATABASE_URL,
+          connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+      )
+
+      SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+      Base = declarative_base()
+
+      def get_db():
+          """Get database session."""
+          db = SessionLocal()
+          try:
+              yield db
+          finally:
+              db.close()
+
+  - path: tests/__init__.py
+    content: ""
+
+  - path: tests/test_api.py
+    content: |
+      import pytest
+      from fastapi.testclient import TestClient
+      from app.main import app
+
+      client = TestClient(app)
+
+      def test_root():
+          """Test root endpoint."""
+          response = client.get("/")
+          assert response.status_code == 200
+          data = response.json()
+          assert "message" in data
+          assert "version" in data
+
+      def test_health():
+          """Test health check."""
+          response = client.get("/health")
+          assert response.status_code == 200
+          assert response.json() == {"status": "healthy"}
+
+  - path: requirements.txt
+    content: |
+      fastapi==0.104.1
+      uvicorn[standard]==0.24.0
+      sqlalchemy==2.0.23
+      pydantic==2.5.0
+      python-dotenv==1.0.0
+      pytest==7.4.3
+      httpx==0.25.1
+
+  - path: .env.example
+    content: |
+      DATABASE_URL=sqlite:///./{{project_name}}.db
+      SECRET_KEY=your-secret-key-here
+      DEBUG=True
+
+  - path: .gitignore
+    content: |
+      __pycache__/
+      *.py[cod]
+      *$py.class
+      *.so
+      .Python
+      env/
+      venv/
+      *.db
+      .env
+      .vscode/
+      .idea/
+      *.log
+
+  - path: README.md
+    content: |
+      # {{project_name}}
+
+      {{description|A FastAPI web API}}
+
+      ## Features
+
+      - FastAPI framework for high performance
+      - Pydantic models for data validation
+      - SQLAlchemy for database ORM
+      - Automatic API documentation
+      - CORS middleware enabled
+
+      ## Setup
+
+      ```bash
+      # Install dependencies
+      pip install -r requirements.txt
+
+      # Copy environment file
+      cp .env.example .env
+
+      # Run development server
+      uvicorn app.main:app --reload
+      ```
+
+      ## API Documentation
+
+      Once running, visit:
+      - Swagger UI: http://localhost:8000/docs
+      - ReDoc: http://localhost:8000/redoc
+
+      ## Testing
+
+      ```bash
+      pytest tests/
+      ```
+
+      ## Author
+
+      {{author|Unknown}}
+
+configuration:
+  tools:
+    web_search:
+      enabled: true
+  skills:
+    auto_load: true
+
+dependencies:
+  - fastapi
+  - uvicorn
+  - sqlalchemy
+  - pydantic
+  - python-dotenv
+
+setup_commands:
+  - pip install -r requirements.txt
+  - cp .env.example .env

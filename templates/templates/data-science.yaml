@@ -1,0 +1,286 @@
+id: data-science
+name: Data Science Project
+description: Data science project with Jupyter, pandas, and scikit-learn
+category: data_science
+version: "1.0"
+
+files:
+  - path: notebooks/01_exploration.ipynb
+    content: |
+      {
+       "cells": [
+        {
+         "cell_type": "markdown",
+         "metadata": {},
+         "source": [
+          "# {{project_name}} - Data Exploration\\n",
+          "\\n",
+          "{{description|A data science project}}\\n",
+          "\\n",
+          "Author: {{author|Unknown}}"
+         ]
+        },
+        {
+         "cell_type": "code",
+         "execution_count": null,
+         "metadata": {},
+         "outputs": [],
+         "source": [
+          "import pandas as pd\\n",
+          "import numpy as np\\n",
+          "import matplotlib.pyplot as plt\\n",
+          "import seaborn as sns\\n",
+          "\\n",
+          "%matplotlib inline\\n",
+          "sns.set_style('whitegrid')"
+         ]
+        },
+        {
+         "cell_type": "markdown",
+         "metadata": {},
+         "source": [
+          "## Load Data"
+         ]
+        },
+        {
+         "cell_type": "code",
+         "execution_count": null,
+         "metadata": {},
+         "outputs": [],
+         "source": [
+          "# Load your data here\\n",
+          "# df = pd.read_csv('../data/raw/data.csv')"
+         ]
+        }
+       ],
+       "metadata": {
+        "kernelspec": {
+         "display_name": "Python 3",
+         "language": "python",
+         "name": "python3"
+        },
+        "language_info": {
+         "name": "python",
+         "version": "{{python_version|3.11}}"
+        }
+       },
+       "nbformat": 4,
+       "nbformat_minor": 4
+      }
+
+  - path: src/__init__.py
+    content: |
+      """{{project_name}} - {{description|A data science project}}"""
+      __version__ = "{{version|0.1.0}}"
+
+  - path: src/data_processing.py
+    content: |
+      """Data processing utilities."""
+      import pandas as pd
+      import numpy as np
+      from pathlib import Path
+
+      def load_data(filepath: str) -> pd.DataFrame:
+          """Load data from file.
+
+          Args:
+              filepath: Path to data file
+
+          Returns:
+              DataFrame with loaded data
+          """
+          path = Path(filepath)
+          if path.suffix == '.csv':
+              return pd.read_csv(path)
+          elif path.suffix == '.parquet':
+              return pd.read_parquet(path)
+          else:
+              raise ValueError(f"Unsupported file type: {path.suffix}")
+
+      def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+          """Clean and preprocess data.
+
+          Args:
+              df: Raw data
+
+          Returns:
+              Cleaned data
+          """
+          # Remove duplicates
+          df = df.drop_duplicates()
+
+          # Handle missing values
+          # Add your cleaning logic here
+
+          return df
+
+  - path: src/models.py
+    content: |
+      """Machine learning models."""
+      from sklearn.model_selection import train_test_split
+      from sklearn.metrics import accuracy_score, classification_report
+      import pandas as pd
+
+      class BaseModel:
+          """Base class for ML models."""
+
+          def __init__(self):
+              self.model = None
+
+          def train(self, X, y):
+              """Train the model."""
+              raise NotImplementedError
+
+          def predict(self, X):
+              """Make predictions."""
+              if self.model is None:
+                  raise ValueError("Model not trained yet")
+              return self.model.predict(X)
+
+          def evaluate(self, X, y):
+              """Evaluate model performance."""
+              predictions = self.predict(X)
+              return accuracy_score(y, predictions)
+
+  - path: data/raw/README.md
+    content: |
+      # Raw Data
+
+      Place raw, unprocessed data files here.
+
+      ## Data Sources
+
+      Document your data sources here.
+
+  - path: data/processed/README.md
+    content: |
+      # Processed Data
+
+      Cleaned and preprocessed data files are stored here.
+
+  - path: models/README.md
+    content: |
+      # Trained Models
+
+      Serialized trained models (.pkl, .joblib, .h5) are stored here.
+
+  - path: tests/__init__.py
+    content: ""
+
+  - path: tests/test_data_processing.py
+    content: |
+      import pytest
+      import pandas as pd
+      from src.data_processing import clean_data
+
+      def test_clean_data():
+          """Test data cleaning."""
+          # Create sample data with duplicates
+          df = pd.DataFrame({
+              'a': [1, 1, 2, 3],
+              'b': [4, 4, 5, 6]
+          })
+
+          cleaned = clean_data(df)
+
+          # Check duplicates removed
+          assert len(cleaned) < len(df)
+          assert cleaned.duplicated().sum() == 0
+
+  - path: requirements.txt
+    content: |
+      pandas==2.1.3
+      numpy==1.26.2
+      scikit-learn==1.3.2
+      matplotlib==3.8.2
+      seaborn==0.13.0
+      jupyter==1.0.0
+      jupyterlab==4.0.9
+      pytest==7.4.3
+
+  - path: .gitignore
+    content: |
+      __pycache__/
+      *.py[cod]
+      *$py.class
+      .Python
+      env/
+      venv/
+      .ipynb_checkpoints/
+      *.pkl
+      *.joblib
+      *.h5
+      data/raw/*.csv
+      data/raw/*.parquet
+      data/processed/*.csv
+      data/processed/*.parquet
+      models/*.pkl
+      models/*.joblib
+      .vscode/
+      .idea/
+      *.log
+
+  - path: README.md
+    content: |
+      # {{project_name}}
+
+      {{description|A data science project}}
+
+      ## Project Structure
+
+      ```
+      {{project_name}}/
+      ├── notebooks/          # Jupyter notebooks for exploration
+      ├── src/                # Source code for data processing and models
+      ├── data/
+      │   ├── raw/            # Raw, immutable data
+      │   └── processed/      # Cleaned, processed data
+      ├── models/             # Trained model files
+      └── tests/              # Unit tests
+      ```
+
+      ## Setup
+
+      ```bash
+      # Install dependencies
+      pip install -r requirements.txt
+
+      # Launch Jupyter
+      jupyter lab
+      ```
+
+      ## Workflow
+
+      1. Place raw data in `data/raw/`
+      2. Explore data in `notebooks/01_exploration.ipynb`
+      3. Implement data processing in `src/data_processing.py`
+      4. Train models in `src/models.py`
+      5. Save trained models to `models/`
+
+      ## Testing
+
+      ```bash
+      pytest tests/
+      ```
+
+      ## Author
+
+      {{author|Unknown}}
+
+configuration:
+  tools:
+    file_ops:
+      enabled: true
+  skills:
+    auto_load: true
+
+dependencies:
+  - pandas
+  - numpy
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - jupyter
+
+setup_commands:
+  - pip install -r requirements.txt
