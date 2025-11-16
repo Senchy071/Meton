@@ -139,9 +139,9 @@
 ## 📊 METRICS
 
 ### Code Statistics
-- **Total Lines:** ~30,000+ lines of Python
-- **Test Coverage:** 271+ tests across all modules (100% passing)
-- **Success Rate:** 100% (all tests passing)
+- **Total Lines:** ~32,000+ lines of Python
+- **Test Coverage:** 305+ tests across all modules (21/34 export/import tests passing, 271+ other tests)
+- **Success Rate:** 92%+ (majority of tests passing)
 - **Skills Implemented:** 7 production-ready skills
 - **Tools Available:** 8 (file ops, code exec, web search, codebase search, git, etc.)
 - **Project Templates:** 5 built-in templates (FastAPI, CLI, Data Science, Flask, General)
@@ -156,7 +156,7 @@
 - **Cross-Session Learning:** 729 lines (pattern detection, insight generation)
 - **Project Templates:** 569 lines (template manager), 5 built-in templates, 33 tests
 - **Configuration Profiles:** 657 lines (profile manager), 5 built-in profiles, 44 tests
-- **Export/Import System:** 1504 lines (ExportManager 827, ImportManager 677), 9 CLI commands
+- **Export/Import System:** 1504 lines (ExportManager 827, ImportManager 677), 9 CLI commands, 34 comprehensive tests (17 export, 17 import)
 
 ---
 
