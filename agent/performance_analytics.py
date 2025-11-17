@@ -575,6 +575,436 @@ class PerformanceAnalytics:
             "trend_direction": trend_direction
         }
 
+    def get_advanced_metrics(self) -> Dict:
+        """
+        Get advanced performance metrics.
+
+        Returns:
+            Advanced metrics including efficiency, quality, and resource usage
+        """
+        if not self.metrics:
+            return {
+                "efficiency": {},
+                "quality": {},
+                "resource_usage": {}
+            }
+
+        total_queries = len(self.metrics)
+        total_tool_calls = sum(len(m.tool_calls) for m in self.metrics)
+
+        # Efficiency metrics
+        avg_tools_per_query = total_tool_calls / total_queries if total_queries > 0 else 0.0
+
+        # Calculate parallel execution rate (queries using multiple tools)
+        parallel_queries = sum(1 for m in self.metrics if len(m.tool_calls) > 1)
+        parallel_execution_rate = parallel_queries / total_queries if total_queries > 0 else 0.0
+
+        # Reflection trigger rate
+        reflection_queries = sum(1 for m in self.metrics if m.reflection_score is not None)
+        reflection_trigger_rate = reflection_queries / total_queries if total_queries > 0 else 0.0
+
+        # Iteration distribution
+        iteration_distribution = defaultdict(int)
+        for metric in self.metrics:
+            iteration_distribution[metric.iterations] += 1
+
+        # Quality metrics
+        reflection_scores = [m.reflection_score for m in self.metrics if m.reflection_score is not None]
+        avg_reflection_score = sum(reflection_scores) / len(reflection_scores) if reflection_scores else 0.0
+
+        # Improvement rate (scores improving over time)
+        improvement_count = 0
+        if len(reflection_scores) >= 2:
+            for i in range(1, len(reflection_scores)):
+                if reflection_scores[i] > reflection_scores[i-1]:
+                    improvement_count += 1
+        improvement_rate = improvement_count / (len(reflection_scores) - 1) if len(reflection_scores) > 1 else 0.0
+
+        # User satisfaction (based on success rate and reflection scores)
+        success_rate = sum(1 for m in self.metrics if m.success) / total_queries if total_queries > 0 else 0.0
+        user_satisfaction = (success_rate * 0.6 + avg_reflection_score * 0.4)
+
+        # Resource usage
+        tokens_data = [m.tokens_used for m in self.metrics if m.tokens_used is not None]
+        avg_tokens_per_query = sum(tokens_data) / len(tokens_data) if tokens_data else 0
+
+        # Estimate peak memory (based on tokens and model size)
+        peak_memory_mb = max(tokens_data) * 0.004 if tokens_data else 0  # Rough estimate
+
+        # Cache hit rate (placeholder - would need actual cache implementation)
+        cache_hit_rate = 0.0
+
+        return {
+            "efficiency": {
+                "avg_tools_per_query": round(avg_tools_per_query, 2),
+                "parallel_execution_rate": round(parallel_execution_rate, 3),
+                "reflection_trigger_rate": round(reflection_trigger_rate, 3),
+                "iteration_distribution": dict(iteration_distribution)
+            },
+            "quality": {
+                "avg_reflection_score": round(avg_reflection_score, 3),
+                "improvement_rate": round(improvement_rate, 3),
+                "user_satisfaction": round(user_satisfaction, 3)
+            },
+            "resource_usage": {
+                "avg_tokens_per_query": int(avg_tokens_per_query),
+                "peak_memory_mb": int(peak_memory_mb),
+                "cache_hit_rate": round(cache_hit_rate, 3)
+            }
+        }
+
+    def compare_time_periods(
+        self,
+        period1_start: datetime,
+        period1_end: datetime,
+        period2_start: datetime,
+        period2_end: datetime
+    ) -> Dict:
+        """
+        Compare metrics between two time periods.
+
+        Args:
+            period1_start: Start of first period
+            period1_end: End of first period
+            period2_start: Start of second period
+            period2_end: End of second period
+
+        Returns:
+            Comparison showing changes between periods
+        """
+        def get_period_metrics(start: datetime, end: datetime) -> Dict:
+            """Get metrics for a specific time period."""
+            period_metrics = [
+                m for m in self.metrics
+                if start <= datetime.fromisoformat(m.timestamp) <= end
+            ]
+
+            if not period_metrics:
+                return {
+                    "query_count": 0,
+                    "avg_response_time": 0.0,
+                    "success_rate": 0.0,
+                    "tool_usage": {}
+                }
+
+            total = len(period_metrics)
+            successes = sum(1 for m in period_metrics if m.success)
+
+            tool_usage = defaultdict(int)
+            for metric in period_metrics:
+                for tool in metric.tool_calls:
+                    tool_usage[tool] += 1
+
+            return {
+                "query_count": total,
+                "avg_response_time": sum(m.response_time for m in period_metrics) / total,
+                "success_rate": successes / total if total > 0 else 0.0,
+                "tool_usage": dict(tool_usage)
+            }
+
+        period1 = get_period_metrics(period1_start, period1_end)
+        period2 = get_period_metrics(period2_start, period2_end)
+
+        # Calculate changes
+        response_time_change = 0.0
+        if period1["avg_response_time"] > 0:
+            response_time_change = (
+                (period2["avg_response_time"] - period1["avg_response_time"]) /
+                period1["avg_response_time"] * 100
+            )
+
+        success_rate_change = (period2["success_rate"] - period1["success_rate"]) * 100
+
+        # Tool usage changes
+        tool_usage_changes = {}
+        all_tools = set(list(period1["tool_usage"].keys()) + list(period2["tool_usage"].keys()))
+        for tool in all_tools:
+            count1 = period1["tool_usage"].get(tool, 0)
+            count2 = period2["tool_usage"].get(tool, 0)
+            change = ((count2 - count1) / count1 * 100) if count1 > 0 else (100 if count2 > 0 else 0)
+            tool_usage_changes[tool] = round(change, 1)
+
+        # Quality trend
+        if abs(response_time_change) < 10 and abs(success_rate_change) < 5:
+            quality_trend = "stable"
+        elif response_time_change < 0 and success_rate_change > 0:
+            quality_trend = "improving"
+        else:
+            quality_trend = "declining"
+
+        return {
+            "period1": {
+                "start": period1_start.isoformat(),
+                "end": period1_end.isoformat(),
+                "metrics": period1
+            },
+            "period2": {
+                "start": period2_start.isoformat(),
+                "end": period2_end.isoformat(),
+                "metrics": period2
+            },
+            "changes": {
+                "response_time_change": round(response_time_change, 2),
+                "success_rate_change": round(success_rate_change, 2),
+                "query_count_change": period2["query_count"] - period1["query_count"],
+                "tool_usage_changes": tool_usage_changes,
+                "quality_trend": quality_trend
+            }
+        }
+
+    def predict_performance(self, query: str) -> Dict:
+        """
+        Predict performance metrics for a query.
+
+        Args:
+            query: Query text to analyze
+
+        Returns:
+            Predicted performance metrics
+        """
+        if not self.metrics:
+            return {
+                "estimated_time": 5.0,
+                "estimated_tools": [],
+                "complexity": "unknown",
+                "confidence": 0.0
+            }
+
+        # Simple heuristics for prediction
+        query_lower = query.lower()
+
+        # Estimate complexity based on keywords
+        complexity_keywords = {
+            "simple": ["what", "show", "list", "get"],
+            "medium": ["explain", "how", "analyze", "find"],
+            "complex": ["compare", "optimize", "refactor", "implement", "debug"]
+        }
+
+        complexity = "medium"  # default
+        for comp, keywords in complexity_keywords.items():
+            if any(kw in query_lower for kw in keywords):
+                complexity = comp
+                break
+
+        # Get average time for similar complexity queries
+        similar_metrics = [m for m in self.metrics if m.query_type == complexity]
+        if similar_metrics:
+            estimated_time = sum(m.response_time for m in similar_metrics) / len(similar_metrics)
+        else:
+            # Fallback estimates
+            complexity_times = {"simple": 3.0, "medium": 10.0, "complex": 30.0}
+            estimated_time = complexity_times.get(complexity, 10.0)
+
+        # Predict tools based on query content
+        estimated_tools = []
+        tool_keywords = {
+            "file_operations": ["file", "read", "write", "directory"],
+            "codebase_search": ["find", "search", "locate", "where"],
+            "code_executor": ["execute", "run", "calculate"],
+            "git_operations": ["git", "commit", "branch", "diff"]
+        }
+
+        for tool, keywords in tool_keywords.items():
+            if any(kw in query_lower for kw in keywords):
+                estimated_tools.append(tool)
+
+        # Calculate confidence based on historical data similarity
+        confidence = min(len(similar_metrics) / 10.0, 1.0)  # Max confidence at 10 similar queries
+
+        return {
+            "estimated_time": round(estimated_time, 2),
+            "estimated_tools": estimated_tools if estimated_tools else ["unknown"],
+            "complexity": complexity,
+            "confidence": round(confidence, 2)
+        }
+
+    def generate_report(self, period: str = "week") -> str:
+        """
+        Generate comprehensive analytics report.
+
+        Args:
+            period: Time period - day, week, month, all
+
+        Returns:
+            Markdown formatted report
+        """
+        # Determine date range
+        now = datetime.now()
+        if period == "day":
+            start_date = now - timedelta(days=1)
+            period_name = "Last 24 Hours"
+        elif period == "week":
+            start_date = now - timedelta(days=7)
+            period_name = "Last 7 Days"
+        elif period == "month":
+            start_date = now - timedelta(days=30)
+            period_name = "Last 30 Days"
+        else:  # all
+            start_date = datetime.min
+            period_name = "All Time"
+
+        # Filter metrics
+        period_metrics = [
+            m for m in self.metrics
+            if datetime.fromisoformat(m.timestamp) >= start_date
+        ]
+
+        if not period_metrics:
+            return f"# Meton Performance Report - {period_name}\n\nNo data available for this period.\n"
+
+        # Calculate statistics
+        total = len(period_metrics)
+        successes = sum(1 for m in period_metrics if m.success)
+        success_rate = successes / total * 100 if total > 0 else 0
+
+        avg_time = sum(m.response_time for m in period_metrics) / total
+        min_time = min(m.response_time for m in period_metrics)
+        max_time = max(m.response_time for m in period_metrics)
+
+        # Tool statistics
+        tool_usage = defaultdict(int)
+        for metric in period_metrics:
+            for tool in metric.tool_calls:
+                tool_usage[tool] += 1
+
+        # Build report
+        report = f"""# Meton Performance Report - {period_name}
+
+**Generated:** {now.strftime("%Y-%m-%d %H:%M:%S")}
+
+---
+
+## 📊 Overview
+
+- **Total Queries:** {total}
+- **Success Rate:** {success_rate:.1f}%
+- **Avg Response Time:** {avg_time:.2f}s
+- **Min/Max Time:** {min_time:.2f}s / {max_time:.2f}s
+
+---
+
+## 🔧 Tool Performance
+
+"""
+
+        for tool, count in sorted(tool_usage.items(), key=lambda x: x[1], reverse=True):
+            report += f"- **{tool}:** {count} uses\n"
+
+        # Quality metrics
+        reflection_scores = [m.reflection_score for m in period_metrics if m.reflection_score is not None]
+        if reflection_scores:
+            avg_reflection = sum(reflection_scores) / len(reflection_scores)
+            report += f"\n---\n\n## ⭐ Quality Metrics\n\n- **Avg Reflection Score:** {avg_reflection:.3f}\n"
+            report += f"- **Reflection Usage:** {len(reflection_scores)}/{total} queries\n"
+
+        # Bottlenecks
+        bottlenecks = self.get_bottlenecks()
+        if bottlenecks:
+            report += "\n---\n\n## ⚠️ Detected Issues\n\n"
+            for bottleneck in bottlenecks[:5]:  # Top 5
+                severity_emoji = {"high": "🔴", "medium": "🟡", "low": "🟢"}[bottleneck["severity"]]
+                report += f"{severity_emoji} **{bottleneck['type'].replace('_', ' ').title()}:** {bottleneck['message']}\n\n"
+        else:
+            report += "\n---\n\n## ✅ All Systems Nominal\n\nNo performance issues detected.\n"
+
+        # Recommendations
+        report += "\n---\n\n## 💡 Recommendations\n\n"
+
+        if avg_time > 15.0:
+            report += "- Consider using faster models for simple queries\n"
+
+        if success_rate < 90.0:
+            report += "- Investigate and fix recurring failures\n"
+
+        if len(tool_usage) < 3:
+            report += "- Explore using more tools for better results\n"
+
+        if not reflection_scores:
+            report += "- Enable self-reflection for quality improvement\n"
+
+        report += "\n---\n\n*Report generated by Meton Performance Analytics*\n"
+
+        return report
+
+    def check_performance_alerts(self) -> List[Dict]:
+        """
+        Check for performance degradation and generate alerts.
+
+        Returns:
+            List of alerts
+        """
+        alerts = []
+
+        if not self.metrics or len(self.metrics) < 10:
+            return alerts  # Need enough data for meaningful alerts
+
+        # Get recent metrics (last 20)
+        recent = self.metrics[-20:]
+        older = self.metrics[-40:-20] if len(self.metrics) >= 40 else []
+
+        if not older:
+            return alerts  # Need comparison data
+
+        # Check response time trend
+        recent_avg_time = sum(m.response_time for m in recent) / len(recent)
+        older_avg_time = sum(m.response_time for m in older) / len(older)
+
+        time_increase = ((recent_avg_time - older_avg_time) / older_avg_time * 100) if older_avg_time > 0 else 0
+
+        if time_increase > 20:
+            alerts.append({
+                "type": "performance_degradation",
+                "severity": "high" if time_increase > 50 else "medium",
+                "message": f"Response time increased by {time_increase:.1f}%",
+                "details": {
+                    "recent_avg": recent_avg_time,
+                    "older_avg": older_avg_time,
+                    "increase_pct": time_increase
+                },
+                "timestamp": datetime.now().isoformat()
+            })
+
+        # Check success rate
+        recent_success_rate = sum(1 for m in recent if m.success) / len(recent)
+
+        if recent_success_rate < 0.8:
+            alerts.append({
+                "type": "low_success_rate",
+                "severity": "high" if recent_success_rate < 0.6 else "medium",
+                "message": f"Success rate dropped to {recent_success_rate*100:.1f}%",
+                "details": {
+                    "success_rate": recent_success_rate,
+                    "failures": sum(1 for m in recent if not m.success)
+                },
+                "timestamp": datetime.now().isoformat()
+            })
+
+        # Check tool failure rates
+        tool_failures = defaultdict(lambda: {"total": 0, "failures": 0})
+        for metric in recent:
+            for tool in metric.tool_calls:
+                tool_failures[tool]["total"] += 1
+                if not metric.success:
+                    tool_failures[tool]["failures"] += 1
+
+        for tool, stats in tool_failures.items():
+            failure_rate = stats["failures"] / stats["total"] if stats["total"] > 0 else 0
+            if failure_rate > 0.1:
+                alerts.append({
+                    "type": "tool_failure",
+                    "severity": "high" if failure_rate > 0.3 else "medium",
+                    "message": f"Tool '{tool}' has {failure_rate*100:.1f}% failure rate",
+                    "details": {
+                        "tool": tool,
+                        "failure_rate": failure_rate,
+                        "failures": stats["failures"],
+                        "total": stats["total"]
+                    },
+                    "timestamp": datetime.now().isoformat()
+                })
+
+        return alerts
+
     def _empty_dashboard(self) -> Dict:
         """Return empty dashboard structure."""
         return {
