@@ -21,6 +21,16 @@ from datetime import datetime
 from typing import List, Tuple, Optional, Dict, Any
 from dataclasses import dataclass, asdict
 
+# Meton components
+from core.config import Config
+from core.models import ModelManager
+from core.conversation import ConversationManager
+from core.agent import MetonAgent
+from tools.file_ops import FileOperationsTool
+from tools.code_executor import CodeExecutorTool
+from tools.web_search import WebSearchTool
+from tools.codebase_search import CodebaseSearchTool
+
 
 @dataclass
 class ConversationMessage:
@@ -42,10 +52,18 @@ class MetonWebUI:
             config_path: Path to configuration file
         """
         self.config_path = config_path
-        self.config = self._load_config()
+        self.config = Config(config_path)
 
-        # Agent is lazy-initialized to avoid import issues in tests
-        self.agent = None
+        # Meton components (lazy-initialized)
+        self.model_manager: Optional[ModelManager] = None
+        self.conversation: Optional[ConversationManager] = None
+        self.agent: Optional[MetonAgent] = None
+
+        # Tools
+        self.file_tool: Optional[FileOperationsTool] = None
+        self.code_tool: Optional[CodeExecutorTool] = None
+        self.web_tool: Optional[WebSearchTool] = None
+        self.codebase_search_tool: Optional[CodebaseSearchTool] = None
 
         # Session state
         self.conversation_history = []
@@ -53,7 +71,7 @@ class MetonWebUI:
         self.temp_dir = tempfile.mkdtemp(prefix="meton_web_")
 
         # Current settings
-        self.current_model = self.config.get("models", {}).get("primary", "qwen2.5:32b")
+        self.current_model = self.config.config.models.primary
         self.tools_enabled = {
             "web_search": False,
             "reflection": False,
@@ -64,17 +82,6 @@ class MetonWebUI:
         # Status
         self.agent_status = "Not initialized"
 
-    def _load_config(self) -> Dict:
-        """Load configuration from YAML file."""
-        import yaml
-
-        try:
-            with open(self.config_path, 'r') as f:
-                return yaml.safe_load(f)
-        except Exception as e:
-            print(f"Warning: Failed to load config: {e}")
-            return {}
-
     def initialize_agent(self) -> str:
         """
         Initialize Meton agent.
@@ -83,16 +90,33 @@ class MetonWebUI:
             Status message
         """
         try:
-            # Import here to avoid circular dependencies
-            # In actual implementation, this would import the real agent
-            # For now, we'll simulate it
+            # Initialize Model Manager
+            self.model_manager = ModelManager(self.config)
+
+            # Initialize Conversation Manager
+            self.conversation = ConversationManager(self.config)
+
+            # Initialize Tools
+            self.file_tool = FileOperationsTool(self.config)
+            self.code_tool = CodeExecutorTool(self.config)
+            self.web_tool = WebSearchTool(self.config)
+            self.codebase_search_tool = CodebaseSearchTool(self.config)
+
+            # Initialize Agent
+            self.agent = MetonAgent(
+                config=self.config,
+                model_manager=self.model_manager,
+                conversation=self.conversation,
+                tools=[self.file_tool, self.code_tool, self.web_tool, self.codebase_search_tool],
+                verbose=False
+            )
 
             self.agent_status = "Ready"
-            return "✅ Agent initialized successfully"
+            return "Agent initialized successfully"
 
         except Exception as e:
             self.agent_status = f"Error: {str(e)}"
-            return f"❌ Failed to initialize agent: {str(e)}"
+            return f"Failed to initialize agent: {str(e)}"
 
     def process_message(
         self,
@@ -123,9 +147,8 @@ class MetonWebUI:
             # Update status
             self.agent_status = "Processing..."
 
-            # Simulate agent response
-            # In actual implementation, call: response = self.agent.process(message)
-            response = self._simulate_agent_response(message)
+            # Process message with real agent
+            response = self.agent.run(message)
 
             # Add to conversation
             msg_record = ConversationMessage(
