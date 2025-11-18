@@ -47,6 +47,12 @@ python launch_web.py --share --port 8080  # With options
 | `/learn insights` | Show generated insights |
 | `/learn patterns` | Show detected patterns |
 | `/learn summary` | Learning statistics |
+| `/optimize profile` | Show performance profile |
+| `/optimize cache stats` | Display cache statistics |
+| `/optimize cache clear` | Clear all caches |
+| `/optimize report` | Show optimization report |
+| `/optimize benchmark` | Run performance benchmarks |
+| `/optimize resources` | Show resource usage |
 | `/exit` or `/quit` or `/q` | Exit Meton |
 
 ---
