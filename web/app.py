@@ -148,7 +148,19 @@ class MetonWebUI:
             self.agent_status = "Processing..."
 
             # Process message with real agent
-            response = self.agent.run(message)
+            agent_response = self.agent.run(message)
+
+            # Extract output from agent response
+            if isinstance(agent_response, dict):
+                response_text = agent_response.get('output', str(agent_response))
+                response_metadata = {
+                    "model": self.current_model,
+                    "iterations": agent_response.get('iterations', 0),
+                    "tool_calls": len(agent_response.get('tool_calls', []))
+                }
+            else:
+                response_text = str(agent_response)
+                response_metadata = {"model": self.current_model}
 
             # Add to conversation
             msg_record = ConversationMessage(
@@ -161,14 +173,14 @@ class MetonWebUI:
 
             response_record = ConversationMessage(
                 role="assistant",
-                content=response,
+                content=response_text,
                 timestamp=datetime.now().isoformat(),
-                metadata={"model": self.current_model}
+                metadata=response_metadata
             )
             self.conversation_history.append(response_record)
 
-            # Update Gradio history
-            history.append((message, response))
+            # Update Gradio history (chatbot expects string, not dict)
+            history.append((message, response_text))
 
             # Update status
             self.agent_status = "Ready"
@@ -249,7 +261,7 @@ Use the settings panel to enable additional tools like web search and reflection
                 file_name = Path(file_path).name
 
                 # Check file size
-                max_size_mb = self.config.get("web_ui", {}).get("max_file_size_mb", 10)
+                max_size_mb = self.config.config.web_ui.max_file_size_mb
                 file_size = os.path.getsize(file_path)
 
                 if file_size > max_size_mb * 1024 * 1024:
@@ -435,7 +447,7 @@ Use the settings panel to enable additional tools like web search and reflection
         Returns:
             Gradio Blocks interface
         """
-        theme_name = self.config.get("web_ui", {}).get("theme", "soft")
+        theme_name = self.config.config.web_ui.theme
 
         # Map theme names to Gradio themes
         theme_map = {
@@ -628,10 +640,13 @@ Use the settings panel to enable additional tools like web search and reflection
         # Build interface
         demo = self.build_interface()
 
-        # Get config
-        web_config = self.config.get("web_ui", {})
-        host = web_config.get("host", "127.0.0.1")
-        port = web_config.get("port", 7860)
+        # Get config defaults (can be overridden by kwargs)
+        host = kwargs.get('server_name', self.config.config.web_ui.host)
+        port = kwargs.get('server_port', self.config.config.web_ui.port)
+
+        # Remove from kwargs if present to avoid duplicate arguments
+        kwargs.pop('server_name', None)
+        kwargs.pop('server_port', None)
 
         # Launch
         try:

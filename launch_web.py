@@ -93,6 +93,12 @@ def main():
         else:
             print("❌ Error: Authentication must be in format 'username:password'")
             sys.exit(1)
+    elif ui.config.config.web_ui.auth:
+        # Use auth from config if available
+        if ':' in ui.config.config.web_ui.auth:
+            username, password = ui.config.config.web_ui.auth.split(':', 1)
+            auth = (username, password)
+            print(f"   Authentication: Enabled from config (user: {username})")
 
     # Prepare launch kwargs
     launch_kwargs = {}
@@ -100,15 +106,22 @@ def main():
     if args.host:
         launch_kwargs['server_name'] = args.host
         print(f"   Host: {args.host}")
+    else:
+        host = ui.config.config.web_ui.host
+        launch_kwargs['server_name'] = host
+        print(f"   Host: {host}")
 
     if args.port:
         launch_kwargs['server_port'] = args.port
         print(f"   Port: {args.port}")
     else:
-        port = ui.config.get("web_ui", {}).get("port", 7860)
+        port = ui.config.config.web_ui.port
+        launch_kwargs['server_port'] = port
         print(f"   Port: {port}")
 
-    if args.share:
+    # Determine if sharing should be enabled
+    share = args.share or ui.config.config.web_ui.share
+    if share:
         print("   Sharing: Enabled (public URL will be generated)")
 
     if args.debug:
@@ -119,7 +132,7 @@ def main():
     print("   Press Ctrl+C to stop\n")
 
     try:
-        ui.launch(share=args.share, auth=auth, **launch_kwargs)
+        ui.launch(share=share, auth=auth, **launch_kwargs)
     except KeyboardInterrupt:
         print("\n\n👋 Shutting down Meton Web UI...")
         ui.cleanup()
