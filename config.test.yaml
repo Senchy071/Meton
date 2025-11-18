@@ -1,0 +1,169 @@
+# Test Configuration for Meton
+# Optimized for testing with smaller models and disabled features
+
+project:
+  name: Meton
+  version: 0.1.0
+  description: Local AI Coding Assistant
+
+models:
+  primary: mistral:latest  # Smaller model for faster tests
+  fallback: mistral:latest
+  quick: mistral:latest
+  settings:
+    temperature: 0.0  # Deterministic for testing
+    max_tokens: 1024
+    top_p: 0.9
+    num_ctx: 2048
+
+agent:
+  max_iterations: 5  # Reduced for faster tests
+  verbose: false  # Less output during tests
+  show_reasoning: false
+  timeout: 60  # Shorter timeout for tests
+
+tools:
+  file_ops:
+    enabled: true
+    allowed_paths:
+      - /tmp/
+      - ./tests/
+    blocked_paths:
+      - /etc/
+      - /sys/
+      - /proc/
+    max_file_size_mb: 5
+
+  code_executor:
+    enabled: true
+    timeout: 3
+    max_output_length: 5000
+
+  web_search:
+    enabled: false  # Disabled for offline tests
+    max_results: 3
+    timeout: 5
+
+  codebase_search:
+    enabled: true
+    top_k: 3
+    similarity_threshold: 0.5
+    max_code_length: 200
+
+  git_operations:
+    enabled: true
+    auto_detect_repo: true
+    max_diff_size: 1000
+    commit_message_style: conventional
+
+conversation:
+  max_history: 10  # Smaller for tests
+  save_path: ./test_conversations/
+  auto_save: false  # Manual save for tests
+
+cli:
+  theme: monokai
+  show_timestamps: false
+  syntax_highlight: false
+  show_tool_output: false
+
+rag:
+  enabled: false  # Disabled for faster tests
+  embedding_model: sentence-transformers/all-mpnet-base-v2
+  index_path: ./test_rag_index/
+  metadata_path: ./test_rag_index/metadata.json
+  dimensions: 768
+  top_k: 3
+  similarity_threshold: 0.7
+
+skills:
+  enabled: false  # Disabled for faster tests
+  auto_load: false
+  directory: ./skills/
+
+multi_agent:
+  enabled: false
+  max_subtasks: 5
+  max_revisions: 1
+  parallel_execution: false
+
+reflection:
+  enabled: false
+  min_quality_threshold: 0.7
+  max_iterations: 1
+
+iterative_improvement:
+  enabled: false
+  max_iterations: 1
+  quality_threshold: 0.7
+
+feedback_learning:
+  enabled: false
+  use_for_improvement: false
+
+parallel_execution:
+  enabled: false
+  max_parallel_tools: 2
+
+chain_of_thought:
+  enabled: false
+  min_complexity_threshold: high
+
+task_planning:
+  enabled: false
+  auto_plan_threshold: high
+
+analytics:
+  enabled: false
+  storage_path: ./test_analytics_data
+
+web_ui:
+  enabled: false
+
+long_term_memory:
+  enabled: false
+  storage_path: ./test_memory
+
+cross_session_learning:
+  enabled: false
+
+templates:
+  enabled: false
+
+profiles:
+  enabled: false
+
+export:
+  export_dir: "./test_exports"
+  backup_dir: "./test_backups"
+  auto_backup: false
+
+optimization:
+  enabled: true  # Keep enabled for optimization tests
+
+  cache:
+    enabled: false  # Disabled for deterministic tests
+    cache_dir: "./test_cache"
+    ttl_seconds: 10
+    max_memory_items: 100
+
+  profiling:
+    enabled: false
+    auto_profile_queries: false
+
+  query_optimization:
+    enabled: true
+    auto_optimize_tools: true
+    auto_optimize_rag: false
+
+  parallel:
+    enabled: false
+
+  lazy_loading:
+    enabled: false
+
+  resource_monitoring:
+    enabled: true
+    sample_interval: 10
+    alert_cpu_threshold: 95
+    alert_memory_threshold: 95

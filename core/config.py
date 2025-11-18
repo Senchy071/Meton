@@ -120,6 +120,59 @@ class SkillsConfig(BaseModel):
     directory: str = "./skills/"
 
 
+class CacheConfig(BaseModel):
+    """Cache configuration."""
+    enabled: bool = True
+    cache_dir: str = "./cache"
+    ttl_seconds: int = 3600
+    max_memory_items: int = 1000
+
+
+class ProfilingConfig(BaseModel):
+    """Profiling configuration."""
+    enabled: bool = True
+    auto_profile_queries: bool = True
+    bottleneck_threshold_seconds: float = 5.0
+
+
+class QueryOptimizationConfig(BaseModel):
+    """Query optimization configuration."""
+    enabled: bool = True
+    auto_optimize_tools: bool = True
+    auto_optimize_rag: bool = True
+
+
+class ParallelConfig(BaseModel):
+    """Parallel execution configuration."""
+    enabled: bool = True
+    max_workers: int = 3
+
+
+class LazyLoadingConfig(BaseModel):
+    """Lazy loading configuration."""
+    enabled: bool = True
+    preload_skills: List[str] = ["code_explainer"]
+
+
+class ResourceMonitoringConfig(BaseModel):
+    """Resource monitoring configuration."""
+    enabled: bool = True
+    sample_interval: int = 5
+    alert_cpu_threshold: int = 90
+    alert_memory_threshold: int = 90
+
+
+class OptimizationConfig(BaseModel):
+    """Optimization configuration."""
+    enabled: bool = True
+    cache: CacheConfig = Field(default_factory=CacheConfig)
+    profiling: ProfilingConfig = Field(default_factory=ProfilingConfig)
+    query_optimization: QueryOptimizationConfig = Field(default_factory=QueryOptimizationConfig)
+    parallel: ParallelConfig = Field(default_factory=ParallelConfig)
+    lazy_loading: LazyLoadingConfig = Field(default_factory=LazyLoadingConfig)
+    resource_monitoring: ResourceMonitoringConfig = Field(default_factory=ResourceMonitoringConfig)
+
+
 class ProjectConfig(BaseModel):
     """Project metadata."""
     name: str = "Meton"
@@ -137,6 +190,7 @@ class MetonConfig(BaseModel):
     cli: CLIConfig = Field(default_factory=CLIConfig)
     rag: RAGConfig = Field(default_factory=RAGConfig)
     skills: SkillsConfig = Field(default_factory=SkillsConfig)
+    optimization: OptimizationConfig = Field(default_factory=OptimizationConfig)
 
 
 class ConfigLoader:

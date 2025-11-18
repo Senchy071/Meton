@@ -162,3 +162,41 @@ export:
   compression: "gzip"  # gzip, zip, none
   include_conversations: true
   include_analytics: true
+optimization:
+  enabled: true
+
+  # Caching configuration
+  cache:
+    enabled: true
+    cache_dir: "./cache"
+    ttl_seconds: 3600  # 1 hour
+    max_memory_items: 1000
+
+  # Performance profiling
+  profiling:
+    enabled: true
+    auto_profile_queries: true
+    bottleneck_threshold_seconds: 5.0
+
+  # Query optimization
+  query_optimization:
+    enabled: true
+    auto_optimize_tools: true
+    auto_optimize_rag: true
+
+  # Parallel execution
+  parallel:
+    enabled: true
+    max_workers: 3
+
+  # Lazy loading
+  lazy_loading:
+    enabled: true
+    preload_skills: ["code_explainer"]  # Skills to preload
+
+  # Resource monitoring
+  resource_monitoring:
+    enabled: true
+    sample_interval: 5  # seconds
+    alert_cpu_threshold: 90  # percentage
+    alert_memory_threshold: 90  # percentage

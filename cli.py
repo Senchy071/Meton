@@ -211,6 +211,16 @@ class MetonCLI:
         table.add_row("/import config <file>", "Import configuration")
         table.add_row("/import backup <file>", "Restore from backup")
 
+        # Add optimization commands section
+        table.add_section()
+        table.add_row("[bold cyan]Optimization:[/]", "")
+        table.add_row("/optimize profile", "Show performance profile")
+        table.add_row("/optimize cache stats", "Cache statistics")
+        table.add_row("/optimize cache clear", "Clear caches")
+        table.add_row("/optimize report", "Optimization report")
+        table.add_row("/optimize benchmark", "Run benchmarks")
+        table.add_row("/optimize resources", "Resource usage")
+
         table.add_section()
         table.add_row("/exit, /quit, /q", "Exit Meton")
 
@@ -395,6 +405,12 @@ class MetonCLI:
                 self.handle_import_command(args[0])
             else:
                 self.console.print("[yellow]Usage: /import [all|config|memories|conversations|backup][/yellow]")
+        elif cmd == '/optimize':
+            # Optimization command
+            if args:
+                self.handle_optimize_command(' '.join(args))
+            else:
+                self.console.print("[yellow]Usage: /optimize [profile|cache|report|benchmark|resources][/yellow]")
         elif cmd in ['/exit', '/quit', '/q']:
             self.exit_cli()
         else:
@@ -1966,6 +1982,193 @@ class MetonCLI:
             self.console.print(f"[red]❌ Validation failed: {str(e)}[/red]\n")
 
     # ========== End Export/Import Commands ==========
+
+    # ========== Optimization Commands ==========
+
+    def handle_optimize_command(self, command_str: str):
+        """Handle optimization commands."""
+        parts = command_str.split()
+        subcommand = parts[0] if parts else ""
+
+        if subcommand == "profile":
+            self.show_performance_profile()
+        elif subcommand == "cache" and len(parts) > 1:
+            if parts[1] == "stats":
+                self.show_cache_stats()
+            elif parts[1] == "clear":
+                self.clear_caches()
+            else:
+                self.console.print("[yellow]Usage: /optimize cache [stats|clear][/yellow]")
+        elif subcommand == "report":
+            self.show_optimization_report()
+        elif subcommand == "benchmark":
+            self.run_benchmarks()
+        elif subcommand == "resources":
+            self.show_resource_usage()
+        else:
+            self.console.print("[yellow]Usage: /optimize [profile|cache|report|benchmark|resources][/yellow]")
+
+    def show_performance_profile(self):
+        """Show performance profile."""
+        self.console.print("\n[cyan]📊 Performance Profile[/cyan]\n")
+
+        try:
+            from optimization.profiler import get_profiler
+
+            profiler = get_profiler()
+            report = profiler.generate_profile_report()
+
+            self.console.print(report)
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to generate profile: {str(e)}[/red]\n")
+
+    def show_cache_stats(self):
+        """Show cache statistics."""
+        self.console.print("\n[cyan]📈 Cache Statistics[/cyan]\n")
+
+        try:
+            from optimization.cache_manager import get_cache_manager
+
+            cache = get_cache_manager()
+            stats = cache.get_stats()
+
+            from rich.table import Table
+            table = Table(show_header=True, header_style="bold cyan")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Value", style="green")
+
+            table.add_row("Enabled", "✅ Yes" if stats["enabled"] else "❌ No")
+            table.add_row("Memory Cache Items", str(stats["memory_cache_items"]))
+            table.add_row("Disk Cache Items", str(stats["disk_cache_items"]))
+            table.add_row("Disk Cache Size", f"{stats['disk_cache_size_mb']:.2f} MB")
+            table.add_row("Cache Hits", str(stats["hits"]))
+            table.add_row("Cache Misses", str(stats["misses"]))
+            table.add_row("Hit Rate", f"{stats['hit_rate_percent']:.1f}%")
+            table.add_row("TTL", f"{stats['ttl_seconds']} seconds")
+
+            self.console.print(table)
+            self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to get cache stats: {str(e)}[/red]\n")
+
+    def clear_caches(self):
+        """Clear all caches."""
+        self.console.print("\n[cyan]🗑️  Clearing caches...[/cyan]\n")
+
+        try:
+            from optimization.cache_manager import get_cache_manager
+
+            cache = get_cache_manager()
+            cache.clear()
+
+            self.console.print("[green]✅ Caches cleared successfully![/green]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to clear caches: {str(e)}[/red]\n")
+
+    def show_optimization_report(self):
+        """Show comprehensive optimization report."""
+        self.console.print("\n[cyan]📋 Optimization Report[/cyan]\n")
+
+        try:
+            from optimization.profiler import get_profiler
+            from optimization.cache_manager import get_cache_manager
+            from optimization.resource_monitor import get_resource_monitor
+
+            profiler = get_profiler()
+            cache = get_cache_manager()
+            monitor = get_resource_monitor()
+
+            # Profiler stats
+            prof_stats = profiler.get_stats()
+            self.console.print("[bold]Performance Profiling:[/bold]")
+            self.console.print(f"  Function Profiles: {prof_stats['function_profiles']}")
+            self.console.print(f"  Total Calls: {prof_stats['total_functions_called']}")
+            self.console.print(f"  Avg Query Time: {prof_stats['avg_query_time']:.3f}s")
+
+            # Cache stats
+            cache_stats = cache.get_stats()
+            self.console.print("\n[bold]Cache Performance:[/bold]")
+            self.console.print(f"  Hit Rate: {cache_stats['hit_rate_percent']:.1f}%")
+            self.console.print(f"  Memory Items: {cache_stats['memory_cache_items']}")
+            self.console.print(f"  Disk Size: {cache_stats['disk_cache_size_mb']:.2f} MB")
+
+            # Resource stats
+            mon_stats = monitor.get_stats()
+            usage = monitor.get_current_usage()
+            self.console.print("\n[bold]Resource Usage:[/bold]")
+            self.console.print(f"  CPU: {usage['cpu_percent']:.1f}%")
+            self.console.print(f"  Memory: {usage['memory_mb']:.1f} MB ({usage['memory_percent']:.1f}%)")
+            self.console.print(f"  Total Samples: {mon_stats['total_samples']}")
+
+            # Bottlenecks
+            bottlenecks = profiler.identify_bottlenecks(threshold_seconds=2.0)
+            if bottlenecks:
+                self.console.print("\n[bold yellow]⚠️  Bottlenecks:[/bold yellow]")
+                for bottleneck in bottlenecks:
+                    self.console.print(f"  • {bottleneck}")
+
+            self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to generate report: {str(e)}[/red]\n")
+
+    def run_benchmarks(self):
+        """Run performance benchmarks."""
+        self.console.print("\n[cyan]🏃 Running Performance Benchmarks...[/cyan]\n")
+        self.console.print("[dim]This may take a minute...[/dim]\n")
+
+        try:
+            from optimization.benchmarks import run_benchmarks
+
+            results = run_benchmarks()
+
+            self.console.print("\n[green]✅ Benchmarks complete![/green]")
+            self.console.print("[dim]Results displayed above[/dim]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Benchmark failed: {str(e)}[/red]\n")
+
+    def show_resource_usage(self):
+        """Show current resource usage."""
+        self.console.print("\n[cyan]💻 Resource Usage[/cyan]\n")
+
+        try:
+            from optimization.resource_monitor import get_resource_monitor
+
+            monitor = get_resource_monitor()
+            usage = monitor.get_current_usage()
+
+            from rich.table import Table
+            table = Table(show_header=True, header_style="bold cyan")
+            table.add_column("Resource", style="cyan")
+            table.add_column("Current", style="green")
+
+            table.add_row("CPU", f"{usage['cpu_percent']:.1f}%")
+            table.add_row("Memory Used", f"{usage['memory_mb']:.1f} MB")
+            table.add_row("Memory %", f"{usage['memory_percent']:.1f}%")
+            table.add_row("Memory Available", f"{usage['memory_available_mb']:.1f} MB")
+            table.add_row("Disk Usage", f"{usage['disk_usage_percent']:.1f}%")
+            table.add_row("Disk Free", f"{usage['disk_free_gb']:.1f} GB")
+
+            self.console.print(table)
+            self.console.print()
+
+            # Show peak if monitoring
+            peak = monitor.get_peak_usage()
+            if peak:
+                self.console.print("[bold]Peak Usage:[/bold]")
+                self.console.print(f"  CPU: {peak['peak_cpu_percent']:.1f}%")
+                self.console.print(f"  Memory: {peak['peak_memory_mb']:.1f} MB ({peak['peak_memory_percent']:.1f}%)")
+                self.console.print(f"  Samples: {peak['samples']}")
+                self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to get resource usage: {str(e)}[/red]\n")
+
+    # ========== End Optimization Commands ==========
 
     def exit_cli(self):
         """Exit the CLI."""
