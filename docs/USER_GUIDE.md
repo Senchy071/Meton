@@ -31,7 +31,7 @@ python meton.py
 
 You'll see:
 ```
-🧠 Meton - Local AI Coding Assistant
+ Meton - Local AI Coding Assistant
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Metis + Ergon = Wisdom in Action
 
@@ -51,29 +51,29 @@ Navigate to: `http://localhost:7860`
 
 ### Basic Workflow
 
-1. **Index your project** (optional but recommended)
-   ```
-   /index /path/to/your/project
-   ```
+1. **Index your project (optional but recommended)
+ ```
+ /index /path/to/your/project
+ ```
 
-2. **Ask questions**
-   ```
-   > How does authentication work in this codebase?
-   > Explain this function: [paste code]
-   > Find all files related to database connections
-   ```
+2. **Ask questions
+ ```
+ > How does authentication work in this codebase?
+ > Explain this function: [paste code]
+ > Find all files related to database connections
+ ```
 
-3. **Get code reviews**
-   ```
-   > Review this code:
-   def process_data(data):
-       return eval(data["query"])
-   ```
+3. **Get code reviews
+ ```
+ > Review this code:
+ def process_data(data):
+ return eval(data["query"])
+ ```
 
-4. **Generate tests**
-   ```
-   > Generate pytest tests for the authenticate_user function
-   ```
+4. **Generate tests
+ ```
+ > Generate pytest tests for the authenticate_user function
+ ```
 
 ---
 
@@ -83,38 +83,38 @@ Navigate to: `http://localhost:7860`
 
 #### Essential Commands
 
-**Help & Status:**
+Help & Status:
 - `/help`, `/h` - Show all commands
 - `/status` - System status
 - `/models` - List available models
 - `/tools` - List tools and their status
 
-**Model Management:**
+Model Management:
 - `/model <name>` - Switch model
-  ```
-  /model llama3.1:8b
-  /model primary
-  /model quick
-  ```
+ ```
+ /model llama3.1:8b
+ /model primary
+ /model quick
+ ```
 
-**Conversation:**
+Conversation:
 - `/history` - Show conversation history
 - `/search <keyword>` - Search history
 - `/clear`, `/c` - Clear conversation
 - `/save` - Save conversation
 
-**RAG/Code Search:**
+RAG/Code Search:
 - `/index [path]` - Index codebase
-  ```
-  /index /media/development/projects/myapp
-  /index .  # Current directory
-  ```
+ ```
+ /index /media/development/projects/myapp
+ /index . # Current directory
+ ```
 - `/csearch "query"` - Test semantic search
 - `/index status` - Show index stats
 - `/index clear` - Delete index
 - `/index refresh` - Re-index last path
 
-**Memory & Learning:**
+Memory & Learning:
 - `/memory stats` - Memory statistics
 - `/memory search <query>` - Search memories
 - `/memory add <content>` - Add manual memory
@@ -124,7 +124,7 @@ Navigate to: `http://localhost:7860`
 - `/learn patterns` - Show detected patterns
 - `/learn summary` - Learning statistics
 
-**Configuration:**
+Configuration:
 - `/profile list [category]` - List profiles
 - `/profile use <id>` - Activate profile
 - `/profile current` - Show active profile
@@ -132,7 +132,7 @@ Navigate to: `http://localhost:7860`
 - `/profile compare <id1> <id2>` - Compare profiles
 - `/reload` - Reload configuration
 
-**Export/Import:**
+Export/Import:
 - `/export all [file]` - Export complete state
 - `/export config [file]` - Export configuration
 - `/export memories [file]` - Export memories
@@ -143,13 +143,13 @@ Navigate to: `http://localhost:7860`
 - `/import backup <file>` - Restore from backup
 - `/import validate <file>` - Validate import file
 
-**Tools:**
+Tools:
 - `/web on/off/status` - Control web search
 - `/skills list` - List available skills
 - `/git status` - Git status
 - `/git review` - AI code review
 
-**Exit:**
+Exit:
 - `/exit`, `/quit`, `/q` - Exit Meton
 
 #### Command Examples
@@ -181,55 +181,55 @@ Navigate to: `http://localhost:7860`
 
 #### Tabs
 
-1. **Chat Tab**
-   - Main conversation interface
-   - Code syntax highlighting
-   - File upload (drag & drop)
-   - Model selection dropdown
-   - Tool toggle switches
+1. **Chat Tab
+ - Main conversation interface
+ - Code syntax highlighting
+ - File upload (drag & drop)
+ - Model selection dropdown
+ - Tool toggle switches
 
-2. **Analytics Tab**
-   - Performance metrics
-   - Tool usage statistics
-   - Response time charts
-   - Error rate tracking
+2. **Analytics Tab
+ - Performance metrics
+ - Tool usage statistics
+ - Response time charts
+ - Error rate tracking
 
-3. **Sessions Tab**
-   - Session management
-   - Load previous sessions
-   - Export conversations
-   - Clear sessions
+3. **Sessions Tab
+ - Session management
+ - Load previous sessions
+ - Export conversations
+ - Clear sessions
 
-4. **Settings Tab**
-   - Configuration editor
-   - Profile management
-   - Tool settings
-   - Import/Export
+4. **Settings Tab
+ - Configuration editor
+ - Profile management
+ - Tool settings
+ - Import/Export
 
 #### Features
 
-**File Upload:**
+File Upload:
 - Drag & drop files into chat
 - Automatically reads file content
 - Supports code files, text, JSON, etc.
 
-**Model Switching:**
+Model Switching:
 - Dropdown menu for model selection
 - Real-time switching without restart
 - Shows current model in status bar
 
-**Tool Toggles:**
+Tool Toggles:
 - Enable/disable tools on the fly
 - Web search toggle
 - Code executor toggle
 - File operations toggle
 
-**Conversation Export:**
+Conversation Export:
 - Export as JSON or Markdown
 - Download conversations
 - Share analysis results
 
-**Keyboard Shortcuts:**
+Keyboard Shortcuts:
 - `Ctrl+Enter` - Send message
 - `Ctrl+K` - Clear conversation
 - `Ctrl+E` - Export conversation
@@ -249,7 +249,7 @@ code --install-extension meton-0.1.0.vsix
 
 #### Commands
 
-**Command Palette** (`Ctrl+Shift+P`):
+Command Palette (`Ctrl+Shift+P`):
 - `Meton: Explain Selected Code`
 - `Meton: Review Selected Code`
 - `Meton: Generate Tests`
@@ -257,39 +257,39 @@ code --install-extension meton-0.1.0.vsix
 - `Meton: Open Chat`
 - `Meton: Index Workspace`
 
-**Keyboard Shortcuts:**
+Keyboard Shortcuts:
 - `Ctrl+Shift+E` - Explain selected code
 - `Ctrl+Shift+M` - Open chat sidebar
 
-**Context Menu:**
+Context Menu:
 - Right-click on selected code
 - Choose Meton action from menu
 
 #### LSP Features
 
-**Code Actions** (💡 lightbulb):
+Code Actions ( lightbulb):
 - Quick fixes for common issues
 - Refactoring suggestions
 - Extract method
 - Simplify code
 
-**Diagnostics:**
+Diagnostics:
 - Real-time code review
 - Security warnings
 - Best practice violations
 - Style issues
 
-**Hover Documentation:**
+Hover Documentation:
 - Hover over functions/variables
 - Get AI-powered explanations
 - See usage examples
 
-**Code Completions:**
+Code Completions:
 - Context-aware suggestions
 - AI-powered completions
 - Smart imports
 
-**Chat Sidebar:**
+Chat Sidebar:
 - Persistent chat panel
 - Ask questions about code
 - Get instant help
@@ -314,13 +314,13 @@ Index your codebase for intelligent search:
 > Locate error handling code
 ```
 
-**How it works:**
+How it works:
 - AST-based code parsing
 - Semantic chunking (1 chunk per function/class)
 - FAISS vector search
 - Returns ranked results with file:line references
 
-**Search Tips:**
+Search Tips:
 - Be specific: "JWT token validation" > "authentication"
 - Use technical terms: "REST endpoint" > "API thing"
 - Ask for locations: "Where is..." / "Find..."
@@ -333,22 +333,22 @@ Get comprehensive code analysis:
 ```python
 > Review this code:
 def process_payment(amount, user_id):
-    query = f"SELECT * FROM users WHERE id = {user_id}"
-    db.execute(query)
-    return amount * 1.1
+ query = f"SELECT * FROM users WHERE id = {user_id}"
+ db.execute(query)
+ return amount * 1.1
 ```
 
-**Output includes:**
-- 🚨 Security issues (SQL injection detected!)
-- ⚠️ Best practices violations
-- 💡 Style recommendations
-- ✨ Improvement suggestions
-- 📊 Complexity analysis
+Output includes:
+- Security issues (SQL injection detected!)
+- Best practices violations
+- Style recommendations
+- Improvement suggestions
+- Complexity analysis
 
-**Review Modes:**
-- **Quick**: Basic security and syntax
-- **Standard**: Security + best practices + style
-- **Thorough**: Full analysis + refactoring suggestions
+Review Modes:
+- Quick Basic security and syntax
+- Standard Security + best practices + style
+- Thorough Full analysis + refactoring suggestions
 
 ### 3. Test Generation
 
@@ -357,18 +357,18 @@ Generate comprehensive tests:
 ```python
 > Generate tests for this function:
 def calculate_discount(price, percentage, min_price=0):
-    if price < min_price:
-        return price
-    return price * (1 - percentage / 100)
+ if price < min_price:
+ return price
+ return price * (1 - percentage / 100)
 ```
 
-**Output:**
-- ✅ Normal flow tests
-- ⚠️ Edge case tests (0, negative, boundaries)
-- ❌ Error case tests (invalid input)
-- 📊 Property-based tests (optional)
+Output:
+- Normal flow tests
+- Edge case tests (0, negative, boundaries)
+- Error case tests (invalid input)
+- Property-based tests (optional)
 
-**Test Frameworks:**
+Test Frameworks:
 - `pytest` (default)
 - `unittest`
 - `hypothesis` (property-based)
@@ -380,19 +380,19 @@ Get refactoring suggestions:
 ```python
 > Suggest refactorings for this code:
 def complex_function(a, b, c, d, e):
-    if a > 0:
-        if b > 0:
-            if c > 0:
-                result = a * b * c
-                if d > 0:
-                    result += d
-                if e > 0:
-                    result += e
-                return result
-    return 0
+ if a > 0:
+ if b > 0:
+ if c > 0:
+ result = a * b * c
+ if d > 0:
+ result += d
+ if e > 0:
+ result += e
+ return result
+ return 0
 ```
 
-**Refactoring Patterns:**
+Refactoring Patterns:
 - Extract method
 - Simplify conditionals
 - Reduce nesting
@@ -407,35 +407,35 @@ Generate documentation:
 ```python
 > Generate Google-style docstring for this function:
 def authenticate_user(username, password, remember_me=False):
-    user = User.query.filter_by(username=username).first()
-    if user and user.check_password(password):
-        login_user(user, remember=remember_me)
-        return True
-    return False
+ user = User.query.filter_by(username=username).first()
+ if user and user.check_password(password):
+ login_user(user, remember=remember_me)
+ return True
+ return False
 ```
 
-**Output:**
+Output:
 ```python
 def authenticate_user(username: str, password: str, remember_me: bool = False) -> bool:
-    """Authenticate a user with username and password.
+ """Authenticate a user with username and password.
 
-    Args:
-        username: The username to authenticate.
-        password: The password to verify.
-        remember_me: Whether to persist the session. Defaults to False.
+ Args:
+ username: The username to authenticate.
+ password: The password to verify.
+ remember_me: Whether to persist the session. Defaults to False.
 
-    Returns:
-        True if authentication successful, False otherwise.
+ Returns:
+ True if authentication successful, False otherwise.
 
-    Raises:
-        DatabaseError: If database query fails.
-    """
+ Raises:
+ DatabaseError: If database query fails.
+ """
 ```
 
-**Documentation Types:**
-- **Docstrings**: Google, NumPy, Sphinx styles
-- **README**: Project overview
-- **API Docs**: Module/function documentation
+Documentation Types:
+- Docstrings Google, NumPy, Sphinx styles
+- README Project overview
+- API Docs Module/function documentation
 
 ---
 
@@ -445,15 +445,15 @@ Meton has 7 built-in skills for high-level tasks.
 
 ### 1. Code Explainer
 
-**Purpose:** Detailed code analysis with complexity metrics.
+Purpose: Detailed code analysis with complexity metrics.
 
-**Usage:**
+Usage:
 ```
 > Explain this code:
 [paste code]
 ```
 
-**Output:**
+Output:
 - Purpose and functionality
 - Control flow analysis
 - Complexity metrics (cyclomatic, cognitive)
@@ -461,15 +461,15 @@ Meton has 7 built-in skills for high-level tasks.
 - Potential issues
 - Improvement suggestions
 
-**Example:**
+Example:
 ```
 > Explain this code:
 def fibonacci(n):
-    if n <= 1:
-        return n
-    return fibonacci(n-1) + fibonacci(n-2)
+ if n <= 1:
+ return n
+ return fibonacci(n-1) + fibonacci(n-2)
 
-📊 Analysis:
+ Analysis:
 - Recursive Fibonacci implementation
 - Time complexity: O(2^n) - exponential
 - Space complexity: O(n) - call stack
@@ -479,27 +479,27 @@ def fibonacci(n):
 
 ### 2. Debugger Assistant
 
-**Purpose:** Error analysis and fix suggestions.
+Purpose: Error analysis and fix suggestions.
 
-**Usage:**
+Usage:
 ```
 > Debug this error:
 Traceback (most recent call last):
-  File "app.py", line 45, in process
-    result = data["key"]
+ File "app.py", line 45, in process
+ result = data["key"]
 KeyError: 'key'
 ```
 
-**Output:**
+Output:
 - Error explanation
 - Root cause analysis
 - Fix suggestions (multiple options)
 - Prevention strategies
 - Test cases to add
 
-**Example:**
+Example:
 ```
-🐛 Error: KeyError accessing dictionary key
+ Error: KeyError accessing dictionary key
 
 Root Cause:
 - Dictionary doesn't contain 'key'
@@ -507,17 +507,17 @@ Root Cause:
 
 Fixes:
 1. Use .get() with default:
-   result = data.get("key", default_value)
+ result = data.get("key", default_value)
 
 2. Check key existence:
-   if "key" in data:
-       result = data["key"]
+ if "key" in data:
+ result = data["key"]
 
 3. Use try/except:
-   try:
-       result = data["key"]
-   except KeyError:
-       result = handle_missing_key()
+ try:
+ result = data["key"]
+ except KeyError:
+ result = handle_missing_key()
 
 Prevention:
 - Validate input schema
@@ -527,15 +527,15 @@ Prevention:
 
 ### 3. Refactoring Engine
 
-**Purpose:** Identify code smells and suggest refactorings.
+Purpose: Identify code smells and suggest refactorings.
 
-**Usage:**
+Usage:
 ```
 > Refactor this code:
 [paste code]
 ```
 
-**Detects:**
+Detects:
 - Long methods (>50 lines)
 - Complex conditionals
 - Duplicate code
@@ -544,7 +544,7 @@ Prevention:
 - Tight coupling
 - Violations of SOLID principles
 
-**Suggests:**
+Suggests:
 - Extract method
 - Replace conditional with polymorphism
 - Introduce parameter object
@@ -553,41 +553,41 @@ Prevention:
 
 ### 4. Test Generator
 
-**Purpose:** Generate comprehensive test suites.
+Purpose: Generate comprehensive test suites.
 
-**Usage:**
+Usage:
 ```
 > Generate tests for:
 [paste code or function name]
 ```
 
-**Generates:**
+Generates:
 - Normal flow tests
 - Edge cases (boundaries, empty, null)
 - Error cases (invalid input, exceptions)
 - Integration tests (if dependencies detected)
 - Property-based tests (optional)
 
-**Example:**
+Example:
 ```
 > Generate tests for calculate_total(items, tax_rate=0.1)
 
 Generated 8 tests:
-✅ test_calculate_total_normal() - Standard case
-✅ test_calculate_total_empty_list() - Edge: empty
-✅ test_calculate_total_zero_items() - Edge: zero
-✅ test_calculate_total_large_list() - Edge: many items
-✅ test_calculate_total_custom_tax() - Variation: custom tax
-✅ test_calculate_total_zero_tax() - Edge: no tax
-✅ test_calculate_total_invalid_tax() - Error: negative tax
-✅ test_calculate_total_non_numeric() - Error: bad input
+ test_calculate_total_normal() - Standard case
+ test_calculate_total_empty_list() - Edge: empty
+ test_calculate_total_zero_items() - Edge: zero
+ test_calculate_total_large_list() - Edge: many items
+ test_calculate_total_custom_tax() - Variation: custom tax
+ test_calculate_total_zero_tax() - Edge: no tax
+ test_calculate_total_invalid_tax() - Error: negative tax
+ test_calculate_total_non_numeric() - Error: bad input
 ```
 
 ### 5. Documentation Generator
 
-**Purpose:** Generate documentation in multiple formats.
+Purpose: Generate documentation in multiple formats.
 
-**Usage:**
+Usage:
 ```
 > Generate documentation for this module
 
@@ -596,16 +596,16 @@ Generated 8 tests:
 > Create a README for this project
 ```
 
-**Formats:**
-- **Docstrings**: Google, NumPy, Sphinx
-- **README**: Project overview, installation, usage
-- **API Reference**: Module/class/function docs
+Formats:
+- Docstrings Google, NumPy, Sphinx
+- README Project overview, installation, usage
+- API Reference Module/class/function docs
 
-**Example:**
+Example:
 ```
 > Generate NumPy-style docstring for:
 def train_model(X, y, epochs=100, learning_rate=0.01):
-    # training code...
+ # training code...
 
 Output:
 \"\"\"Train a machine learning model.
@@ -613,31 +613,31 @@ Output:
 Parameters
 ----------
 X : array-like
-    Training features
+ Training features
 y : array-like
-    Training labels
+ Training labels
 epochs : int, optional
-    Number of training iterations (default=100)
+ Number of training iterations (default=100)
 learning_rate : float, optional
-    Learning rate for optimization (default=0.01)
+ Learning rate for optimization (default=0.01)
 
 Returns
 -------
 model : Model
-    Trained model instance
+ Trained model instance
 
 Raises
 ------
 ValueError
-    If X and y have incompatible shapes
+ If X and y have incompatible shapes
 \"\"\"
 ```
 
 ### 6. Code Reviewer
 
-**Purpose:** Comprehensive code quality analysis.
+Purpose: Comprehensive code quality analysis.
 
-**Usage:**
+Usage:
 ```
 > Review this pull request
 
@@ -646,32 +646,32 @@ ValueError
 > Check this code for best practices
 ```
 
-**Checks:**
-- ✅ Security vulnerabilities
-- ✅ Best practices compliance
-- ✅ Code style (PEP 8 for Python)
-- ✅ Performance issues
-- ✅ Maintainability concerns
-- ✅ Documentation quality
+Checks:
+- Security vulnerabilities
+- Best practices compliance
+- Code style (PEP 8 for Python)
+- Performance issues
+- Maintainability concerns
+- Documentation quality
 
-**Categories:**
-- 🚨 **CRITICAL**: Security issues, major bugs
-- ⚠️ **WARNING**: Best practice violations, style issues
-- 💡 **INFO**: Suggestions, optimizations
+Categories:
+- **CRITICAL Security issues, major bugs
+- **WARNING Best practice violations, style issues
+- INFO Suggestions, optimizations
 
 ### 7. Task Planner
 
-**Purpose:** Decompose complex tasks into subtasks.
+Purpose: Decompose complex tasks into subtasks.
 
-**Usage:**
+Usage:
 ```
 > Plan implementation of user authentication system
 
 > Break down this feature into steps:
-  Add real-time notifications to the app
+ Add real-time notifications to the app
 ```
 
-**Output:**
+Output:
 - Task breakdown (hierarchical)
 - Estimated complexity
 - Dependencies
@@ -685,7 +685,7 @@ ValueError
 
 ### File Operations
 
-**Capabilities:**
+Capabilities:
 - Read files
 - Write files
 - List directories
@@ -693,12 +693,12 @@ ValueError
 - Check file existence
 - Get file info
 
-**Security:**
+Security:
 - Path validation
 - Blocked paths (/etc, /sys, /proc)
 - Allowed paths configuration
 
-**Example:**
+Example:
 ```
 > Read the config.yaml file
 
@@ -709,37 +709,37 @@ ValueError
 
 ### Code Executor
 
-**Capabilities:**
+Capabilities:
 - Execute Python code
 - Capture stdout/stderr
 - Track execution time
 - Isolate execution
 
-**Security:**
+Security:
 - Subprocess isolation
 - 5-second timeout
 - Import validation (allowed/blocked lists)
 - No eval()/exec() in agent code
 
-**Example:**
+Example:
 ```
 > Execute this code:
 import requests
 response = requests.get("https://api.github.com")
 print(response.status_code)
 
-📊 Execution result (0.45s):
+ Execution result (0.45s):
 200
 ```
 
 ### Web Search
 
-**Capabilities:**
+Capabilities:
 - DuckDuckGo search
 - No API key required
 - Configurable result count
 
-**Usage:**
+Usage:
 ```
 # Enable web search
 /web on
@@ -749,17 +749,17 @@ print(response.status_code)
 > What are the latest features in Python 3.12?
 ```
 
-**Note:** Disabled by default. Enable with `/web on`.
+Note: Disabled by default. Enable with `/web on`.
 
 ### Codebase Search (RAG)
 
-**Capabilities:**
+Capabilities:
 - Semantic code search
 - Natural language queries
 - Returns ranked results
 - Shows file paths and line numbers
 
-**Usage:**
+Usage:
 ```
 # Index first
 /index /path/to/project
@@ -772,7 +772,7 @@ print(response.status_code)
 
 ### Git Integration
 
-**Capabilities:**
+Capabilities:
 - Git status
 - Diff analysis
 - Commit message generation
@@ -780,7 +780,7 @@ print(response.status_code)
 - Branch suggestions
 - History analysis
 
-**Usage:**
+Usage:
 ```
 /git status
 /git review
@@ -832,9 +832,9 @@ Enable automatic quality improvement:
 ```yaml
 # In config.yaml
 reflection:
-  enabled: true
-  quality_threshold: 0.7
-  max_iterations: 2
+ enabled: true
+ quality_threshold: 0.7
+ max_iterations: 2
 ```
 
 Agent automatically reflects on responses and improves them if quality score < threshold.
@@ -905,10 +905,10 @@ Persistent memory across sessions:
 /memory export json memories_backup.json
 ```
 
-**Memory Types:**
-- **Semantic**: Automatically stored concepts
-- **Episodic**: Session interactions
-- **Manual**: User-added memories
+Memory Types:
+- Semantic Automatically stored concepts
+- Episodic Session interactions
+- Manual User-added memories
 
 ### Cross-Session Learning
 
@@ -928,7 +928,7 @@ Learn patterns from usage:
 /learn apply insight_123
 ```
 
-**Learns from:**
+Learns from:
 - Query types
 - Tool usage patterns
 - Common errors
@@ -944,72 +944,72 @@ Edit `config.yaml`:
 
 ```yaml
 models:
-  primary: "qwen2.5-coder:32b"
-  fallback: "llama3.1:8b"
-  quick: "mistral:7b"
-  temperature: 0.0
-  max_tokens: 2048
-  top_p: 0.9
+ primary: "qwen2.5-coder:32b"
+ fallback: "llama3.1:8b"
+ quick: "mistral:7b"
+ temperature: 0.0
+ max_tokens: 2048
+ top_p: 0.9
 
 agent:
-  max_iterations: 10
-  verbose: true
-  timeout: 300
+ max_iterations: 10
+ verbose: true
+ timeout: 300
 
 tools:
-  file_operations:
-    enabled: true
-    allowed_paths:
-      - "/home/user/projects"
-      - "/media/development"
-    blocked_paths:
-      - "/etc"
-      - "/sys"
-      - "/proc"
+ file_operations:
+ enabled: true
+ allowed_paths:
+ - "/home/user/projects"
+ - "/media/development"
+ blocked_paths:
+ - "/etc"
+ - "/sys"
+ - "/proc"
 
-  code_executor:
-    enabled: true
-    timeout: 5
+ code_executor:
+ enabled: true
+ timeout: 5
 
-  web_search:
-    enabled: false
-    max_results: 5
+ web_search:
+ enabled: false
+ max_results: 5
 
-  codebase_search:
-    enabled: true
+ codebase_search:
+ enabled: true
 
 rag:
-  enabled: true
-  top_k: 10
-  similarity_threshold: 0.7
-  max_chunks: 1000
+ enabled: true
+ top_k: 10
+ similarity_threshold: 0.7
+ max_chunks: 1000
 
 skills:
-  enabled: true
-  auto_load: true
+ enabled: true
+ auto_load: true
 
 multiagent:
-  enabled: false
+ enabled: false
 
 reflection:
-  enabled: true
-  quality_threshold: 0.7
-  max_iterations: 2
+ enabled: true
+ quality_threshold: 0.7
+ max_iterations: 2
 
 analytics:
-  enabled: true
-  retention_days: 90
+ enabled: true
+ retention_days: 90
 
 memory:
-  max_memories: 10000
-  auto_consolidate: true
-  auto_decay: true
+ max_memories: 10000
+ auto_consolidate: true
+ auto_decay: true
 
 learning:
-  enabled: true
-  min_pattern_occurrences: 5
-  confidence_threshold: 0.7
-  lookback_days: 30
+ enabled: true
+ min_pattern_occurrences: 5
+ confidence_threshold: 0.7
+ lookback_days: 30
 ```
 
 ### Runtime Configuration
@@ -1037,84 +1037,84 @@ Change settings without restart:
 
 ### General Tips
 
-1. **Index before asking** - Better semantic search results
-   ```
-   /index /path/to/project
-   > How does X work?
-   ```
+1. **Index before asking - Better semantic search results
+ ```
+ /index /path/to/project
+ > How does X work?
+ ```
 
-2. **Be specific** - Better than vague questions
-   - ✅ "Show me JWT token validation in auth.py"
-   - ❌ "Tell me about authentication"
+2. **Be specific - Better than vague questions
+ - "Show me JWT token validation in auth.py"
+ - "Tell me about authentication"
 
-3. **Use appropriate models**
-   - Quick queries: `mistral:7b`
-   - Code tasks: `qwen2.5-coder:32b`
-   - Complex reasoning: `llama3.1:70b` (if available)
+3. **Use appropriate models
+ - Quick queries: `mistral:7b`
+ - Code tasks: `qwen2.5-coder:32b`
+ - Complex reasoning: `llama3.1:70b` (if available)
 
-4. **Enable reflection for important tasks**
-   ```yaml
-   reflection:
-     enabled: true
-   ```
+4. **Enable reflection for important tasks
+ ```yaml
+ reflection:
+ enabled: true
+ ```
 
-5. **Review analytics** - Identify bottlenecks
-   ```
-   /analytics dashboard
-   ```
+5. **Review analytics - Identify bottlenecks
+ ```
+ /analytics dashboard
+ ```
 
 ### Code Review Tips
 
-1. **Paste complete context** - Include imports and dependencies
-2. **Specify what to focus on** - "Check for security" vs "general review"
-3. **Review in chunks** - Don't paste 1000 lines at once
-4. **Ask follow-up questions** - "Explain that SQL injection risk"
+1. **Paste complete context - Include imports and dependencies
+2. **Specify what to focus on - "Check for security" vs "general review"
+3. **Review in chunks - Don't paste 1000 lines at once
+4. **Ask follow-up questions - "Explain that SQL injection risk"
 
 ### Search Tips
 
-1. **Use technical terms** - "REST endpoint" > "API"
-2. **Ask for specific locations** - "Where is..." / "Show me..."
-3. **Combine search with questions** - "Find auth code and explain it"
+1. **Use technical terms - "REST endpoint" > "API"
+2. **Ask for specific locations - "Where is..." / "Show me..."
+3. **Combine search with questions - "Find auth code and explain it"
 
 ### Performance Tips
 
-1. **Close verbose mode** for faster responses
-   ```
-   /verbose off
-   ```
+1. **Close verbose mode for faster responses
+ ```
+ /verbose off
+ ```
 
-2. **Use quick profile** for simple queries
-   ```
-   /profile use quick
-   ```
+2. **Use quick profile for simple queries
+ ```
+ /profile use quick
+ ```
 
-3. **Clear conversation** when changing topics
-   ```
-   /clear
-   ```
+3. **Clear conversation when changing topics
+ ```
+ /clear
+ ```
 
-4. **Limit RAG results** if searches are slow
-   ```yaml
-   rag:
-     top_k: 5  # Instead of 10
-   ```
+4. **Limit RAG results if searches are slow
+ ```yaml
+ rag:
+ top_k: 5 # Instead of 10
+ ```
 
 ### Memory Tips
 
-1. **Add important patterns** manually
-   ```
-   /memory add "Use dependency injection for testability"
-   ```
+1. **Add important patterns manually
+ ```
+ /memory add "Use dependency injection for testability"
+ ```
 
-2. **Export memories** periodically
-   ```
-   /memory export json backup.json
-   ```
+2. **Export memories periodically
+ ```
+ /memory export json backup.json
+ ```
 
-3. **Search memories** before asking
-   ```
-   /memory search "testing patterns"
-   ```
+3. **Search memories before asking
+ ```
+ /memory search "testing patterns"
+ ```
 
 ### Keyboard Shortcuts (Web UI)
 
@@ -1128,11 +1128,11 @@ Change settings without restart:
 
 ## Next Steps
 
-- **Try Examples**: See [EXAMPLES.md](EXAMPLES.md)
-- **Explore API**: Check [API_REFERENCE.md](API_REFERENCE.md)
-- **Extend Meton**: Read [DEVELOPMENT.md](DEVELOPMENT.md)
-- **Get Help**: See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- Try Examples See [EXAMPLES.md](EXAMPLES.md)
+- Explore API Check [API_REFERENCE.md](API_REFERENCE.md)
+- Extend Meton Read [DEVELOPMENT.md](DEVELOPMENT.md)
+- Get Help See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 ---
 
-**Happy coding with Meton!** 🧠✨
+Happy coding with Meton! 

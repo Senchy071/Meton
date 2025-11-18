@@ -29,30 +29,30 @@ Main agent class using LangGraph ReAct pattern.
 
 ```python
 class MetonAgent:
-    """LangGraph-based ReAct agent with multi-step reasoning."""
+ """LangGraph-based ReAct agent with multi-step reasoning."""
 
-    def __init__(
-        self,
-        model_manager: ModelManager,
-        conversation_manager: ConversationManager,
-        tools: List[BaseTool],
-        config: MetonConfig,
-        verbose: bool = False
-    ):
-        """Initialize Meton agent.
+ def __init__(
+ self,
+ model_manager: ModelManager,
+ conversation_manager: ConversationManager,
+ tools: List[BaseTool],
+ config: MetonConfig,
+ verbose: bool = False
+ ):
+ """Initialize Meton agent.
 
-        Args:
-            model_manager: Model manager instance
-            conversation_manager: Conversation manager instance
-            tools: List of available tools
-            config: Configuration object
-            verbose: Enable verbose output
-        """
+ Args:
+ model_manager: Model manager instance
+ conversation_manager: Conversation manager instance
+ tools: List of available tools
+ config: Configuration object
+ verbose: Enable verbose output
+ """
 ```
 
 #### Methods
 
-**run(query: str) -> Dict[str, Any]**
+run(query: str) -> Dict[str, Any]
 
 Execute a query with ReAct pattern.
 
@@ -61,26 +61,26 @@ result = agent.run("How does authentication work?")
 
 # Returns:
 {
-    "output": "Authentication uses JWT tokens...",
-    "thoughts": ["THOUGHT: Need to search codebase...", ...],
-    "tool_calls": [("codebase_search", {...}, "Found 5 files...")],
-    "iteration": 3,
-    "success": True
+ "output": "Authentication uses JWT tokens...",
+ "thoughts": ["THOUGHT: Need to search codebase...", ...],
+ "tool_calls": [("codebase_search", {...}, "Found 5 files...")],
+ "iteration": 3,
+ "success": True
 }
 ```
 
-**Parameters:**
+Parameters:
 - `query` (str): User query to process
 
-**Returns:**
+Returns:
 - Dict with keys:
-  - `output` (str): Final answer
-  - `thoughts` (List[str]): Agent's reasoning steps
-  - `tool_calls` (List[Tuple]): Tool executions (name, input, output)
-  - `iteration` (int): Number of iterations used
-  - `success` (bool): Whether query succeeded
+ - `output` (str): Final answer
+ - `thoughts` (List[str]): Agent's reasoning steps
+ - `tool_calls` (List[Tuple]): Tool executions (name, input, output)
+ - `iteration` (int): Number of iterations used
+ - `success` (bool): Whether query succeeded
 
-**get_available_tools() -> List[str]**
+get_available_tools() -> List[str]
 
 Get list of enabled tool names.
 
@@ -89,7 +89,7 @@ tools = agent.get_available_tools()
 # ['file_operations', 'code_executor', 'codebase_search', ...]
 ```
 
-**enable_tool(tool_name: str) -> bool**
+enable_tool(tool_name: str) -> bool
 
 Enable a tool at runtime.
 
@@ -98,7 +98,7 @@ agent.enable_tool('web_search')
 # Returns: True if successful
 ```
 
-**disable_tool(tool_name: str) -> bool**
+disable_tool(tool_name: str) -> bool
 
 Disable a tool at runtime.
 
@@ -122,28 +122,28 @@ Manages configuration with Pydantic validation.
 
 ```python
 class ConfigLoader:
-    """Type-safe configuration management."""
+ """Type-safe configuration management."""
 
-    def __init__(self, config_path: str = "config.yaml"):
-        """Load configuration from YAML file.
+ def __init__(self, config_path: str = "config.yaml"):
+ """Load configuration from YAML file.
 
-        Args:
-            config_path: Path to configuration file
-        """
+ Args:
+ config_path: Path to configuration file
+ """
 ```
 
 #### Methods
 
-**save() -> None**
+save() -> None
 
 Save current configuration to disk.
 
 ```python
 config.config.tools.web_search.enabled = True
-config.save()  # Persist to config.yaml
+config.save() # Persist to config.yaml
 ```
 
-**reload() -> None**
+reload() -> None
 
 Reload configuration from disk.
 
@@ -151,7 +151,7 @@ Reload configuration from disk.
 config.reload()
 ```
 
-**get(key: str, default: Any = None) -> Any**
+get(key: str, default: Any = None) -> Any
 
 Get configuration value by dot notation.
 
@@ -167,20 +167,20 @@ value = config.get('nonexistent.key', 'default')
 
 ```python
 class MetonConfig(BaseModel):
-    """Root configuration model."""
+ """Root configuration model."""
 
-    models: ModelsConfig
-    agent: AgentConfig
-    conversation: ConversationConfig
-    tools: ToolsConfig
-    rag: RAGConfig
-    skills: SkillsConfig
-    multiagent: MultiAgentConfig
-    reflection: ReflectionConfig
-    analytics: AnalyticsConfig
-    memory: MemoryConfig
-    learning: LearningConfig
-    profiles: Dict[str, ProfileConfig]
+ models: ModelsConfig
+ agent: AgentConfig
+ conversation: ConversationConfig
+ tools: ToolsConfig
+ rag: RAGConfig
+ skills: SkillsConfig
+ multiagent: MultiAgentConfig
+ reflection: ReflectionConfig
+ analytics: AnalyticsConfig
+ memory: MemoryConfig
+ learning: LearningConfig
+ profiles: Dict[str, ProfileConfig]
 ```
 
 ---
@@ -198,22 +198,22 @@ Base class for all Meton tools.
 
 ```python
 class MetonBaseTool(BaseTool):
-    """Base class for Meton tools extending LangChain BaseTool."""
+ """Base class for Meton tools extending LangChain BaseTool."""
 
-    name: str
-    description: str
-    _enabled: bool = True
+ name: str
+ description: str
+ _enabled: bool = True
 
-    def _run(self, input: str) -> str:
-        """Execute the tool (must be implemented by subclass).
+ def _run(self, input: str) -> str:
+ """Execute the tool (must be implemented by subclass).
 
-        Args:
-            input: JSON string with tool parameters
+ Args:
+ input: JSON string with tool parameters
 
-        Returns:
-            Tool execution result as string
-        """
-        raise NotImplementedError
+ Returns:
+ Tool execution result as string
+ """
+ raise NotImplementedError
 ```
 
 #### Creating a Custom Tool
@@ -223,27 +223,27 @@ from tools.base import MetonBaseTool
 import json
 
 class MyCustomTool(MetonBaseTool):
-    """Custom tool example."""
+ """Custom tool example."""
 
-    name = "my_custom_tool"
-    description = "Does something custom. Input: {\"param\": \"value\"}"
+ name = "my_custom_tool"
+ description = "Does something custom. Input: {\"param\": \"value\"}"
 
-    def _run(self, input: str) -> str:
-        """Execute custom logic."""
-        try:
-            params = json.loads(input)
-            param_value = params.get("param")
+ def _run(self, input: str) -> str:
+ """Execute custom logic."""
+ try:
+ params = json.loads(input)
+ param_value = params.get("param")
 
-            # Your custom logic here
-            result = self.do_something(param_value)
+ # Your custom logic here
+ result = self.do_something(param_value)
 
-            return f"Success: {result}"
-        except Exception as e:
-            return f"Error: {str(e)}"
+ return f"Success: {result}"
+ except Exception as e:
+ return f"Error: {str(e)}"
 
-    def do_something(self, param: str) -> str:
-        """Custom logic implementation."""
-        return param.upper()
+ def do_something(self, param: str) -> str:
+ """Custom logic implementation."""
+ return param.upper()
 
 # Register tool
 from cli import MetonCLI
@@ -268,9 +268,9 @@ result = tool._run(input)
 
 # Write file
 input = json.dumps({
-    "action": "write",
-    "path": "/path/to/file.py",
-    "content": "print('hello')"
+ "action": "write",
+ "path": "/path/to/file.py",
+ "content": "print('hello')"
 })
 result = tool._run(input)
 
@@ -302,7 +302,7 @@ Execute Python code in isolated subprocess.
 
 ```python
 input = json.dumps({
-    "code": "import math\nprint(math.pi)"
+ "code": "import math\nprint(math.pi)"
 })
 result = tool._run(input)
 # "3.141592653589793\nExecution time: 0.02s"
@@ -325,8 +325,8 @@ DuckDuckGo web search.
 
 ```python
 input = json.dumps({
-    "query": "Python async best practices",
-    "max_results": 5
+ "query": "Python async best practices",
+ "max_results": 5
 })
 result = tool._run(input)
 ```
@@ -342,8 +342,8 @@ Semantic code search using RAG.
 
 ```python
 input = json.dumps({
-    "query": "authentication implementation",
-    "top_k": 5
+ "query": "authentication implementation",
+ "top_k": 5
 })
 result = tool._run(input)
 # Returns: "Found 5 results:\n1. auth.py:45-67 (score: 0.89)..."
@@ -364,23 +364,23 @@ Base class for all skills.
 
 ```python
 class BaseSkill(ABC):
-    """Abstract base class for all skills."""
+ """Abstract base class for all skills."""
 
-    name: str
-    description: str
-    version: str
+ name: str
+ description: str
+ version: str
 
-    @abstractmethod
-    def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute the skill.
+ @abstractmethod
+ def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+ """Execute the skill.
 
-        Args:
-            input_data: Skill-specific input parameters
+ Args:
+ input_data: Skill-specific input parameters
 
-        Returns:
-            Skill execution result
-        """
-        pass
+ Returns:
+ Skill execution result
+ """
+ pass
 ```
 
 #### Creating a Custom Skill
@@ -390,49 +390,49 @@ from skills.base import BaseSkill
 from typing import Dict, Any
 
 class MyCustomSkill(BaseSkill):
-    """Custom skill example."""
+ """Custom skill example."""
 
-    name = "my_custom_skill"
-    description = "Does something custom"
-    version = "1.0.0"
+ name = "my_custom_skill"
+ description = "Does something custom"
+ version = "1.0.0"
 
-    def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute custom skill logic.
+ def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+ """Execute custom skill logic.
 
-        Args:
-            input_data: {
-                "param1": str,
-                "param2": int
-            }
+ Args:
+ input_data: {
+ "param1": str,
+ "param2": int
+ }
 
-        Returns:
-            {
-                "success": bool,
-                "result": str,
-                "details": Dict
-            }
-        """
-        try:
-            param1 = input_data.get("param1")
-            param2 = input_data.get("param2", 0)
+ Returns:
+ {
+ "success": bool,
+ "result": str,
+ "details": Dict
+ }
+ """
+ try:
+ param1 = input_data.get("param1")
+ param2 = input_data.get("param2", 0)
 
-            # Your skill logic here
-            result = self.process(param1, param2)
+ # Your skill logic here
+ result = self.process(param1, param2)
 
-            return {
-                "success": True,
-                "result": result,
-                "details": {"processed": True}
-            }
-        except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+ return {
+ "success": True,
+ "result": result,
+ "details": {"processed": True}
+ }
+ except Exception as e:
+ return {
+ "success": False,
+ "error": str(e)
+ }
 
-    def process(self, param1: str, param2: int) -> str:
-        """Custom processing logic."""
-        return f"{param1} processed {param2} times"
+ def process(self, param1: str, param2: int) -> str:
+ """Custom processing logic."""
+ return f"{param1} processed {param2} times"
 
 # Save to skills/my_custom_skill.py
 # Auto-loaded if skills.auto_load: true in config
@@ -452,21 +452,21 @@ from skills.code_explainer import CodeExplainerSkill
 
 skill = CodeExplainerSkill()
 result = skill.execute({
-    "code": "def factorial(n):\n    return 1 if n <= 1 else n * factorial(n-1)",
-    "language": "python"
+ "code": "def factorial(n):\n return 1 if n <= 1 else n * factorial(n-1)",
+ "language": "python"
 })
 
 # Returns:
 {
-    "success": True,
-    "explanation": "Recursive factorial implementation...",
-    "complexity": {
-        "cyclomatic": 2,
-        "cognitive": 3,
-        "time": "O(n)",
-        "space": "O(n)"
-    },
-    "suggestions": ["Consider iterative approach for large n"]
+ "success": True,
+ "explanation": "Recursive factorial implementation...",
+ "complexity": {
+ "cyclomatic": 2,
+ "cognitive": 3,
+ "time": "O(n)",
+ "space": "O(n)"
+ },
+ "suggestions": ["Consider iterative approach for large n"]
 }
 ```
 
@@ -484,17 +484,17 @@ from skills.test_generator import TestGeneratorSkill
 
 skill = TestGeneratorSkill()
 result = skill.execute({
-    "code": "def add(a, b):\n    return a + b",
-    "framework": "pytest",  # or "unittest"
-    "include_edge_cases": True
+ "code": "def add(a, b):\n return a + b",
+ "framework": "pytest", # or "unittest"
+ "include_edge_cases": True
 })
 
 # Returns:
 {
-    "success": True,
-    "tests": "import pytest\n\ndef test_add_normal():\n    ...",
-    "test_count": 5,
-    "coverage_estimate": 0.95
+ "success": True,
+ "tests": "import pytest\n\ndef test_add_normal():\n ...",
+ "test_count": 5,
+ "coverage_estimate": 0.95
 }
 ```
 
@@ -512,16 +512,16 @@ from skills.documentation_generator import DocumentationGeneratorSkill
 
 skill = DocumentationGeneratorSkill()
 result = skill.execute({
-    "code": "def authenticate(username, password): ...",
-    "style": "google",  # or "numpy", "sphinx"
-    "doc_type": "docstring"  # or "readme", "api"
+ "code": "def authenticate(username, password): ...",
+ "style": "google", # or "numpy", "sphinx"
+ "doc_type": "docstring" # or "readme", "api"
 })
 
 # Returns:
 {
-    "success": True,
-    "documentation": "\"\"\"Authenticate user...",
-    "style": "google"
+ "success": True,
+ "documentation": "\"\"\"Authenticate user...",
+ "style": "google"
 }
 ```
 
@@ -579,8 +579,8 @@ embedding = model.encode("authentication function")
 
 # Encode batch
 embeddings = model.encode_batch([
-    "function one",
-    "function two"
+ "function one",
+ "function two"
 ])
 # Returns: np.ndarray shape (2, 768)
 
@@ -643,9 +643,9 @@ memory = LongTermMemory(max_memories=10000)
 
 # Add memory
 memory_id = memory.add_memory(
-    content="Always use bcrypt for password hashing",
-    importance=0.9,
-    tags=["security", "authentication"]
+ content="Always use bcrypt for password hashing",
+ importance=0.9,
+ tags=["security", "authentication"]
 )
 
 # Search memories
@@ -711,22 +711,22 @@ Coordinate multiple specialized agents.
 from multiagent.coordinator import MultiAgentCoordinator
 
 coordinator = MultiAgentCoordinator(
-    model_manager=model_manager,
-    config=config
+ model_manager=model_manager,
+ config=config
 )
 
 # Execute with multiple agents
 result = coordinator.execute(
-    query="Compare our API with FastAPI and suggest improvements",
-    agents=["planner", "researcher", "executor", "reviewer"]
+ query="Compare our API with FastAPI and suggest improvements",
+ agents=["planner", "researcher", "executor", "reviewer"]
 )
 
 # Returns:
 {
-    "success": True,
-    "result": "Comparison and suggestions...",
-    "agents_used": ["planner", "researcher", "executor", "reviewer"],
-    "execution_time": 45.2
+ "success": True,
+ "result": "Comparison and suggestions...",
+ "agents_used": ["planner", "researcher", "executor", "reviewer"],
+ "execution_time": 45.2
 }
 
 # Get agent status
@@ -736,7 +736,7 @@ status = coordinator.get_agent_status("researcher")
 
 ### Specialized Agents
 
-**PlannerAgent**: Decomposes tasks into subtasks
+PlannerAgent Decomposes tasks into subtasks
 
 ```python
 from multiagent.agents.planner import PlannerAgent
@@ -746,7 +746,7 @@ plan = agent.plan("Implement user authentication")
 # Returns: {"subtasks": [...], "dependencies": {...}, "estimates": {...}}
 ```
 
-**ResearcherAgent**: Gathers information
+ResearcherAgent Gathers information
 
 ```python
 from multiagent.agents.researcher import ResearcherAgent
@@ -756,7 +756,7 @@ research = agent.research("FastAPI authentication patterns")
 # Returns: {"findings": [...], "sources": [...], "summary": "..."}
 ```
 
-**ExecutorAgent**: Performs tasks
+ExecutorAgent Performs tasks
 
 ```python
 from multiagent.agents.executor import ExecutorAgent
@@ -766,7 +766,7 @@ result = agent.execute({"task": "Write function", "spec": {...}})
 # Returns: {"success": True, "output": "...", "artifacts": [...]}
 ```
 
-**ReviewerAgent**: Validates results
+ReviewerAgent Validates results
 
 ```python
 from multiagent.agents.reviewer import ReviewerAgent
@@ -796,18 +796,18 @@ analytics = PerformanceAnalytics()
 
 # Record metric
 analytics.record_metric(
-    metric_type="query_time",
-    value=2.5,
-    tags={"model": "qwen2.5-coder:32b", "tool": "codebase_search"}
+ metric_type="query_time",
+ value=2.5,
+ tags={"model": "qwen2.5-coder:32b", "tool": "codebase_search"}
 )
 
 # Get statistics
 stats = analytics.get_statistics(days=7)
 # Returns: {
-#     "avg_query_time": 3.2,
-#     "total_queries": 145,
-#     "tool_usage": {...},
-#     "error_rate": 0.02
+# "avg_query_time": 3.2,
+# "total_queries": 145,
+# "tool_usage": {...},
+# "error_rate": 0.02
 # }
 
 # Detect bottlenecks
@@ -830,29 +830,29 @@ All API methods follow consistent error handling:
 
 ```python
 try:
-    result = agent.run(query)
-    if result.get("success"):
-        output = result["output"]
-    else:
-        error = result.get("error", "Unknown error")
-        handle_error(error)
+ result = agent.run(query)
+ if result.get("success"):
+ output = result["output"]
+ else:
+ error = result.get("error", "Unknown error")
+ handle_error(error)
 except MetonException as e:
-    # Meton-specific exceptions
-    logger.error(f"Meton error: {e}")
+ # Meton-specific exceptions
+ logger.error(f"Meton error: {e}")
 except Exception as e:
-    # General exceptions
-    logger.error(f"Unexpected error: {e}")
+ # General exceptions
+ logger.error(f"Unexpected error: {e}")
 ```
 
 ### Custom Exceptions
 
 ```python
 from core.exceptions import (
-    MetonException,
-    ConfigurationError,
-    ToolExecutionError,
-    ModelError,
-    SkillExecutionError
+ MetonException,
+ ConfigurationError,
+ ToolExecutionError,
+ ModelError,
+ SkillExecutionError
 )
 
 # Raise custom exception
@@ -870,22 +870,22 @@ from typing import Dict, List, Any, Optional, Union
 from pathlib import Path
 
 def my_function(
-    query: str,
-    top_k: int = 5,
-    filters: Optional[Dict[str, Any]] = None
+ query: str,
+ top_k: int = 5,
+ filters: Optional[Dict[str, Any]] = None
 ) -> List[Dict[str, Union[str, float]]]:
-    """Type-hinted function example."""
-    pass
+ """Type-hinted function example."""
+ pass
 ```
 
 ---
 
 ## Next Steps
 
-- **Extend Meton**: See [DEVELOPMENT.md](DEVELOPMENT.md)
-- **View Examples**: Check [EXAMPLES.md](EXAMPLES.md)
-- **Get Help**: Read [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- Extend Meton See [DEVELOPMENT.md](DEVELOPMENT.md)
+- View Examples Check [EXAMPLES.md](EXAMPLES.md)
+- Get Help Read [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 ---
 
-**For more details, see source code with extensive docstrings.**
+For more details, see source code with extensive docstrings.

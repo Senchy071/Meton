@@ -20,12 +20,12 @@ Common issues and solutions for Meton.
 
 ### Python Version Errors
 
-**Symptom:**
+Symptom:
 ```
 ERROR: Python 3.10+ required, but found 3.9
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Ubuntu - Install Python 3.10
 sudo add-apt-repository ppa:deadsnakes/ppa
@@ -41,34 +41,34 @@ python3.10 --version
 
 ### Virtual Environment Issues
 
-**Symptom:**
+Symptom:
 ```
 Command 'python' not found after activating venv
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Recreate virtual environment
 rm -rf venv
 python3.10 -m venv venv
 
 # Activate
-source venv/bin/activate  # Linux/macOS
+source venv/bin/activate # Linux/macOS
 # OR
-venv\Scripts\activate  # Windows
+venv\Scripts\activate # Windows
 
 # Verify
-which python  # Should show venv path
+which python # Should show venv path
 ```
 
 ### Dependency Installation Failures
 
-**Symptom:**
+Symptom:
 ```
 ERROR: Could not build wheels for faiss-cpu
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Install build dependencies
 sudo apt install build-essential python3-dev
@@ -80,12 +80,12 @@ pip install faiss-cpu --no-cache-dir
 pip install -r requirements.txt
 ```
 
-**Symptom:**
+Symptom:
 ```
 ERROR: sentence-transformers installation failed
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Install PyTorch first
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
@@ -96,12 +96,12 @@ pip install sentence-transformers
 
 ### Ollama Installation Issues
 
-**Symptom:**
+Symptom:
 ```
 bash: ollama: command not found
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Linux - Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
@@ -118,12 +118,12 @@ ollama serve &
 
 ### Model Download Issues
 
-**Symptom:**
+Symptom:
 ```
 Error: model not found
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Check available models
 ollama list
@@ -147,23 +147,23 @@ curl http://localhost:11434/api/tags
 
 ### Out of Memory
 
-**Symptom:**
+Symptom:
 ```
 RuntimeError: CUDA out of memory
 # OR
 Killed (Out of memory)
 ```
 
-**Solution:**
+Solution:
 
-**Option 1: Use smaller model**
+Option 1: Use smaller model
 ```yaml
 # config.yaml
 models:
-  primary: "mistral:7b"  # Instead of llama3.1:70b
+ primary: "mistral:7b" # Instead of llama3.1:70b
 ```
 
-**Option 2: Increase swap space**
+Option 2: Increase swap space
 ```bash
 # Add 32GB swap (Linux)
 sudo fallocate -l 32G /swapfile
@@ -175,23 +175,23 @@ sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```
 
-**Option 3: Close other applications**
+Option 3: Close other applications
 ```bash
 # Check memory usage
 free -h
 
 # Kill memory-hungry processes
-top  # Press 'k' to kill processes
+top # Press 'k' to kill processes
 ```
 
 ### Connection Refused
 
-**Symptom:**
+Symptom:
 ```
 ConnectionRefusedError: [Errno 111] Connection refused
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Check if Ollama is running
 ps aux | grep ollama
@@ -209,12 +209,12 @@ sudo ufw allow 11434
 
 ### Import Errors
 
-**Symptom:**
+Symptom:
 ```
 ModuleNotFoundError: No module named 'langchain'
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Ensure venv is activated
 source venv/bin/activate
@@ -229,36 +229,36 @@ pip install -r requirements.txt
 
 ### Agent Timeout
 
-**Symptom:**
+Symptom:
 ```
 ERROR: Agent timeout after 300 seconds
 ```
 
-**Solution:**
+Solution:
 ```yaml
 # config.yaml - Increase timeout
 agent:
-  timeout: 600  # 10 minutes
+ timeout: 600 # 10 minutes
 
 # OR use faster model
 models:
-  primary: "mistral:7b"
+ primary: "mistral:7b"
 ```
 
 ### Loop Detection
 
-**Symptom:**
+Symptom:
 ```
 WARNING: Loop detected, forcing completion
 ```
 
-**Solution:**
+Solution:
 This is expected behavior preventing infinite loops. If happening too often:
 
 ```yaml
 # config.yaml - Increase max iterations
 agent:
-  max_iterations: 15  # Default is 10
+ max_iterations: 15 # Default is 10
 ```
 
 Or rephrase query to be more specific:
@@ -276,61 +276,61 @@ Or rephrase query to be more specific:
 
 ### Slow Response Times
 
-**Symptom:**
+Symptom:
 Queries taking >30 seconds
 
-**Solution:**
+Solution:
 
-**1. Use faster model**
+1. Use faster model
 ```bash
 /model mistral:7b
 # OR
 /profile use quick
 ```
 
-**2. Disable verbose mode**
+2. Disable verbose mode
 ```bash
 /verbose off
 ```
 
-**3. Reduce RAG results**
+3. Reduce RAG results
 ```yaml
 # config.yaml
 rag:
-  top_k: 5  # Instead of 10
+ top_k: 5 # Instead of 10
 ```
 
-**4. Disable unnecessary tools**
+4. Disable unnecessary tools
 ```bash
 /web off
 ```
 
 ### Slow Indexing
 
-**Symptom:**
+Symptom:
 Codebase indexing takes >10 minutes
 
-**Solution:**
+Solution:
 
-**1. Index specific directories**
+1. Index specific directories
 ```bash
 # Instead of entire project
 /index /path/to/specific/module
 ```
 
-**2. Exclude large directories**
+2. Exclude large directories
 ```python
 # Modify rag/indexer.py
 EXCLUDE_DIRS = [
-    "__pycache__", ".git", "node_modules",
-    "venv", "build", "dist",
-    "large_data_dir"  # Add your directories
+ "__pycache__", ".git", "node_modules",
+ "venv", "build", "dist",
+ "large_data_dir" # Add your directories
 ]
 ```
 
-**3. Check disk I/O**
+3. Check disk I/O
 ```bash
-iostat -x 1  # Linux
+iostat -x 1 # Linux
 
 # If high I/O wait, consider:
 # - Using SSD instead of HDD
@@ -339,12 +339,12 @@ iostat -x 1  # Linux
 
 ### High CPU Usage
 
-**Symptom:**
+Symptom:
 CPU at 100% during queries
 
-**Expected**: CPU usage is high during LLM inference (normal)
+Expected CPU usage is high during LLM inference (normal)
 
-**If excessive:**
+If excessive:
 ```bash
 # Check process CPU
 top
@@ -362,12 +362,12 @@ OLLAMA_NUM_THREADS=8 ollama serve
 
 ### Config Not Loading
 
-**Symptom:**
+Symptom:
 ```
 ERROR: Could not load config.yaml
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Check file exists
 ls -la config.yaml
@@ -378,36 +378,36 @@ python3 -c "import yaml; yaml.safe_load(open('config.yaml'))"
 # If corrupt, restore from backup
 cp config.yaml.backup config.yaml
 
-# Or recreate from example
-cp config.yaml.example config.yaml
+# Or recreate by re-running setup
+./setup.sh
 ```
 
 ### Invalid Configuration
 
-**Symptom:**
+Symptom:
 ```
 ValidationError: Invalid model configuration
 ```
 
-**Solution:**
+Solution:
 ```yaml
 # Check required fields in config.yaml
 models:
-  primary: "qwen2.5-coder:32b"  # Must be valid model name
-  fallback: "llama3.1:8b"
-  quick: "mistral:7b"
-  temperature: 0.0  # Must be float between 0 and 1
-  max_tokens: 2048  # Must be positive integer
+ primary: "qwen2.5-coder:32b" # Must be valid model name
+ fallback: "llama3.1:8b"
+ quick: "mistral:7b"
+ temperature: 0.0 # Must be float between 0 and 1
+ max_tokens: 2048 # Must be positive integer
 ```
 
 ### Permission Denied
 
-**Symptom:**
+Symptom:
 ```
 PermissionError: [Errno 13] Permission denied: 'config.yaml'
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Fix file permissions
 chmod 644 config.yaml
@@ -426,53 +426,53 @@ chown $USER:$USER config.yaml
 
 ### File Operations Errors
 
-**Symptom:**
+Symptom:
 ```
 ERROR: Path /etc/passwd is blocked
 ```
 
-**Solution:**
+Solution:
 This is expected security behavior. Blocked paths include `/etc`, `/sys`, `/proc`.
 
 To allow specific paths:
 ```yaml
 # config.yaml
 tools:
-  file_operations:
-    allowed_paths:
-      - "/home/user/projects"
-      - "/media/development"
+ file_operations:
+ allowed_paths:
+ - "/home/user/projects"
+ - "/media/development"
 ```
 
-**Symptom:**
+Symptom:
 ```
 ERROR: File not found
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Use absolute paths
 > Read /home/user/project/file.py
 
 # Not relative paths
-> Read file.py  # May fail
+> Read file.py # May fail
 ```
 
 ### Code Executor Issues
 
-**Symptom:**
+Symptom:
 ```
 ERROR: Import 'os' is blocked
 ```
 
-**Solution:**
+Solution:
 This is expected security. Blocked imports include `os`, `subprocess`, `eval`.
 
 Allowed imports are in `tools/code_executor.py:ALLOWED_IMPORTS`:
 ```python
 ALLOWED_IMPORTS = [
-    'math', 'random', 'datetime', 'json',
-    'typing', 'collections', 're', ...
+ 'math', 'random', 'datetime', 'json',
+ 'typing', 'collections', 're', ...
 ]
 ```
 
@@ -480,32 +480,32 @@ To add allowed import (use caution!):
 ```python
 # tools/code_executor.py
 ALLOWED_IMPORTS = [
-    # ... existing ...
-    'your_safe_library',
+ # ... existing ...
+ 'your_safe_library',
 ]
 ```
 
-**Symptom:**
+Symptom:
 ```
 ERROR: Execution timeout after 5 seconds
 ```
 
-**Solution:**
+Solution:
 ```yaml
 # config.yaml - Increase timeout (be careful!)
 tools:
-  code_executor:
-    timeout: 10  # seconds
+ code_executor:
+ timeout: 10 # seconds
 ```
 
 ### Web Search Not Working
 
-**Symptom:**
+Symptom:
 ```
 ERROR: Web search tool is disabled
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Enable web search
 /web on
@@ -514,12 +514,12 @@ ERROR: Web search tool is disabled
 /tools
 ```
 
-**Symptom:**
+Symptom:
 ```
 ERROR: DuckDuckGo search failed
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Check internet connection
 ping -c 3 duckduckgo.com
@@ -533,12 +533,12 @@ pip install --upgrade ddgs
 
 ### RAG Search Not Working
 
-**Symptom:**
+Symptom:
 ```
 ERROR: No index found, please run /index first
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Index your codebase
 /index /path/to/project
@@ -547,12 +547,12 @@ ERROR: No index found, please run /index first
 /index status
 ```
 
-**Symptom:**
+Symptom:
 ```
 ERROR: FAISS index corrupted
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Clear and rebuild index
 /index clear
@@ -569,10 +569,10 @@ rm -rf rag_index/
 
 ### Web UI Not Loading
 
-**Symptom:**
+Symptom:
 Browser shows "Connection refused" at http://localhost:7860
 
-**Solution:**
+Solution:
 ```bash
 # Check if server is running
 ps aux | grep launch_web
@@ -589,26 +589,26 @@ python launch_web.py --port 8080
 
 ### Gradio Errors
 
-**Symptom:**
+Symptom:
 ```
 ERROR: Gradio version mismatch
 ```
 
-**Solution:**
+Solution:
 ```bash
 # Update Gradio
 pip install --upgrade gradio
 
 # Check version
-pip show gradio  # Should be 4.0+
+pip show gradio # Should be 4.0+
 ```
 
 ### File Upload Fails
 
-**Symptom:**
+Symptom:
 File upload doesn't work in web UI
 
-**Solution:**
+Solution:
 ```bash
 # Check file size limit (default: 10MB)
 # Increase in launch_web.py if needed
@@ -621,10 +621,10 @@ chmod 644 your_file.py
 
 ### Analytics Not Displaying
 
-**Symptom:**
+Symptom:
 Analytics tab shows errors or blank charts
 
-**Solution:**
+Solution:
 ```bash
 # Install/update visualization dependencies
 pip install --upgrade plotly pandas
@@ -635,7 +635,7 @@ ls -la analytics/
 # Enable analytics if disabled
 # config.yaml
 analytics:
-  enabled: true
+ enabled: true
 ```
 
 ---
@@ -644,10 +644,10 @@ analytics:
 
 ### Extension Not Loading
 
-**Symptom:**
+Symptom:
 VS Code shows "Extension activation failed"
 
-**Solution:**
+Solution:
 ```bash
 # Rebuild extension
 cd vscode-extension
@@ -659,15 +659,15 @@ npm run package
 code --install-extension meton-0.1.0.vsix --force
 
 # Check VS Code logs
-# View → Output → Meton
+# View -> Output -> Meton
 ```
 
 ### Server Connection Failed
 
-**Symptom:**
+Symptom:
 "Cannot connect to Meton server"
 
-**Solution:**
+Solution:
 ```bash
 # Start Meton API server
 python api/server.py
@@ -681,12 +681,12 @@ uvicorn api.server:app --host 0.0.0.0 --port 8000
 
 ### LSP Features Not Working
 
-**Symptom:**
+Symptom:
 No code actions, diagnostics, or completions
 
-**Solution:**
+Solution:
 1. Check Meton server is running
-2. Reload VS Code window (Ctrl+Shift+P → "Reload Window")
+2. Reload VS Code window (Ctrl+Shift+P -> "Reload Window")
 3. Check Output panel for errors
 4. Verify extension is activated (bottom status bar should show Meton icon)
 
@@ -723,8 +723,8 @@ Enable debug logging:
 ```yaml
 # config.yaml
 logging:
-  level: "DEBUG"
-  file: "meton_debug.log"
+ level: "DEBUG"
+ file: "meton_debug.log"
 ```
 
 Run with verbose:
@@ -752,22 +752,22 @@ dmesg | tail
 
 ### Common Log Patterns
 
-**Out of memory:**
+Out of memory:
 ```
 kernel: Out of memory: Killed process
 ```
 
-**Port in use:**
+Port in use:
 ```
 OSError: [Errno 98] Address already in use
 ```
 
-**Permission denied:**
+Permission denied:
 ```
 PermissionError: [Errno 13] Permission denied
 ```
 
-**Module not found:**
+Module not found:
 ```
 ModuleNotFoundError: No module named 'X'
 ```
@@ -778,41 +778,41 @@ ModuleNotFoundError: No module named 'X'
 
 ### Before Reporting
 
-1. ✅ Check this troubleshooting guide
-2. ✅ Search existing [GitHub Issues](https://github.com/yourusername/meton/issues)
-3. ✅ Try with latest version
-4. ✅ Try with clean configuration
-5. ✅ Collect diagnostic information
+1. Check this troubleshooting guide
+2. Search existing [GitHub Issues](https://github.com/Senchy071/Meton/issues)
+3. Try with latest version
+4. Try with clean configuration
+5. Collect diagnostic information
 
 ### Bug Report Template
 
 ```markdown
-**Environment:**
+Environment:
 - OS: Ubuntu 22.04
 - Python: 3.10.12
 - Meton version: 0.1.0
 - Ollama version: 0.1.17
 
-**Description:**
+Description:
 Clear description of the issue
 
-**Steps to Reproduce:**
+Steps to Reproduce:
 1. Step one
 2. Step two
 3. Step three
 
-**Expected Behavior:**
+Expected Behavior:
 What should happen
 
-**Actual Behavior:**
+Actual Behavior:
 What actually happens
 
-**Logs:**
+Logs:
 ```
 Relevant log output
 ```
 
-**Configuration:**
+Configuration:
 ```yaml
 Relevant config.yaml sections
 ```
@@ -820,34 +820,34 @@ Relevant config.yaml sections
 
 ### Where to Report
 
-- **Bugs**: [GitHub Issues](https://github.com/yourusername/meton/issues)
-- **Questions**: [GitHub Discussions](https://github.com/yourusername/meton/discussions)
-- **Security**: Email security@yourdomain.com
+- Bugs [GitHub Issues](https://github.com/Senchy071/Meton/issues)
+- Questions [GitHub Discussions](https://github.com/Senchy071/Meton/discussions)
+- Security Email security@yourdomain.com
 
 ---
 
 ## Still Need Help?
 
-1. **Read Documentation**:
-   - [User Guide](USER_GUIDE.md)
-   - [Installation Guide](INSTALLATION.md)
-   - [API Reference](API_REFERENCE.md)
+1. **Read Documentation
+ - [User Guide](USER_GUIDE.md)
+ - [Installation Guide](INSTALLATION.md)
+ - [API Reference](API_REFERENCE.md)
 
-2. **Search Issues**:
-   - [Open Issues](https://github.com/yourusername/meton/issues)
-   - [Closed Issues](https://github.com/yourusername/meton/issues?q=is%3Aissue+is%3Aclosed)
+2. **Search Issues
+ - [Open Issues](https://github.com/Senchy071/Meton/issues)
+ - [Closed Issues](https://github.com/Senchy071/Meton/issues?q=is%3Aissue+is%3Aclosed)
 
-3. **Ask Community**:
-   - [GitHub Discussions](https://github.com/yourusername/meton/discussions)
+3. **Ask Community
+ - [GitHub Discussions](https://github.com/Senchy071/Meton/discussions)
 
-4. **Contact Maintainers**:
-   - Create detailed issue with template above
+4. **Contact Maintainers
+ - Create detailed issue with template above
 
 ---
 
-**Most issues can be resolved by:**
-- ✅ Reinstalling dependencies
-- ✅ Using smaller models
-- ✅ Checking logs
-- ✅ Verifying configuration
-- ✅ Ensuring services are running
+Most issues can be resolved by:
+- Reinstalling dependencies
+- Using smaller models
+- Checking logs
+- Verifying configuration
+- Ensuring services are running

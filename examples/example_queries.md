@@ -168,12 +168,12 @@ Analyze the error handling strategy
 
 ## Tips for Effective Queries
 
-1. **Start Broad**: Begin with "What files can you see?" to understand context
-2. **Be Specific**: "Read core/agent.py" is better than "show me some code"
-3. **Multi-Step**: Combine actions - "List Python files and describe each"
-4. **Use Context**: Follow-up questions work well - agent remembers conversation
-5. **Verify First**: Check if files exist before reading
-6. **Search History**: Use `/search` to find previous answers
+1. **Start Broad Begin with "What files can you see?" to understand context
+2. **Be Specific "Read core/agent.py" is better than "show me some code"
+3. **Multi-Step Combine actions - "List Python files and describe each"
+4. **Use Context Follow-up questions work well - agent remembers conversation
+5. **Verify First Check if files exist before reading
+6. **Search History Use `/search` to find previous answers
 
 ---
 
@@ -285,16 +285,16 @@ Look up Rich table formatting docs
 ## What NOT to Ask
 
 ### Out of Scope
-- ❌ "Install package X..." (no package management)
-- ❌ "Make an API call to..." (local only, no network from code execution)
-- ❌ "Deploy this to production..." (local development tool)
-- ❌ "Modify system files..." (restricted for security)
+- "Install package X..." (no package management)
+- "Make an API call to..." (local only, no network from code execution)
+- "Deploy this to production..." (local development tool)
+- "Modify system files..." (restricted for security)
 
 ### Better Alternatives
-- ✓ "Read README.md and find installation instructions"
-- ✓ "Show me the code in core/models.py that handles model loading"
-- ✓ "What packages are listed in requirements.txt?"
-- ✓ "Search for FastAPI documentation" (with /web on)
+- OK "Read README.md and find installation instructions"
+- OK "Show me the code in core/models.py that handles model loading"
+- OK "What packages are listed in requirements.txt?"
+- OK "Search for FastAPI documentation" (with /web on)
 
 ---
 

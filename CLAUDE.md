@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Meton** is a fully local AI coding assistant powered by LangChain, LangGraph, and Ollama. Everything runs on local hardware - no external API calls, no data leaving the machine. The name comes from Metis (wisdom) + Ergon (action).
+Meton is a fully local AI coding assistant powered by LangChain, LangGraph, and Ollama. Everything runs on local hardware - no external API calls, no data leaving the machine. The name comes from Metis (wisdom) + Ergon (action).
 
-**Core Architecture:**
-- **Agent System**: LangGraph-based ReAct agent with multi-step reasoning (Think → Act → Observe loop)
-- **Tools**: File operations, code execution, web search, semantic code search (RAG)
-- **Skills**: High-level capabilities (code explainer, debugger, refactoring engine)
-- **RAG System**: FAISS-based semantic code search using AST parsing and sentence-transformers embeddings
-- **Models**: Ollama integration with Qwen 2.5 32B (primary), Llama 3.1 8B (fallback), Mistral (quick)
+Core Architecture:
+- Agent System LangGraph-based ReAct agent with multi-step reasoning (Think -> Act -> Observe loop)
+- Tools File operations, code execution, web search, semantic code search (RAG)
+- Skills High-level capabilities (code explainer, debugger, refactoring engine)
+- RAG System FAISS-based semantic code search using AST parsing and sentence-transformers embeddings
+- Models Ollama integration with Qwen 2.5 32B (primary), Llama 3.1 8B (fallback), Mistral (quick)
 
 ## Development Commands
 
@@ -29,29 +29,29 @@ python meton.py
 ### Testing
 ```bash
 # Run specific test suites
-python test_infrastructure.py       # Core config, logger, formatting
-python test_models.py               # Model Manager
-python test_conversation.py         # Conversation Manager
-python test_agent.py                # Agent System
-python test_file_ops.py             # File Operations Tool
+python test_infrastructure.py # Core config, logger, formatting
+python test_models.py # Model Manager
+python test_conversation.py # Conversation Manager
+python test_agent.py # Agent System
+python test_file_ops.py # File Operations Tool
 
 # Run RAG/indexing tests
-python test_rag_code_parser.py      # AST-based code parsing
-python test_rag_chunker.py          # Semantic chunking
-python test_rag_indexer.py          # Codebase indexing
-python test_codebase_search.py      # Semantic search tool
+python test_rag_code_parser.py # AST-based code parsing
+python test_rag_chunker.py # Semantic chunking
+python test_rag_indexer.py # Codebase indexing
+python test_codebase_search.py # Semantic search tool
 python test_rag_agent_integration.py # Agent RAG integration
 
 # Run tool tests
-python test_code_executor.py        # Code execution tool
-python test_web_search.py           # Web search tool
-python test_agent_integration.py    # Agent + tools integration
+python test_code_executor.py # Code execution tool
+python test_web_search.py # Web search tool
+python test_agent_integration.py # Agent + tools integration
 
 # Run skills tests
-python test_skills.py               # Skills framework
-python test_code_explainer.py       # Code explainer skill
-python test_debugger.py             # Debugger skill
-python test_refactoring_engine.py   # Refactoring engine skill
+python test_skills.py # Skills framework
+python test_code_explainer.py # Code explainer skill
+python test_debugger.py # Debugger skill
+python test_refactoring_engine.py # Refactoring engine skill
 
 # Note: Tests use executable scripts, not pytest
 # Tests are standalone Python scripts that import and test components
@@ -74,42 +74,42 @@ source venv/bin/activate
 
 ### Core Components
 
-**1. Agent System (`core/agent.py`)**
+1. Agent System (`core/agent.py`)
 - LangGraph StateGraph with ReAct pattern implementation
-- Three-node architecture: Reasoning → Tool Execution → Loop Detection
-- **Critical**: Loop detection system prevents infinite tool calls by tracking (tool_name, input) pairs
+- Three-node architecture: Reasoning -> Tool Execution -> Loop Detection
+- Critical Loop detection system prevents infinite tool calls by tracking (tool_name, input) pairs
 - System prompt structure: Path context + Available tools + Examples + Critical rules
 - Max iterations: 10 (configurable in `config.yaml`)
 
-**2. Configuration (`core/config.py`)**
+2. Configuration (`core/config.py`)
 - Pydantic-based type-safe configuration with YAML persistence
-- **Important**: ConfigLoader has `save()` method at core/config.py:164-173 for persisting runtime changes
+- Important ConfigLoader has `save()` method at core/config.py:164-173 for persisting runtime changes
 - When CLI commands change settings (like `/web on`), must update three locations:
-  1. Tool runtime state (`tool._enabled`)
-  2. In-memory config (`config.config.tools.<tool>.enabled`)
-  3. Disk persistence via `config.save()`
+ 1. Tool runtime state (`tool._enabled`)
+ 2. In-memory config (`config.config.tools.<tool>.enabled`)
+ 3. Disk persistence via `config.save()`
 
-**3. Model Manager (`core/models.py`)**
+3. Model Manager (`core/models.py`)
 - Ollama integration with LangChain compatibility
 - LLM instance caching per model for performance
-- Alias resolution: `primary`/`fallback`/`quick` → actual model names
+- Alias resolution: `primary`/`fallback`/`quick` -> actual model names
 - Supports model switching without restart via `/model` command
 
-**4. Conversation Manager (`core/conversation.py`)**
+4. Conversation Manager (`core/conversation.py`)
 - Thread-safe with `threading.Lock` for all operations
 - JSON-based persistence in `conversations/` directory
 - Auto-trimming based on `max_history` (preserves system messages)
 - UUID session IDs with ISO 8601 timestamps
 
-**5. RAG System (`rag/` directory)**
-- **CodeParser**: AST-based Python parsing extracting functions, classes, imports with full metadata
-- **CodeChunker**: Semantic chunking (1 chunk per function/class, preserves code structure)
-- **EmbeddingModel**: sentence-transformers/all-mpnet-base-v2 (768-dim vectors)
-- **VectorStore**: FAISS IndexFlatL2 for exact L2 distance search
-- **MetadataStore**: JSON storage mapping chunk IDs to file paths, line numbers, code snippets
-- **CodebaseIndexer**: Orchestrates parsing → chunking → embedding → storage
+5. RAG System (`rag/` directory)
+- CodeParser AST-based Python parsing extracting functions, classes, imports with full metadata
+- CodeChunker Semantic chunking (1 chunk per function/class, preserves code structure)
+- EmbeddingModel sentence-transformers/all-mpnet-base-v2 (768-dim vectors)
+- VectorStore FAISS IndexFlatL2 for exact L2 distance search
+- MetadataStore JSON storage mapping chunk IDs to file paths, line numbers, code snippets
+- CodebaseIndexer Orchestrates parsing -> chunking -> embedding -> storage
 
-**6. Skills System (`skills/` directory)**
+6. Skills System (`skills/` directory)
 - High-level intelligent capabilities built on top of tools
 - `BaseSkill` abstract class requiring `execute()` implementation
 - Current skills: Code Explainer, Debugger Assistant, Refactoring Engine
@@ -119,75 +119,75 @@ source venv/bin/activate
 
 All tools inherit from `MetonBaseTool` (extends LangChain's `BaseTool`).
 
-**FileOperationsTool**
+FileOperationsTool
 - Actions: read, write, list, create_dir, exists, get_info
 - Security: Path resolution, blocked paths (/etc, /sys, /proc), allowed paths validation
 - JSON input: `{"action": "read", "path": "/path/to/file"}`
 
-**CodeExecutorTool**
+CodeExecutorTool
 - Subprocess isolation with 5-second timeout
 - AST-based import validation (27 allowed, 36 blocked standard libraries)
 - Captures stdout + stderr with execution time tracking
 
-**WebSearchTool**
+WebSearchTool
 - DuckDuckGo integration via `ddgs` library (no API key needed)
-- **Note**: Library migrated from `duckduckgo_search` → `ddgs` (October 2025)
+- Note Library migrated from `duckduckgo_search` -> `ddgs` (October 2025)
 - Disabled by default, runtime toggle via `/web on/off`
 - Config persistence required (see Configuration section)
 
-**CodebaseSearchTool**
+CodebaseSearchTool
 - Semantic code search using RAG system
-- Natural language queries → vector similarity search
+- Natural language queries -> vector similarity search
 - Returns ranked results with file paths, line numbers, similarity scores
 - Lazy-loads indexer for performance
 
 ### Data Flow Patterns
 
-**Query Execution Flow:**
+Query Execution Flow:
 ```
-User input → CLI.process_query() → Agent.run(query) → LangGraph.invoke()
-  → Reasoning Node (builds prompt, calls LLM, parses THOUGHT/ACTION/INPUT/ANSWER)
-  → Tool Execution Node (looks up tool, executes, captures result)
-  → Loop Detection (prevents repeated tool calls)
-  → Repeat until ANSWER or max iterations
-  → Return result → CLI.display_response()
-```
-
-**RAG Indexing Flow:**
-```
-/index [path] → CodebaseIndexer.index_directory()
-  → Walk tree (exclude __pycache__, .git, venv, etc.)
-  → For each .py file: CodeParser.parse() → CodeChunker.chunk()
-  → Batch generate embeddings → VectorStore.add()
-  → Save metadata → MetadataStore.save()
-  → Update config (enable RAG) → config.save()
+User input -> CLI.process_query() -> Agent.run(query) -> LangGraph.invoke()
+ -> Reasoning Node (builds prompt, calls LLM, parses THOUGHT/ACTION/INPUT/ANSWER)
+ -> Tool Execution Node (looks up tool, executes, captures result)
+ -> Loop Detection (prevents repeated tool calls)
+ -> Repeat until ANSWER or max iterations
+ -> Return result -> CLI.display_response()
 ```
 
-**RAG Query Flow:**
+RAG Indexing Flow:
 ```
-Natural language query → EmbeddingModel.encode(query)
-  → FAISS.search(query_vector, k=5)
-  → Retrieve metadata for top-k results
-  → Format with file paths, line numbers, code snippets
-  → Return to agent for synthesis
+/index [path] -> CodebaseIndexer.index_directory()
+ -> Walk tree (exclude __pycache__, .git, venv, etc.)
+ -> For each .py file: CodeParser.parse() -> CodeChunker.chunk()
+ -> Batch generate embeddings -> VectorStore.add()
+ -> Save metadata -> MetadataStore.save()
+ -> Update config (enable RAG) -> config.save()
+```
+
+RAG Query Flow:
+```
+Natural language query -> EmbeddingModel.encode(query)
+ -> FAISS.search(query_vector, k=5)
+ -> Retrieve metadata for top-k results
+ -> Format with file paths, line numbers, code snippets
+ -> Return to agent for synthesis
 ```
 
 ## Key Implementation Details
 
 ### Agent System Prompt Structure
 The agent's effectiveness depends heavily on the system prompt (core/agent.py). Structure:
-1. **Path context**: Current working directory and allowed paths
-2. **Available tools**: Each tool's name, description, input format
-3. **Examples**: Complete Think → Act → Observe → Answer flows
-4. **Critical rules**: ANSWER format rules are critical - agent must end with ANSWER to complete
+1. **Path context Current working directory and allowed paths
+2. **Available tools Each tool's name, description, input format
+3. **Examples Complete Think -> Act -> Observe -> Answer flows
+4. **Critical rules ANSWER format rules are critical - agent must end with ANSWER to complete
 
 ### Loop Detection Algorithm
 Located in agent.py reasoning node:
 ```python
 if (current_action == last_action and current_input == last_input):
-    # Force completion with existing result
-    state["finished"] = True
-    state["final_answer"] = last_result
+ # Force completion with existing result
+ state["finished"] = True
+ state["final_answer"] = last_result
 ```
 This prevents infinite loops when agent repeats same tool call.
 
@@ -200,10 +200,10 @@ The agent automatically uses `codebase_search` when:
 Tool selection is driven by examples in system prompt showing when to use each tool.
 
 ### Security Model
-- **File Operations**: Path resolution prevents traversal attacks, blocked/allowed path lists
-- **Code Execution**: Subprocess isolation, AST import validation, timeout protection
-- **LLM**: Fully local (no external API calls), no eval()/exec() usage
-- **Config**: Pydantic validation prevents injection
+- File Operations Path resolution prevents traversal attacks, blocked/allowed path lists
+- Code Execution Subprocess isolation, AST import validation, timeout protection
+- LLM Fully local (no external API calls), no eval()/exec() usage
+- Config Pydantic validation prevents injection
 
 ## Common Development Tasks
 
@@ -245,14 +245,14 @@ sys.path.insert(0, str(Path(__file__).parent))
 from core.component import ComponentClass
 
 def test_feature():
-    """Test description."""
-    component = ComponentClass()
-    result = component.method()
-    assert result == expected, f"Expected {expected}, got {result}"
+ """Test description."""
+ component = ComponentClass()
+ result = component.method()
+ assert result == expected, f"Expected {expected}, got {result}"
 
 if __name__ == "__main__":
-    test_feature()
-    print("✅ All tests passed")
+ test_feature()
+ print(" All tests passed")
 ```
 
 Run directly: `python test_component.py`
@@ -273,7 +273,7 @@ Run directly: `python test_component.py`
 ## Known Limitations & Gotchas
 
 ### Configuration Persistence
-**Critical**: When CLI commands modify settings, must update three locations:
+Critical When CLI commands modify settings, must update three locations:
 1. Tool runtime state (`tool._enabled`)
 2. In-memory config object
 3. Call `config.save()` to persist to disk
@@ -296,37 +296,37 @@ Always activate venv before running: `source venv/bin/activate`. The project use
 
 ```
 meton/
-├── core/                    # Core components
-│   ├── agent.py            # LangGraph ReAct agent
-│   ├── config.py           # Pydantic configuration
-│   ├── conversation.py     # Thread-safe conversation manager
-│   └── models.py           # Ollama model manager
-├── tools/                   # LangChain tools
-│   ├── base.py             # MetonBaseTool base class
-│   ├── file_ops.py         # File operations
-│   ├── code_executor.py    # Python code execution
-│   ├── web_search.py       # DuckDuckGo search
-│   └── codebase_search.py  # RAG semantic search
-├── skills/                  # High-level skills
-│   ├── base.py             # BaseSkill abstract class
-│   ├── code_explainer.py   # Code explanation
-│   ├── debugger.py         # Debug assistance
-│   └── refactoring_engine.py # Code refactoring
-├── rag/                     # RAG system
-│   ├── code_parser.py      # AST-based parsing
-│   ├── chunker.py          # Semantic chunking
-│   ├── embeddings.py       # Sentence transformers
-│   ├── vector_store.py     # FAISS vector store
-│   ├── metadata_store.py   # JSON metadata storage
-│   └── indexer.py          # Indexing orchestration
-├── utils/                   # Utilities
-│   ├── logger.py           # Logging setup
-│   └── formatting.py       # CLI formatting helpers
-├── cli.py                   # Main CLI interface
-├── meton.py                # Entry point
-├── config.yaml             # Configuration file
-├── requirements.txt        # Python dependencies
-└── test_*.py               # Test scripts
+├── core/ # Core components
+│ ├── agent.py # LangGraph ReAct agent
+│ ├── config.py # Pydantic configuration
+│ ├── conversation.py # Thread-safe conversation manager
+│ └── models.py # Ollama model manager
+├── tools/ # LangChain tools
+│ ├── base.py # MetonBaseTool base class
+│ ├── file_ops.py # File operations
+│ ├── code_executor.py # Python code execution
+│ ├── web_search.py # DuckDuckGo search
+│ └── codebase_search.py # RAG semantic search
+├── skills/ # High-level skills
+│ ├── base.py # BaseSkill abstract class
+│ ├── code_explainer.py # Code explanation
+│ ├── debugger.py # Debug assistance
+│ └── refactoring_engine.py # Code refactoring
+├── rag/ # RAG system
+│ ├── code_parser.py # AST-based parsing
+│ ├── chunker.py # Semantic chunking
+│ ├── embeddings.py # Sentence transformers
+│ ├── vector_store.py # FAISS vector store
+│ ├── metadata_store.py # JSON metadata storage
+│ └── indexer.py # Indexing orchestration
+├── utils/ # Utilities
+│ ├── logger.py # Logging setup
+│ └── formatting.py # CLI formatting helpers
+├── cli.py # Main CLI interface
+├── meton.py # Entry point
+├── config.yaml # Configuration file
+├── requirements.txt # Python dependencies
+└── test_*.py # Test scripts
 ```
 
 ## LangGraph Agent State Management
@@ -339,7 +339,7 @@ The agent uses a `StateGraph` with `AgentState` TypedDict:
 - `finished`: Boolean completion flag
 - `final_answer`: Final response string
 
-State flows through nodes: `START` → `reasoning_node` → `tool_execution_node` → (loop or `END`)
+State flows through nodes: `START` -> `reasoning_node` -> `tool_execution_node` -> (loop or `END`)
 
 Conditional edges based on:
 - `state["finished"]` - Has agent provided ANSWER?
@@ -349,11 +349,11 @@ Conditional edges based on:
 ## RAG System Details
 
 ### Indexing Strategy
-- **AST Parsing**: Uses Python's `ast` module to extract functions, classes, imports
-- **Semantic Chunks**: One chunk per function/class (not arbitrary text splitting)
-- **Metadata**: File path, start/end line numbers, docstrings, decorators, arguments
-- **Embeddings**: sentence-transformers/all-mpnet-base-v2 (768 dimensions)
-- **Storage**: FAISS IndexFlatL2 (exact L2 distance) + JSON metadata
+- AST Parsing Uses Python's `ast` module to extract functions, classes, imports
+- Semantic Chunks One chunk per function/class (not arbitrary text splitting)
+- Metadata File path, start/end line numbers, docstrings, decorators, arguments
+- Embeddings sentence-transformers/all-mpnet-base-v2 (768 dimensions)
+- Storage FAISS IndexFlatL2 (exact L2 distance) + JSON metadata
 
 ### Search Process
 1. Encode natural language query to 768-dim vector
@@ -374,9 +374,9 @@ After successful indexing, both `rag.enabled` and `tools.codebase_search.enabled
 ## Model Configuration
 
 Default models (configurable in config.yaml):
-- **Primary**: qwen2.5:32b-instruct-q5_K_M (main reasoning)
-- **Fallback**: llama3.1:8b (backup)
-- **Quick**: mistral:latest (fast responses)
+- Primary qwen2.5:32b-instruct-q5_K_M (main reasoning)
+- Fallback llama3.1:8b (backup)
+- Quick mistral:latest (fast responses)
 
 Generation settings:
 - Temperature: 0.0 (deterministic)
@@ -388,12 +388,12 @@ Switch models at runtime: `/model <name>` or `/model primary|fallback|quick`
 
 ## Conversation Management
 
-- **Auto-save**: Enabled by default in config.yaml
-- **Max history**: 20 messages (auto-trims older messages)
-- **Storage**: JSON files in `conversations/` directory
-- **Format**: `session_<timestamp>_<uuid>.json`
-- **Thread-safe**: All operations use `threading.Lock`
-- **Context window**: Preserves system messages during trimming
+- Auto-save Enabled by default in config.yaml
+- Max history 20 messages (auto-trims older messages)
+- Storage JSON files in `conversations/` directory
+- Format `session_<timestamp>_<uuid>.json`
+- Thread-safe All operations use `threading.Lock`
+- Context window Preserves system messages during trimming
 
 CLI commands:
 - `/save` - Manual save

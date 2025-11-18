@@ -4,19 +4,19 @@ A VS Code extension that integrates Meton, a local AI coding assistant, directly
 
 ## Features
 
-- **Code Explanation**: Get detailed explanations of selected code
-- **Code Review**: Receive AI-powered code review feedback
-- **Test Generation**: Automatically generate tests for your code
-- **Refactoring Suggestions**: Get intelligent refactoring recommendations
-- **Interactive Chat**: Ask Meton anything about your code
-- **Workspace Indexing**: Semantic search across your entire codebase
-- **Status Bar Integration**: Quick access and connection status
+- Code Explanation Get detailed explanations of selected code
+- Code Review Receive AI-powered code review feedback
+- Test Generation Automatically generate tests for your code
+- Refactoring Suggestions Get intelligent refactoring recommendations
+- Interactive Chat Ask Meton anything about your code
+- Workspace Indexing Semantic search across your entire codebase
+- Status Bar Integration Quick access and connection status
 
 ## Requirements
 
-- **Meton Server**: The Meton API server must be running
-- **Python 3.11+**: Required for the Meton backend
-- **VS Code 1.80.0+**: Minimum supported VS Code version
+- Meton Server The Meton API server must be running
+- Python 3.11+ Required for the Meton backend
+- VS Code 1.80.0+ Minimum supported VS Code version
 
 ## Installation
 
@@ -50,9 +50,9 @@ Configure the extension in VS Code settings:
 
 ```json
 {
-  "meton.serverUrl": "http://localhost:8000",
-  "meton.autoIndex": true,
-  "meton.enableInlineAssist": true
+ "meton.serverUrl": "http://localhost:8000",
+ "meton.autoIndex": true,
+ "meton.enableInlineAssist": true
 }
 ```
 
@@ -70,12 +70,12 @@ Configure the extension in VS Code settings:
 
 Access Meton commands through the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`):
 
-- **Meton: Explain Selected Code** - Get detailed code explanation
-- **Meton: Review Selected Code** - Get code review feedback
-- **Meton: Generate Tests** - Generate tests for selected code
-- **Meton: Suggest Refactorings** - Get refactoring suggestions
-- **Meton: Open Chat** - Ask Meton anything
-- **Meton: Index Workspace** - Manually index your workspace
+- Meton: Explain Selected Code - Get detailed code explanation
+- Meton: Review Selected Code - Get code review feedback
+- Meton: Generate Tests - Generate tests for selected code
+- Meton: Suggest Refactorings - Get refactoring suggestions
+- Meton: Open Chat - Ask Meton anything
+- Meton: Index Workspace - Manually index your workspace
 
 ### Keyboard Shortcuts
 
@@ -88,10 +88,10 @@ Access Meton commands through the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P
 
 The Meton status bar item shows the current connection status:
 
-- ✓ **Meton** - Connected and ready
-- ✗ **Meton** - Disconnected (check if server is running)
-- ⟲ **Meton** - Processing request
-- ⚡ **Meton** - Indexing workspace
+- OK **Meton - Connected and ready
+- FAIL **Meton - Disconnected (check if server is running)
+- ⟲ **Meton - Processing request
+- Meton - Indexing workspace
 
 Click the status bar item to open the chat.
 
@@ -108,11 +108,11 @@ Click the status bar item to open the chat.
 1. Select code to review
 2. Run `Meton: Review Selected Code`
 3. Get feedback on:
-   - Code quality
-   - Potential bugs
-   - Security issues
-   - Performance improvements
-   - Best practices
+ - Code quality
+ - Potential bugs
+ - Security issues
+ - Performance improvements
+ - Best practices
 
 ### Test Generation
 
@@ -146,16 +146,16 @@ Meton automatically indexes your workspace for semantic code search:
 ### Extension Shows "Disconnected"
 
 1. Make sure the Meton API server is running:
-   ```bash
-   python api/server.py
-   ```
+ ```bash
+ python api/server.py
+ ```
 
 2. Check the server URL in settings matches where the server is running
 
 3. Verify the server is healthy:
-   ```bash
-   curl http://localhost:8000/health
-   ```
+ ```bash
+ curl http://localhost:8000/health
+ ```
 
 ### Commands Don't Work
 
@@ -193,13 +193,13 @@ npm run package
 ```
 vscode-extension/
 ├── src/
-│   ├── extension.ts      # Main entry point
-│   ├── metonClient.ts    # HTTP client for Meton API
-│   ├── commands.ts       # VS Code command implementations
-│   └── statusBar.ts      # Status bar integration
-├── package.json          # Extension manifest
-├── tsconfig.json         # TypeScript configuration
-└── README.md            # This file
+│ ├── extension.ts # Main entry point
+│ ├── metonClient.ts # HTTP client for Meton API
+│ ├── commands.ts # VS Code command implementations
+│ └── statusBar.ts # Status bar integration
+├── package.json # Extension manifest
+├── tsconfig.json # TypeScript configuration
+└── README.md # This file
 ```
 
 ## Contributing

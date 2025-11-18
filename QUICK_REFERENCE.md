@@ -8,12 +8,12 @@ One-page cheat sheet for Meton commands and common operations.
 
 ```bash
 # CLI Mode
-./meton                    # Using convenience script
-python meton.py            # Direct launch
+./meton # Using convenience script
+python meton.py # Direct launch
 
 # Web UI Mode
-python launch_web.py       # Gradio interface
-python launch_web.py --share --port 8080  # With options
+python launch_web.py # Gradio interface
+python launch_web.py --share --port 8080 # With options
 ```
 
 ---
@@ -66,8 +66,8 @@ python launch_web.py --share --port 8080  # With options
 | `quick` | mistral:latest | Fastest (~3s) |
 
 ```bash
-/model quick        # Switch to fast model
-/model primary      # Switch to quality model
+/model quick # Switch to fast model
+/model primary # Switch to quality model
 ```
 
 ---
@@ -98,12 +98,12 @@ Find error handling in agent.py
 ### Semantic Code Search (with /index)
 
 ```
-/index /path/to/project                    # Index first
-How does authentication work?              # Natural language query
+/index /path/to/project # Index first
+How does authentication work? # Natural language query
 Find database connection code
 Show me error handling patterns
 Where is user input validated?
-/csearch authentication                    # Direct search test
+/csearch authentication # Direct search test
 ```
 
 ### Code Execution
@@ -117,7 +117,7 @@ Calculate fibonacci of 10
 ### Web Search
 
 ```
-/web on                                    # Enable first
+/web on # Enable first
 Search for Python asyncio best practices
 Find FAISS documentation
 ```
@@ -125,20 +125,20 @@ Find FAISS documentation
 ### Long-Term Memory
 
 ```
-/memory stats                              # View statistics
-/memory search authentication              # Search memories
-/memory add I prefer type hints            # Add manual memory
-/memory export json                        # Export to file
+/memory stats # View statistics
+/memory search authentication # Search memories
+/memory add I prefer type hints # Add manual memory
+/memory export json # Export to file
 ```
 
 ### Cross-Session Learning
 
 ```
-/learn analyze                             # Analyze for patterns
-/learn insights                            # View insights
-/learn patterns                            # Show detected patterns
-/learn apply insight_123                   # Apply insight
-/learn summary                             # Statistics
+/learn analyze # Analyze for patterns
+/learn insights # View insights
+/learn patterns # Show detected patterns
+/learn apply insight_123 # Apply insight
+/learn summary # Statistics
 ```
 
 ### Multi-Step
@@ -228,17 +228,17 @@ nano config.yaml
 ```yaml
 # Change primary model
 models:
-  primary: "deepseek-coder:33b"
+ primary: "deepseek-coder:33b"
 
 # Add allowed path
 tools:
-  file_ops:
-    allowed_paths:
-      - /your/project/path
+ file_ops:
+ allowed_paths:
+ - /your/project/path
 
 # Change context window
 conversation:
-  max_history: 20  # default: 10
+ max_history: 20 # default: 10
 ```
 
 ---
@@ -259,14 +259,14 @@ conversation:
 
 ```
 meton/
-├── config.yaml              # Configuration
-├── logs/                    # Daily log files
-├── conversations/           # Saved conversations
-├── memory/                  # Long-term memory storage
-├── analytics_data/          # Performance analytics
-├── web_sessions/            # Web UI session data
-├── venv/                    # Python environment
-└── meton                    # Convenience launcher
+├── config.yaml # Configuration
+├── logs/ # Daily log files
+├── conversations/ # Saved conversations
+├── memory/ # Long-term memory storage
+├── analytics_data/ # Performance analytics
+├── web_sessions/ # Web UI session data
+├── venv/ # Python environment
+└── meton # Convenience launcher
 ```
 
 ---
@@ -275,12 +275,12 @@ meton/
 
 ```
 ╭─── Current Status ────────────────────╮
-│ Model:        qwen2.5:32b-instruct... │  ← Active model
-│ Session:      3c8a9f2d...             │  ← Current session ID
-│ Messages:     12                      │  ← Conversation length
-│ Tools:        file_operations         │  ← Available tools
-│ Max Iter:     10                      │  ← Loop limit
-│ Verbose:      OFF                     │  ← Debug mode
+│ Model: qwen2.5:32b-instruct... │ ← Active model
+│ Session: 3c8a9f2d... │ ← Current session ID
+│ Messages: 12 │ ← Conversation length
+│ Tools: file_operations │ ← Available tools
+│ Max Iter: 10 │ ← Loop limit
+│ Verbose: OFF │ ← Debug mode
 ╰───────────────────────────────────────╯
 ```
 
@@ -289,27 +289,27 @@ meton/
 ## Verbose Mode Output
 
 ```
-💭 THOUGHT: I need to list the directory
-🎯 ACTION: file_operations
-📥 INPUT: {"action": "list", "path": "/path"}
-🔧 Executing: file_operations
-✓ Result: [files listed]
+ THOUGHT: I need to list the directory
+ ACTION: file_operations
+ INPUT: {"action": "list", "path": "/path"}
+ Executing: file_operations
+OK Result: [files listed]
 ```
 
 ---
 
 ## Best Practices
 
-1. **Start broad**: `What files can you see?`
-2. **Check status**: `/status` to confirm context
-3. **Search first**: `/search keyword` or `/memory search` before re-asking
-4. **Save work**: `/save` after important findings
-5. **Clear context**: `/clear` when changing topics
-6. **Use verbose**: `/verbose on` to understand agent
-7. **Choose model**: `quick` for testing, `primary` for quality
-8. **Build memory**: Regular use builds cross-session intelligence
-9. **Monitor learning**: `/learn summary` to see patterns
-10. **Use Web UI**: `python launch_web.py` for visual analytics
+1. **Start broad `What files can you see?`
+2. **Check status `/status` to confirm context
+3. **Search first `/search keyword` or `/memory search` before re-asking
+4. **Save work `/save` after important findings
+5. **Clear context `/clear` when changing topics
+6. **Use verbose `/verbose on` to understand agent
+7. **Choose model `quick` for testing, `primary` for quality
+8. **Build memory Regular use builds cross-session intelligence
+9. **Monitor learning `/learn summary` to see patterns
+10. **Use Web UI `python launch_web.py` for visual analytics
 
 ---
 
@@ -318,47 +318,47 @@ meton/
 ```
 $ ./meton
 
-🧠 METON - Local Coding Assistant
+ METON - Local Coding Assistant
 Model: qwen2.5:32b-instruct-q5_K_M
 Tools: file_operations, codebase_search
 
 You: What files can you see?
-💬 Assistant: I can see 16 files...
+ Assistant: I can see 16 files...
 
 You: /memory search testing
-🔍 Found 2 memories about testing patterns
+ Found 2 memories about testing patterns
 
 You: /learn summary
 Total Patterns: 5 | Learning Velocity: 1.2/week
 
 You: /model quick
-✓ Switched to model: mistral:latest
+OK Switched to model: mistral:latest
 
 You: quick test query
-💬 Assistant: [faster response]
+ Assistant: [faster response]
 
 You: /save
-✓ Conversation saved
+OK Conversation saved
 
 You: /exit
-👋 Goodbye!
+ Goodbye!
 ```
 
 ---
 
 ## Getting Help
 
-- **In-session**: `/help`
-- **Usage Guide**: See [USAGE.md](USAGE.md)
-- **Architecture**: See [ARCHITECTURE.md](ARCHITECTURE.md)
-- **Project Status**: See [STATUS.md](STATUS.md)
+- In-session `/help`
+- Usage Guide See [USAGE.md](USAGE.md)
+- Architecture See [ARCHITECTURE.md](ARCHITECTURE.md)
+- Project Status See [STATUS.md](STATUS.md)
 
 ---
 
-**Quick Start:** `./meton` → `/help` → Ask questions!
+Quick Start: `./meton` -> `/help` -> Ask questions!
 
-**Pro Tip:** Use `/verbose on` when learning how Meton thinks.
+Pro Tip: Use `/verbose on` when learning how Meton thinks.
 
 ---
 
-*Meton - Wisdom in Action* 🧠⚡
+*Meton - Wisdom in Action* 

@@ -28,7 +28,7 @@
 
 ### System Prompt Rules
 - Agent must trust tool output statistics completely
-- CRITICAL: When tool output shows "✓ Found X file(s)", use that exact number X
+- CRITICAL: When tool output shows "OK Found X file(s)", use that exact number X
 - Do not manually count file paths - the tool already counted them correctly
 - Do not verify or double-check numerical data provided by tools
 - WRONG: "Based on file paths provided, I count 4 files"

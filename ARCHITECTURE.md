@@ -8,32 +8,32 @@ System design documentation for the Meton local AI coding assistant.
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                    User Interface (CLI)                  │
-│              Rich Console + Interactive Prompt           │
+│ User Interface (CLI) │
+│ Rich Console + Interactive Prompt │
 └────────────────────┬─────────────────────────────────────┘
-                     │
-       ┌─────────────┴─────────────┐
-       │                           │
-┌──────▼───────┐          ┌────────▼────────┐
-│  Agent Core  │◄─────────┤  Conversation   │
-│  (LangGraph) │          │    Manager      │
-└──────┬───────┘          └─────────────────┘
-       │                           ▲
-       │ uses                      │ stores
-       │                           │
-┌──────▼───────┐          ┌────────┴────────┐
-│    Tools     │          │   Persistence   │
-│ (File Ops)   │          │  (JSON Files)   │
-└──────┬───────┘          └─────────────────┘
-       │
-┌──────▼───────┐          ┌─────────────────┐
-│ Model Manager│◄─────────┤  Configuration  │
-│   (Ollama)   │          │   (YAML/Pydantic)│
-└──────┬───────┘          └─────────────────┘
-       │
+ │
+ ┌─────────────┴─────────────┐
+ │ │
+┌──────▼───────┐ ┌────────▼────────┐
+│ Agent Core │◄─────────┤ Conversation │
+│ (LangGraph) │ │ Manager │
+└──────┬───────┘ └─────────────────┘
+ │ ▲
+ │ uses │ stores
+ │ │
+┌──────▼───────┐ ┌────────┴────────┐
+│ Tools │ │ Persistence │
+│ (File Ops) │ │ (JSON Files) │
+└──────┬───────┘ └─────────────────┘
+ │
+┌──────▼───────┐ ┌─────────────────┐
+│ Model Manager│◄─────────┤ Configuration │
+│ (Ollama) │ │ (YAML/Pydantic)│
+└──────┬───────┘ └─────────────────┘
+ │
 ┌──────▼───────┐
-│   CodeLlama  │
-│  (Local LLM) │
+│ CodeLlama │
+│ (Local LLM) │
 └──────────────┘
 ```
 
@@ -43,9 +43,9 @@ System design documentation for the Meton local AI coding assistant.
 
 ### 1. CLI Layer (`cli.py`)
 
-**Purpose:** User-facing interactive interface
+Purpose: User-facing interactive interface
 
-**Key Features:**
+Key Features:
 - Rich console formatting
 - 12 interactive commands
 - Real-time agent feedback
@@ -53,9 +53,9 @@ System design documentation for the Meton local AI coding assistant.
 - Error handling
 - Signal handlers (Ctrl+C)
 
-**Main Class:** `MetonCLI`
+Main Class: `MetonCLI`
 
-**Initialization Flow:**
+Initialization Flow:
 1. Create Config instance
 2. Initialize ModelManager
 3. Initialize ConversationManager
@@ -64,51 +64,51 @@ System design documentation for the Meton local AI coding assistant.
 6. Display welcome banner
 7. Enter interactive loop
 
-**Command Flow:**
+Command Flow:
 ```python
-user_input → starts with '/' ?
-    YES → handle_command() → execute command
-    NO  → process_query() → agent.run() → display_response()
+user_input -> starts with '/' ?
+ YES -> handle_command() -> execute command
+ NO -> process_query() -> agent.run() -> display_response()
 ```
 
 ### 2. Configuration Layer (`core/config.py`)
 
-**Purpose:** Type-safe configuration management
+Purpose: Type-safe configuration management
 
-**Architecture:**
+Architecture:
 - Pydantic models for validation
 - YAML file loading
 - Nested configuration structure
 - Default values
 
-**Structure:**
+Structure:
 ```python
 Config
 ├── models (ModelsConfig)
-│   ├── primary_model
-│   ├── fallback_model
-│   ├── quick_model
-│   └── settings (GenerationSettings)
+│ ├── primary_model
+│ ├── fallback_model
+│ ├── quick_model
+│ └── settings (GenerationSettings)
 ├── conversation (ConversationConfig)
-│   ├── max_history
-│   └── auto_save
+│ ├── max_history
+│ └── auto_save
 └── tools (ToolsConfig)
-    └── file_ops (FileOpsConfig)
-        ├── allowed_paths
-        └── blocked_paths
+ └── file_ops (FileOpsConfig)
+ ├── allowed_paths
+ └── blocked_paths
 ```
 
-**Usage:**
+Usage:
 ```python
-config = Config()  # Loads config.yaml
+config = Config() # Loads config.yaml
 model_name = config.config.models.primary_model
 ```
 
 ### 3. Model Manager (`core/models.py`)
 
-**Purpose:** Ollama LLM integration
+Purpose: Ollama LLM integration
 
-**Key Features:**
+Key Features:
 - Model listing and selection
 - Model switching without restart
 - LangChain compatibility
@@ -117,32 +117,32 @@ model_name = config.config.models.primary_model
 - Chat with message history
 - LLM instance caching
 
-**Main Class:** `ModelManager`
+Main Class: `ModelManager`
 
-**Important Methods:**
+Important Methods:
 ```python
-list_available_models()     # Query Ollama
-switch_model(name)          # Change active model
-generate(prompt, stream)    # Simple generation
-chat(messages)              # Chat with history
-get_llm()                   # LangChain OllamaLLM instance
-resolve_alias(alias)        # primary → codellama:34b
+list_available_models() # Query Ollama
+switch_model(name) # Change active model
+generate(prompt, stream) # Simple generation
+chat(messages) # Chat with history
+get_llm() # LangChain OllamaLLM instance
+resolve_alias(alias) # primary -> codellama:34b
 ```
 
-**Flow:**
+Flow:
 ```
-Query → get_llm() → check cache
-                    ↓
-        cache miss? create OllamaLLM → cache → return
-                    ↓
-        cache hit?  return cached instance
+Query -> get_llm() -> check cache
+ ↓
+ cache miss? create OllamaLLM -> cache -> return
+ ↓
+ cache hit? return cached instance
 ```
 
 ### 4. Conversation Manager (`core/conversation.py`)
 
-**Purpose:** Thread-safe conversation persistence
+Purpose: Thread-safe conversation persistence
 
-**Key Features:**
+Key Features:
 - UUID session IDs
 - ISO 8601 timestamps
 - Context window management (auto-trim)
@@ -151,94 +151,94 @@ Query → get_llm() → check cache
 - JSON serialization
 - LangChain format compatibility
 
-**Main Class:** `ConversationManager`
+Main Class: `ConversationManager`
 
-**Message Structure:**
+Message Structure:
 ```python
 {
-    "role": "user|assistant|system|tool",
-    "content": "message text",
-    "timestamp": "2025-10-28T10:30:00",
-    "metadata": {...}
+ "role": "user|assistant|system|tool",
+ "content": "message text",
+ "timestamp": "2025-10-28T10:30:00",
+ "metadata": {...}
 }
 ```
 
-**Thread Safety:**
+Thread Safety:
 ```python
 def add_message(self, ...):
-    with self._lock:              # Acquire lock
-        self.messages.append(...)  # Modify
-        if auto_save:
-            self._save_internal()  # Save (lock already held)
+ with self._lock: # Acquire lock
+ self.messages.append(...) # Modify
+ if auto_save:
+ self._save_internal() # Save (lock already held)
 ```
 
-**Context Window:**
+Context Window:
 - Preserves system messages
 - Trims oldest user/assistant messages
 - Keeps last N messages (configurable)
 
 ### 5. Agent System (`core/agent.py`)
 
-**Purpose:** ReAct pattern orchestration with LangGraph
+Purpose: ReAct pattern orchestration with LangGraph
 
-**Architecture:** LangGraph StateGraph with 3 nodes
+Architecture: LangGraph StateGraph with 3 nodes
 
 ```
 ┌─────────────────────────────────────────────┐
-│         Agent State                         │
-│  - messages                                 │
-│  - thoughts                                 │
-│  - tool_calls                               │
-│  - iteration                                │
-│  - finished                                 │
-│  - final_answer                             │
+│ Agent State │
+│ - messages │
+│ - thoughts │
+│ - tool_calls │
+│ - iteration │
+│ - finished │
+│ - final_answer │
 └────────────┬────────────────────────────────┘
-             │
-    START────┼───► Reasoning Node
-             │         │
-             │         ▼
-             │    Parse Output
-             │    (THOUGHT/ACTION/ANSWER)
-             │         │
-             │         ├──► has tool call?
-             │         │         │
-             │         │    YES  ▼
-             │         │    Tool Execution Node
-             │         │         │
-             │         │         ▼
-             │         │    Execute Tool
-             │         │         │
-             │         │         ▼
-             │         │    Update State
-             │         │         │
-             │         │         └──► Loop back to Reasoning
-             │         │
-             │         │    NO
-             │         └─────► END (has answer)
-             │
-             └──► Max iterations? → END
+ │
+ START────┼─── Reasoning Node
+ │ │
+ │ ▼
+ │ Parse Output
+ │ (THOUGHT/ACTION/ANSWER)
+ │ │
+ │ ├── has tool call?
+ │ │ │
+ │ │ YES ▼
+ │ │ Tool Execution Node
+ │ │ │
+ │ │ ▼
+ │ │ Execute Tool
+ │ │ │
+ │ │ ▼
+ │ │ Update State
+ │ │ │
+ │ │ └── Loop back to Reasoning
+ │ │
+ │ │ NO
+ │ └───── END (has answer)
+ │
+ └── Max iterations? -> END
 ```
 
-**Key Features:**
-- Multi-step reasoning (Think → Act → Observe)
+Key Features:
+- Multi-step reasoning (Think -> Act -> Observe)
 - Tool integration via tool_map
-- **Loop Detection System**
+- Loop Detection System
 - Iteration limits
 - Verbose mode for debugging
 - Path context injection
 - Structured output parsing
 
-**Loop Detection:**
+Loop Detection:
 ```python
 # Detects when agent tries same tool with same input
 if (current_action == last_action and
-    current_input == last_input):
-    # Force completion with existing result
-    state["finished"] = True
-    state["final_answer"] = last_result
+ current_input == last_input):
+ # Force completion with existing result
+ state["finished"] = True
+ state["final_answer"] = last_result
 ```
 
-**System Prompt Structure:**
+System Prompt Structure:
 1. Path context (current working directory, allowed paths)
 2. Available tools
 3. Examples with complete flows
@@ -246,11 +246,11 @@ if (current_action == last_action and
 
 ### 6. Tools System (`tools/`)
 
-**Base Tool:** `MetonBaseTool` (extends LangChain's `BaseTool`)
+Base Tool: `MetonBaseTool` (extends LangChain's `BaseTool`)
 
-**File Operations Tool** (`tools/file_ops.py`):
+File Operations Tool (`tools/file_ops.py`):
 
-**Actions:**
+Actions:
 - `read` - Read file contents
 - `write` - Write to file
 - `list` - List directory
@@ -258,7 +258,7 @@ if (current_action == last_action and
 - `exists` - Check existence
 - `get_info` - File metadata
 
-**Security:**
+Security:
 ```python
 1. Path resolution (prevent ../.. attacks)
 2. Blocked paths check (/etc/, /sys/, /proc/)
@@ -267,15 +267,15 @@ if (current_action == last_action and
 5. Binary file detection
 ```
 
-**Usage:**
+Usage:
 ```json
 {
-    "action": "read",
-    "path": "/media/development/projects/meton/config.yaml"
+ "action": "read",
+ "path": "/media/development/projects/meton/config.yaml"
 }
 ```
 
-**Tool Registration:**
+Tool Registration:
 ```python
 # In Agent
 self.tool_map = {tool.name: tool for tool in tools}
@@ -284,27 +284,27 @@ self.tool_map = {tool.name: tool for tool in tools}
 # Agent parses ACTION and looks up tool in tool_map
 ```
 
-**Code Executor Tool** (`tools/code_executor.py`):
+Code Executor Tool (`tools/code_executor.py`):
 
-**Features:**
+Features:
 - Subprocess isolation for safety
 - AST-based import validation (27 allowed, 36 blocked)
 - Timeout protection (5 seconds default)
 - Output capture (stdout + stderr)
 - Execution time tracking
 
-**Web Search Tool** (`tools/web_search.py`):
+Web Search Tool (`tools/web_search.py`):
 
-**Features:**
+Features:
 - DuckDuckGo integration (no API key needed)
 - Disabled by default (explicit opt-in required)
 - Configurable max results (1-20)
 - Timeout protection
 - Runtime enable/disable via `/web on/off`
 
-**Codebase Search Tool** (`tools/codebase_search.py`):
+Codebase Search Tool (`tools/codebase_search.py`):
 
-**Features:**
+Features:
 - Semantic code search using RAG
 - Natural language queries
 - Returns ranked results with similarity scores
@@ -315,99 +315,99 @@ self.tool_map = {tool.name: tool for tool in tools}
 
 ## RAG System (`rag/`)
 
-**Purpose:** Semantic code understanding via vector embeddings and retrieval
+Purpose: Semantic code understanding via vector embeddings and retrieval
 
-**Architecture:**
+Architecture:
 
 ```
 ┌──────────────────────────────────────────────────┐
-│              Indexing Pipeline                   │
+│ Indexing Pipeline │
 └──────────────────────────────────────────────────┘
-                     │
-   Python Files ─────┤
-                     │
-        ┌────────────▼────────────┐
-        │   CodeParser (AST)      │
-        │  - Parse Python files   │
-        │  - Extract functions    │
-        │  - Extract classes      │
-        │  - Extract imports      │
-        │  - Capture docstrings   │
-        └────────────┬────────────┘
-                     │
-        ┌────────────▼────────────┐
-        │    CodeChunker          │
-        │  - 1 chunk per function │
-        │  - 1 chunk per class    │
-        │  - 1 chunk for imports  │
-        │  - 1 chunk for module   │
-        └────────────┬────────────┘
-                     │
-        ┌────────────▼────────────┐
-        │  EmbeddingModel         │
-        │  - sentence-transformers│
-        │  - all-mpnet-base-v2    │
-        │  - 768-dim vectors      │
-        └────────────┬────────────┘
-                     │
-        ┌────────────▼────────────┐
-        │    Storage Layer        │
-        │  ├─ VectorStore (FAISS) │
-        │  │   - IndexFlatL2      │
-        │  │   - L2 distance      │
-        │  └─ MetadataStore (JSON)│
-        │      - File paths       │
-        │      - Line numbers     │
-        │      - Chunk types      │
-        │      - Code snippets    │
-        └─────────────────────────┘
+ │
+ Python Files ─────┤
+ │
+ ┌────────────▼────────────┐
+ │ CodeParser (AST) │
+ │ - Parse Python files │
+ │ - Extract functions │
+ │ - Extract classes │
+ │ - Extract imports │
+ │ - Capture docstrings │
+ └────────────┬────────────┘
+ │
+ ┌────────────▼────────────┐
+ │ CodeChunker │
+ │ - 1 chunk per function │
+ │ - 1 chunk per class │
+ │ - 1 chunk for imports │
+ │ - 1 chunk for module │
+ └────────────┬────────────┘
+ │
+ ┌────────────▼────────────┐
+ │ EmbeddingModel │
+ │ - sentence-transformers│
+ │ - all-mpnet-base-v2 │
+ │ - 768-dim vectors │
+ └────────────┬────────────┘
+ │
+ ┌────────────▼────────────┐
+ │ Storage Layer │
+ │ ├─ VectorStore (FAISS) │
+ │ │ - IndexFlatL2 │
+ │ │ - L2 distance │
+ │ └─ MetadataStore (JSON)│
+ │ - File paths │
+ │ - Line numbers │
+ │ - Chunk types │
+ │ - Code snippets │
+ └─────────────────────────┘
 
 
 ┌──────────────────────────────────────────────────┐
-│              Query Pipeline                      │
+│ Query Pipeline │
 └──────────────────────────────────────────────────┘
-                     │
+ │
 Natural Language ────┤
-Query               │
-        ┌────────────▼────────────┐
-        │  EmbeddingModel         │
-        │  - Encode query         │
-        │  - 768-dim vector       │
-        └────────────┬────────────┘
-                     │
-        ┌────────────▼────────────┐
-        │  FAISS Search           │
-        │  - Find nearest vectors │
-        │  - Calculate similarity │
-        │  - Return top-k         │
-        └────────────┬────────────┘
-                     │
-        ┌────────────▼────────────┐
-        │  Retrieve Metadata      │
-        │  - Get file paths       │
-        │  - Get line numbers     │
-        │  - Get code snippets    │
-        │  - Calculate scores     │
-        └────────────┬────────────┘
-                     │
-                     ▼
-               Return Results
+Query │
+ ┌────────────▼────────────┐
+ │ EmbeddingModel │
+ │ - Encode query │
+ │ - 768-dim vector │
+ └────────────┬────────────┘
+ │
+ ┌────────────▼────────────┐
+ │ FAISS Search │
+ │ - Find nearest vectors │
+ │ - Calculate similarity │
+ │ - Return top-k │
+ └────────────┬────────────┘
+ │
+ ┌────────────▼────────────┐
+ │ Retrieve Metadata │
+ │ - Get file paths │
+ │ - Get line numbers │
+ │ - Get code snippets │
+ │ - Calculate scores │
+ └────────────┬────────────┘
+ │
+ ▼
+ Return Results
 ```
 
 ### RAG Components
 
 #### 1. EmbeddingModel (`rag/embeddings.py`)
 
-**Purpose:** Generate vector embeddings for code
+Purpose: Generate vector embeddings for code
 
-**Features:**
+Features:
 - Sentence-transformers integration
 - Model: `all-mpnet-base-v2`
 - 768-dimensional vectors
 - Batch processing for efficiency
 - Local model (no API calls)
 
-**Usage:**
+Usage:
 ```python
 model = EmbeddingModel()
 vectors = model.encode(["def hello(): pass", "class Foo: pass"])
@@ -416,9 +416,9 @@ vectors = model.encode(["def hello(): pass", "class Foo: pass"])
 
 #### 2. CodeParser (`rag/code_parser.py`)
 
-**Purpose:** AST-based Python code parsing
+Purpose: AST-based Python code parsing
 
-**Features:**
+Features:
 - Extracts functions with full metadata
 - Extracts classes with methods
 - Captures imports (standard, third-party)
@@ -426,22 +426,22 @@ vectors = model.encode(["def hello(): pass", "class Foo: pass"])
 - Tracks line numbers
 - Graceful error handling (syntax errors)
 
-**Metadata Extracted:**
+Metadata Extracted:
 ```python
 {
-    "name": "authenticate_user",
-    "type": "function",
-    "start_line": 45,
-    "end_line": 67,
-    "docstring": "Authenticate user credentials",
-    "code": "def authenticate_user(...)...",
-    "decorators": ["@require_auth"],
-    "args": ["username", "password"],
-    "returns": "bool"
+ "name": "authenticate_user",
+ "type": "function",
+ "start_line": 45,
+ "end_line": 67,
+ "docstring": "Authenticate user credentials",
+ "code": "def authenticate_user(...)...",
+ "decorators": ["@require_auth"],
+ "args": ["username", "password"],
+ "returns": "bool"
 }
 ```
 
-**AST Traversal:**
+AST Traversal:
 ```python
 1. Parse file with ast.parse()
 2. Walk AST tree with ast.walk()
@@ -453,30 +453,30 @@ vectors = model.encode(["def hello(): pass", "class Foo: pass"])
 
 #### 3. CodeChunker (`rag/chunker.py`)
 
-**Purpose:** Create semantic chunks for indexing
+Purpose: Create semantic chunks for indexing
 
-**Chunking Strategy:**
-- **1 chunk per function** - Complete function with context
-- **1 chunk per class** - Class definition + methods
-- **1 chunk for imports** - All imports in file
-- **1 chunk for module** - Module-level docstring
+Chunking Strategy:
+- 1 chunk per function - Complete function with context
+- 1 chunk per class - Class definition + methods
+- 1 chunk for imports - All imports in file
+- 1 chunk for module - Module-level docstring
 
-**Chunk Structure:**
+Chunk Structure:
 ```python
 {
-    "id": "uuid4",
-    "file_path": "/path/to/file.py",
-    "chunk_type": "function|class|import|module",
-    "name": "function_name",
-    "start_line": 45,
-    "end_line": 67,
-    "code": "def authenticate_user(...)...",
-    "docstring": "Docstring text",
-    "metadata": {...}
+ "id": "uuid4",
+ "file_path": "/path/to/file.py",
+ "chunk_type": "function|class|import|module",
+ "name": "function_name",
+ "start_line": 45,
+ "end_line": 67,
+ "code": "def authenticate_user(...)...",
+ "docstring": "Docstring text",
+ "metadata": {...}
 }
 ```
 
-**Why Semantic Chunking?**
+Why Semantic Chunking?
 - Each chunk is a logical unit (function/class)
 - Preserves code context and structure
 - Better search results than arbitrary splitting
@@ -484,9 +484,9 @@ vectors = model.encode(["def hello(): pass", "class Foo: pass"])
 
 #### 4. CodebaseIndexer (`rag/indexer.py`)
 
-**Purpose:** Orchestrate the indexing process
+Purpose: Orchestrate the indexing process
 
-**Features:**
+Features:
 - Recursive directory traversal
 - Exclusion patterns (`__pycache__`, `.git`, `venv`, etc.)
 - Python file detection (`.py` extension)
@@ -494,96 +494,96 @@ vectors = model.encode(["def hello(): pass", "class Foo: pass"])
 - Progress tracking
 - Error handling per-file (continues on failure)
 
-**Indexing Flow:**
+Indexing Flow:
 ```python
 1. Walk directory tree (exclude patterns)
 2. Filter Python files
 3. For each file:
-   a. CodeParser.parse(file) → elements
-   b. CodeChunker.chunk(elements) → chunks
-   c. Collect chunks
+ a. CodeParser.parse(file) -> elements
+ b. CodeChunker.chunk(elements) -> chunks
+ c. Collect chunks
 4. Batch generate embeddings (all chunks)
 5. Store vectors in VectorStore
 6. Store metadata in MetadataStore
 7. Return statistics (files, chunks, time)
 ```
 
-**Statistics Tracked:**
+Statistics Tracked:
 ```python
 {
-    "total_files": 127,
-    "total_chunks": 834,
-    "indexing_time": 18.2,
-    "last_indexed_path": "/path/to/project",
-    "timestamp": "2025-11-04T14:23:15"
+ "total_files": 127,
+ "total_chunks": 834,
+ "indexing_time": 18.2,
+ "last_indexed_path": "/path/to/project",
+ "timestamp": "2025-11-04T14:23:15"
 }
 ```
 
 #### 5. VectorStore (`rag/vector_store.py`)
 
-**Purpose:** FAISS-based vector similarity search
+Purpose: FAISS-based vector similarity search
 
-**Features:**
+Features:
 - FAISS `IndexFlatL2` (exact L2 distance)
 - Fast nearest neighbor search
 - Persistent storage (saves to disk)
-- Index mapping (vector ID → chunk ID)
+- Index mapping (vector ID -> chunk ID)
 
-**FAISS Configuration:**
+FAISS Configuration:
 ```python
-dimension = 768  # Embedding size
-index = faiss.IndexFlatL2(dimension)  # Exact search
-index.add(vectors)  # Add all embeddings
+dimension = 768 # Embedding size
+index = faiss.IndexFlatL2(dimension) # Exact search
+index.add(vectors) # Add all embeddings
 ```
 
-**Search:**
+Search:
 ```python
 distances, indices = index.search(query_vector, k=5)
 # distances: similarity scores (lower = more similar)
 # indices: vector IDs in the index
 ```
 
-**Persistence:**
+Persistence:
 ```
 rag_index/
-├── faiss.index            # FAISS index file
-└── faiss.index.mappings   # Vector ID → Chunk ID mappings
+├── faiss.index # FAISS index file
+└── faiss.index.mappings # Vector ID -> Chunk ID mappings
 ```
 
 #### 6. MetadataStore (`rag/metadata_store.py`)
 
-**Purpose:** Store chunk metadata as JSON
+Purpose: Store chunk metadata as JSON
 
-**Features:**
+Features:
 - JSON-based storage
 - Fast lookup by chunk ID
 - File path, line numbers, code snippets
 - Chunk type and name
 
-**Storage Format:**
+Storage Format:
 ```json
 {
-  "chunk_uuid": {
-    "file_path": "auth/login.py",
-    "chunk_type": "function",
-    "name": "authenticate_user",
-    "start_line": 45,
-    "end_line": 67,
-    "code": "def authenticate_user(...)...",
-    "docstring": "Authenticate user credentials"
-  }
+ "chunk_uuid": {
+ "file_path": "auth/login.py",
+ "chunk_type": "function",
+ "name": "authenticate_user",
+ "start_line": 45,
+ "end_line": 67,
+ "code": "def authenticate_user(...)...",
+ "docstring": "Authenticate user credentials"
+ }
 }
 ```
 
-**Persistence:**
+Persistence:
 ```
 rag_index/
-└── metadata.json  # All chunk metadata
+└── metadata.json # All chunk metadata
 ```
 
 ### RAG Integration with Agent
 
-**Tool Selection Rules:**
+Tool Selection Rules:
 
 The agent automatically uses `codebase_search` when:
 - User asks "how does X work?"
@@ -591,7 +591,7 @@ The agent automatically uses `codebase_search` when:
 - User asks "find code that does X"
 - Questions about THIS project's code
 
-**System Prompt Examples:**
+System Prompt Examples:
 ```
 Example: Semantic Code Search
 
@@ -609,34 +609,34 @@ ANSWER: Based on auth/login.py:45-67, the authentication system
 uses bcrypt for password hashing and JWT tokens...
 ```
 
-**Configuration Integration:**
+Configuration Integration:
 ```yaml
 rag:
-  enabled: true                # Auto-enabled after indexing
-  last_indexed_path: /path/to/project
-  last_indexed_at: "2025-11-04T14:23:15"
-  index_stats:
-    total_files: 127
-    total_chunks: 834
+ enabled: true # Auto-enabled after indexing
+ last_indexed_path: /path/to/project
+ last_indexed_at: "2025-11-04T14:23:15"
+ index_stats:
+ total_files: 127
+ total_chunks: 834
 
 tools:
-  codebase_search:
-    enabled: true              # Auto-enabled with RAG
-    top_k: 5                   # Return top 5 results
-    similarity_threshold: 0.3  # Minimum similarity score
-    max_code_length: 500       # Truncate long code snippets
+ codebase_search:
+ enabled: true # Auto-enabled with RAG
+ top_k: 5 # Return top 5 results
+ similarity_threshold: 0.3 # Minimum similarity score
+ max_code_length: 500 # Truncate long code snippets
 ```
 
 ### CLI Index Management
 
-**Commands:**
+Commands:
 - `/index [path]` - Index a codebase
 - `/index status` - Show statistics
 - `/index clear` - Delete index
 - `/index refresh` - Re-index last path
 - `/csearch <query>` - Test semantic search
 
-**Indexing Process:**
+Indexing Process:
 1. Validate path (exists, contains Python files)
 2. Initialize RAG components
 3. Call indexer with progress display
@@ -644,10 +644,10 @@ tools:
 5. Persist config to disk
 6. Display statistics
 
-**Auto-enablement:**
+Auto-enablement:
 After successful indexing:
-- `rag.enabled` → `true`
-- `tools.codebase_search.enabled` → `true`
+- `rag.enabled` -> `true`
+- `tools.codebase_search.enabled` -> `true`
 - Config saved to `config.yaml`
 - Agent gains semantic search capability
 
@@ -659,59 +659,59 @@ After successful indexing:
 
 ```
 1. User enters query
-   ↓
+ ↓
 2. CLI.process_query()
-   ↓
+ ↓
 3. Agent.run(query)
-   ↓
+ ↓
 4. Create initial state
-   ↓
+ ↓
 5. LangGraph StateGraph.invoke()
-   │
-   ├─► Reasoning Node
-   │    ├─ Build prompt (system + context + query)
-   │    ├─ Get LLM (via ModelManager)
-   │    ├─ LLM.invoke(prompt)
-   │    ├─ Parse output (THOUGHT/ACTION/INPUT/ANSWER)
-   │    └─ Update state
-   │
-   ├─► Tool Execution Node (if needed)
-   │    ├─ Get tool from tool_map
-   │    ├─ Parse JSON input
-   │    ├─ Execute tool
-   │    └─ Store result in state
-   │
-   ├─► Loop Detection (if repeated)
-   │    ├─ Compare with last call
-   │    ├─ Force answer if duplicate
-   │    └─ Break loop
-   │
-   └─► Repeat until:
-        - Agent provides ANSWER
-        - Max iterations reached
-        - Error occurs
-   ↓
+ │
+ ├─ Reasoning Node
+ │ ├─ Build prompt (system + context + query)
+ │ ├─ Get LLM (via ModelManager)
+ │ ├─ LLM.invoke(prompt)
+ │ ├─ Parse output (THOUGHT/ACTION/INPUT/ANSWER)
+ │ └─ Update state
+ │
+ ├─ Tool Execution Node (if needed)
+ │ ├─ Get tool from tool_map
+ │ ├─ Parse JSON input
+ │ ├─ Execute tool
+ │ └─ Store result in state
+ │
+ ├─ Loop Detection (if repeated)
+ │ ├─ Compare with last call
+ │ ├─ Force answer if duplicate
+ │ └─ Break loop
+ │
+ └─ Repeat until:
+ - Agent provides ANSWER
+ - Max iterations reached
+ - Error occurs
+ ↓
 6. Return result
-   ↓
+ ↓
 7. CLI.display_response()
-   ├─ Parse code blocks
-   ├─ Apply syntax highlighting
-   └─ Display to user
+ ├─ Parse code blocks
+ ├─ Apply syntax highlighting
+ └─ Display to user
 ```
 
 ### Configuration Reload Flow
 
 ```
 1. User: /reload
-   ↓
+ ↓
 2. Create new Config()
-   ↓
+ ↓
 3. Update config references:
-   ├─ self.config = new_config
-   ├─ model_manager.config = new_config
-   ├─ conversation.config = new_config
-   └─ agent.config = new_config
-   ↓
+ ├─ self.config = new_config
+ ├─ model_manager.config = new_config
+ ├─ conversation.config = new_config
+ └─ agent.config = new_config
+ ↓
 4. Next query uses new config
 ```
 
@@ -743,30 +743,30 @@ On load():
 
 ### Adding a New Tool
 
-1. **Create tool class** (`tools/your_tool.py`):
+1. **Create tool class (`tools/your_tool.py`):
 
 ```python
 from tools.base import MetonBaseTool
 from langchain.pydantic_v1 import Field
 
 class YourTool(MetonBaseTool):
-    """Tool description for LLM."""
+ """Tool description for LLM."""
 
-    name: str = "your_tool"
-    description: str = "What your tool does..."
+ name: str = "your_tool"
+ description: str = "What your tool does..."
 
-    def __init__(self, config):
-        super().__init__(config=config)
+ def __init__(self, config):
+ super().__init__(config=config)
 
-    def _run(self, input: str) -> str:
-        """Execute tool logic."""
-        # Parse input (usually JSON)
-        # Perform action
-        # Return result string
-        return "result"
+ def _run(self, input: str) -> str:
+ """Execute tool logic."""
+ # Parse input (usually JSON)
+ # Perform action
+ # Return result string
+ return "result"
 ```
 
-2. **Register in CLI** (`cli.py:initialize()`):
+2. **Register in CLI (`cli.py:initialize()`):
 
 ```python
 from tools.your_tool import YourTool
@@ -775,24 +775,24 @@ from tools.your_tool import YourTool
 your_tool = YourTool(self.config)
 
 self.agent = MetonAgent(
-    config=self.config,
-    model_manager=self.model_manager,
-    conversation=self.conversation,
-    tools=[file_tool, your_tool],  # Add here
-    verbose=self.verbose
+ config=self.config,
+ model_manager=self.model_manager,
+ conversation=self.conversation,
+ tools=[file_tool, your_tool], # Add here
+ verbose=self.verbose
 )
 ```
 
-3. **Update config** (add to `config.yaml` if needed):
+3. **Update config (add to `config.yaml` if needed):
 
 ```yaml
 tools:
-  your_tool:
-    enabled: true
-    option1: value1
+ your_tool:
+ enabled: true
+ option1: value1
 ```
 
-4. **Test:**
+4. **Test:
 ```bash
 python meton.py
 You: use your_tool to do something
@@ -800,67 +800,67 @@ You: use your_tool to do something
 
 ### Adding a New Command
 
-1. **Add to help** (`cli.py:display_help()`):
+1. **Add to help (`cli.py:display_help()`):
 
 ```python
 table.add_row("/newcmd", "Description of command")
 ```
 
-2. **Add handler** (`cli.py:handle_command()`):
+2. **Add handler (`cli.py:handle_command()`):
 
 ```python
 elif cmd == '/newcmd':
-    if args:
-        self.new_command_handler(args[0])
-    else:
-        self.console.print("[yellow]Usage: /newcmd <arg>[/yellow]")
+ if args:
+ self.new_command_handler(args[0])
+ else:
+ self.console.print("[yellow]Usage: /newcmd <arg>[/yellow]")
 ```
 
-3. **Implement method:**
+3. **Implement method:
 
 ```python
 def new_command_handler(self, arg: str):
-    """Handle /newcmd."""
-    try:
-        # Implementation
-        self.console.print("[green]✓ Success[/green]")
-    except Exception as e:
-        self.console.print(f"[red]❌ Error: {e}[/red]")
+ """Handle /newcmd."""
+ try:
+ # Implementation
+ self.console.print("[green]OK Success[/green]")
+ except Exception as e:
+ self.console.print(f"[red] Error: {e}[/red]")
 ```
 
 ### Adding a New Model Provider
 
 Currently Ollama-only. To add OpenAI/Anthropic/etc:
 
-1. **Extend ModelManager**:
+1. **Extend ModelManager
 ```python
 class MultiModelManager(ModelManager):
-    def __init__(self, config, provider="ollama"):
-        self.provider = provider
-        if provider == "openai":
-            # Initialize OpenAI client
-        elif provider == "ollama":
-            super().__init__(config)
+ def __init__(self, config, provider="ollama"):
+ self.provider = provider
+ if provider == "openai":
+ # Initialize OpenAI client
+ elif provider == "ollama":
+ super().__init__(config)
 ```
 
-2. **Update config schema**:
+2. **Update config schema
 ```yaml
 models:
-  provider: "ollama"  # or "openai", "anthropic"
-  ollama:
-    primary_model: "codellama:34b"
-  openai:
-    model: "gpt-4"
-    api_key: "..."
+ provider: "ollama" # or "openai", "anthropic"
+ ollama:
+ primary_model: "codellama:34b"
+ openai:
+ model: "gpt-4"
+ api_key: "..."
 ```
 
-3. **Update get_llm()**:
+3. **Update get_llm()
 ```python
 def get_llm(self):
-    if self.provider == "ollama":
-        return OllamaLLM(...)
-    elif self.provider == "openai":
-        return ChatOpenAI(...)
+ if self.provider == "ollama":
+ return OllamaLLM(...)
+ elif self.provider == "openai":
+ return ChatOpenAI(...)
 ```
 
 ---
@@ -868,9 +868,9 @@ def get_llm(self):
 ## Performance Considerations
 
 ### Model Selection
-- **34B models**: High quality, 8-16GB VRAM, 10-20s latency
-- **13B models**: Balanced, 4-8GB VRAM, 5-10s latency
-- **7B models**: Fast, 2-4GB VRAM, 2-5s latency
+- 34B models High quality, 8-16GB VRAM, 10-20s latency
+- 13B models Balanced, 4-8GB VRAM, 5-10s latency
+- 7B models Fast, 2-4GB VRAM, 2-5s latency
 
 ### Caching Strategy
 - LLM instances cached per model
@@ -934,30 +934,30 @@ See final testing checklist in STATUS.md
 
 ### Phase 2 Possibilities
 
-1. **RAG Integration**
-   - FAISS vector store
-   - Codebase indexing
-   - Semantic search tool
+1. **RAG Integration
+ - FAISS vector store
+ - Codebase indexing
+ - Semantic search tool
 
-2. **Multi-Agent System**
-   - Planner agent
-   - Executor agents
-   - Reviewer agent
+2. **Multi-Agent System
+ - Planner agent
+ - Executor agents
+ - Reviewer agent
 
-3. **Code Execution**
-   - Sandboxed Python execution
-   - Test running
-   - Linting integration
+3. **Code Execution
+ - Sandboxed Python execution
+ - Test running
+ - Linting integration
 
-4. **Web Search Tool**
-   - Documentation lookup
-   - Stack Overflow search
-   - GitHub API integration
+4. **Web Search Tool
+ - Documentation lookup
+ - Stack Overflow search
+ - GitHub API integration
 
-5. **Advanced Conversation**
-   - Named sessions
-   - Session switching
-   - Conversation branching
+5. **Advanced Conversation
+ - Named sessions
+ - Session switching
+ - Conversation branching
 
 ---
 
@@ -978,7 +978,7 @@ tail -f logs/meton_<date>.log
 Add print statements in `core/agent.py:_reasoning_node()`:
 ```python
 if self.verbose:
-    print(f"State: {state}")
+ print(f"State: {state}")
 ```
 
 ### Test Tool Directly
@@ -997,7 +997,7 @@ print(result)
 from core.agent import MetonAgent
 # Initialize agent...
 prompt = agent._get_system_prompt()
-print(prompt)  # See what agent sees
+print(prompt) # See what agent sees
 ```
 
 ---
@@ -1006,18 +1006,18 @@ print(prompt)  # See what agent sees
 
 When modifying Meton:
 
-1. **Update tests** for changed components
-2. **Update STATUS.md** with implementation details
-3. **Update this ARCHITECTURE.md** if adding components
-4. **Update USAGE.md** if adding user-facing features
-5. **Run test suite** before committing:
-   ```bash
-   python test_infrastructure.py
-   python test_models.py
-   python test_conversation.py
-   python test_agent.py
-   python test_file_ops.py
-   ```
+1. **Update tests for changed components
+2. **Update STATUS.md with implementation details
+3. **Update this ARCHITECTURE.md if adding components
+4. **Update USAGE.md if adding user-facing features
+5. **Run test suite before committing:
+ ```bash
+ python test_infrastructure.py
+ python test_models.py
+ python test_conversation.py
+ python test_agent.py
+ python test_file_ops.py
+ ```
 
 ---
 

@@ -18,25 +18,25 @@ Complete installation instructions for Meton local AI coding assistant.
 ## System Requirements
 
 ### Minimum Requirements
-- **CPU:** 8 cores (Intel i7 or AMD Ryzen 7)
-- **RAM:** 32GB DDR4
-- **Storage:** 50GB free space (SSD recommended)
-- **OS:** Linux (Ubuntu 20.04+), macOS (10.15+), Windows 10/11 (WSL2)
-- **Python:** 3.10 or higher
+- CPU: 8 cores (Intel i7 or AMD Ryzen 7)
+- RAM: 32GB DDR4
+- Storage: 50GB free space (SSD recommended)
+- OS: Linux (Ubuntu 20.04+), macOS (10.15+), Windows 10/11 (WSL2)
+- Python: 3.10 or higher
 
 ### Recommended Requirements
-- **CPU:** 16+ cores (AMD Ryzen 9 7950X or Intel i9-13900K)
-- **RAM:** 128GB DDR5 (for 70B models)
-- **GPU:** NVIDIA RTX 3090 (24GB) or better
-- **Storage:** 100GB+ NVMe SSD
-- **OS:** Linux (Ubuntu 22.04+ or Pop!_OS)
-- **Python:** 3.11+
+- CPU: 16+ cores (AMD Ryzen 9 7950X or Intel i9-13900K)
+- RAM: 128GB DDR5 (for 70B models)
+- GPU: NVIDIA RTX 3090 (24GB) or better
+- Storage: 100GB+ NVMe SSD
+- OS: Linux (Ubuntu 22.04+ or Pop!_OS)
+- Python: 3.11+
 
 ### Software Prerequisites
-- **Git:** For cloning the repository
-- **Python 3.10+:** With pip and venv
-- **CUDA 12.0+:** Optional, for GPU acceleration
-- **Ollama:** For running local LLMs
+- Git: For cloning the repository
+- Python 3.10+: With pip and venv
+- CUDA 12.0+: Optional, for GPU acceleration
+- Ollama: For running local LLMs
 
 ---
 
@@ -48,12 +48,12 @@ Complete installation instructions for Meton local AI coding assistant.
 ```bash
 sudo apt update
 sudo apt install -y \
-  python3.10 \
-  python3-pip \
-  python3-venv \
-  git \
-  build-essential \
-  curl
+ python3.10 \
+ python3-pip \
+ python3-venv \
+ git \
+ build-essential \
+ curl
 ```
 
 #### macOS
@@ -79,11 +79,11 @@ wsl --install -d Ubuntu-22.04
 
 ```bash
 # Clone from GitHub (replace with actual repository URL)
-git clone https://github.com/yourusername/meton.git
+git clone https://github.com/Senchy071/Meton.git
 cd meton
 
 # Verify you're in the right directory
-pwd  # Should show: /path/to/meton
+pwd # Should show: /path/to/meton
 ```
 
 ---
@@ -95,9 +95,9 @@ pwd  # Should show: /path/to/meton
 python3.10 -m venv venv
 
 # Activate virtual environment
-source venv/bin/activate  # Linux/macOS
+source venv/bin/activate # Linux/macOS
 # OR
-venv\Scripts\activate  # Windows (PowerShell)
+venv\Scripts\activate # Windows (PowerShell)
 
 # Verify activation (should show venv path)
 which python
@@ -130,7 +130,7 @@ pip install -r requirements.txt
 # - and more...
 ```
 
-**Expected installation time:** 5-10 minutes depending on internet speed.
+Expected installation time: 5-10 minutes depending on internet speed.
 
 ---
 
@@ -179,13 +179,13 @@ ollama pull mistral:7b
 ollama pull llama3.1:70b
 ```
 
-**Model sizes:**
+Model sizes:
 - `mistral:7b`: ~4.1GB download
 - `llama3.1:8b`: ~4.7GB download
 - `qwen2.5-coder:32b`: ~18GB download
 - `llama3.1:70b`: ~40GB download
 
-**Download time:** 10-60 minutes depending on model and internet speed.
+Download time: 10-60 minutes depending on model and internet speed.
 
 ---
 
@@ -193,43 +193,43 @@ ollama pull llama3.1:70b
 
 ```bash
 # Copy example config
-cp config.yaml config.yaml.backup  # Backup existing config if any
+cp config.yaml config.yaml.backup # Backup existing config if any
 
 # Edit config.yaml
-nano config.yaml  # or vim, code, etc.
+nano config.yaml # or vim, code, etc.
 ```
 
-**Key configuration options:**
+Key configuration options:
 
 ```yaml
 models:
-  primary: "qwen2.5-coder:32b"  # Change based on your downloaded models
-  fallback: "llama3.1:8b"
-  quick: "mistral:7b"
-  temperature: 0.0
-  max_tokens: 2048
+ primary: "qwen2.5-coder:32b" # Change based on your downloaded models
+ fallback: "llama3.1:8b"
+ quick: "mistral:7b"
+ temperature: 0.0
+ max_tokens: 2048
 
 tools:
-  file_operations:
-    enabled: true
-  code_executor:
-    enabled: true
-  web_search:
-    enabled: false  # Enable if you want web search
-  codebase_search:
-    enabled: true
+ file_operations:
+ enabled: true
+ code_executor:
+ enabled: true
+ web_search:
+ enabled: false # Enable if you want web search
+ codebase_search:
+ enabled: true
 
 rag:
-  enabled: true
-  top_k: 10
-  similarity_threshold: 0.7
+ enabled: true
+ top_k: 10
+ similarity_threshold: 0.7
 
 skills:
-  enabled: true
-  auto_load: true
+ enabled: true
+ auto_load: true
 ```
 
-**Important paths to configure:**
+Important paths to configure:
 - `allowed_paths`: Add directories you want Meton to access
 - `blocked_paths`: Keep default blocked paths for security
 
@@ -245,12 +245,12 @@ source venv/bin/activate
 python meton.py
 
 # You should see:
-# 🧠 Meton - Local AI Coding Assistant
+# Meton - Local AI Coding Assistant
 # ...
 # Type /help for commands
 ```
 
-**Test basic functionality:**
+Test basic functionality:
 ```
 > /status
 > /models
@@ -307,11 +307,11 @@ Meton comes with 5 built-in profiles:
 /profile list
 
 # Activate a profile
-/profile use development  # For coding tasks
-/profile use research     # For deep analysis
-/profile use writing      # For documentation
-/profile use quick        # For fast responses
-/profile use code-review  # For thorough reviews
+/profile use development # For coding tasks
+/profile use research # For deep analysis
+/profile use writing # For documentation
+/profile use quick # For fast responses
+/profile use code-review # For thorough reviews
 ```
 
 ### Custom Configuration
@@ -326,13 +326,13 @@ Or edit `config.yaml` directly:
 ```yaml
 # Add under config.profiles section
 my_profile:
-  name: "My Profile"
-  description: "Custom configuration"
-  category: "custom"
-  settings:
-    model: "qwen2.5-coder:32b"
-    temperature: 0.1
-    # ...more settings
+ name: "My Profile"
+ description: "Custom configuration"
+ category: "custom"
+ settings:
+ model: "qwen2.5-coder:32b"
+ temperature: 0.1
+ # ...more settings
 ```
 
 ---
@@ -358,7 +358,7 @@ python test_rag_indexer.py
 python test_skills.py
 ```
 
-**Expected output:** All tests should pass with ✅.
+Expected output: All tests should pass with .
 
 ### Verify Web UI
 
@@ -370,7 +370,7 @@ python launch_web.py
 # http://localhost:7860
 ```
 
-**Check:**
+Check:
 - Chat interface loads
 - Can send messages
 - Model selection works
@@ -435,7 +435,7 @@ pip install jupyter ipykernel
 
 ### Issue: Command not found: python3.10
 
-**Solution:**
+Solution:
 ```bash
 # Ubuntu - add deadsnakes PPA
 sudo add-apt-repository ppa:deadsnakes/ppa
@@ -448,7 +448,7 @@ brew install python@3.10
 
 ### Issue: Out of memory when running models
 
-**Solution:**
+Solution:
 - Use smaller model (mistral:7b instead of llama3.1:70b)
 - Close other applications
 - Increase swap space:
@@ -462,7 +462,7 @@ sudo swapon /swapfile
 
 ### Issue: Ollama not found
 
-**Solution:**
+Solution:
 ```bash
 # Ensure Ollama is in PATH
 which ollama
@@ -476,7 +476,7 @@ ollama serve &
 
 ### Issue: Import errors (ModuleNotFoundError)
 
-**Solution:**
+Solution:
 ```bash
 # Ensure venv is activated
 source venv/bin/activate
@@ -493,7 +493,7 @@ pip install -r requirements.txt
 
 ### Issue: Permission denied errors
 
-**Solution:**
+Solution:
 ```bash
 # Fix file permissions
 chmod +x setup.sh meton.py launch_web.py
@@ -504,7 +504,7 @@ chmod 755 ~/.meton
 
 ### Issue: Web UI not loading
 
-**Solution:**
+Solution:
 ```bash
 # Check if port 7860 is in use
 lsof -i :7860
@@ -522,20 +522,20 @@ sudo ufw allow 7860
 
 After successful installation:
 
-1. **Read the User Guide**: [USER_GUIDE.md](USER_GUIDE.md)
-2. **Try Examples**: [EXAMPLES.md](EXAMPLES.md)
-3. **Index a Project**: `/index /path/to/your/code`
-4. **Explore Skills**: `/skills list`
-5. **Check Analytics**: `/analytics dashboard`
+1. **Read the User Guide [USER_GUIDE.md](USER_GUIDE.md)
+2. **Try Examples [EXAMPLES.md](EXAMPLES.md)
+3. **Index a Project `/index /path/to/your/code`
+4. **Explore Skills `/skills list`
+5. **Check Analytics `/analytics dashboard`
 
 ---
 
 ## Getting Help
 
-- **Documentation**: Check [docs/](.)
-- **Troubleshooting**: See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-- **GitHub Issues**: Report bugs or ask questions
-- **Discussions**: Join the community
+- Documentation Check [docs/](.)
+- Troubleshooting See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- GitHub Issues Report bugs or ask questions
+- Discussions Join the community
 
 ---
 
@@ -565,4 +565,4 @@ brew uninstall ollama
 
 ---
 
-**Installation complete! You're ready to use Meton.** 🎉
+Installation complete! You're ready to use Meton. 
