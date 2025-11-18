@@ -294,9 +294,9 @@ class MetonCLI:
             
             table.add_section()
             table.add_row("[dim]Aliases:[/dim]", "")
-            table.add_row("  primary", f"→ {self.config.config.models.primary_model}")
-            table.add_row("  fallback", f"→ {self.config.config.models.fallback_model}")
-            table.add_row("  quick", f"→ {self.config.config.models.quick_model}")
+            table.add_row("  primary", f"→ {self.config.config.models.primary}")
+            table.add_row("  fallback", f"→ {self.config.config.models.fallback}")
+            table.add_row("  quick", f"→ {self.config.config.models.quick}")
             
             self.console.print()
             self.console.print(table)
