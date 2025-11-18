@@ -173,6 +173,149 @@ class OptimizationConfig(BaseModel):
     resource_monitoring: ResourceMonitoringConfig = Field(default_factory=ResourceMonitoringConfig)
 
 
+class MultiAgentConfig(BaseModel):
+    """Multi-agent configuration."""
+    enabled: bool = False
+    max_subtasks: int = Field(default=10, ge=1)
+    max_revisions: int = Field(default=2, ge=1)
+    parallel_execution: bool = False
+
+
+class ReflectionConfig(BaseModel):
+    """Self-reflection configuration."""
+    enabled: bool = False
+    min_quality_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+    max_iterations: int = Field(default=2, ge=1)
+    auto_reflect_on: Dict[str, bool] = Field(default_factory=lambda: {
+        "complex_queries": True,
+        "multi_tool_usage": True,
+        "long_responses": True
+    })
+
+
+class IterativeImprovementConfig(BaseModel):
+    """Iterative improvement configuration."""
+    enabled: bool = False
+    max_iterations: int = Field(default=3, ge=1)
+    quality_threshold: float = Field(default=0.85, ge=0.0, le=1.0)
+    convergence_threshold: float = Field(default=0.05, ge=0.0, le=1.0)
+    convergence_window: int = Field(default=2, ge=1)
+
+
+class FeedbackLearningConfig(BaseModel):
+    """Feedback learning configuration."""
+    enabled: bool = True
+    use_for_improvement: bool = False
+    similarity_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+    max_relevant_feedback: int = Field(default=5, ge=1)
+    storage_path: str = "./feedback_data"
+
+
+class ParallelExecutionConfig(BaseModel):
+    """Parallel execution configuration (for tools)."""
+    enabled: bool = False
+    max_parallel_tools: int = Field(default=3, ge=1)
+    timeout_per_tool: int = Field(default=30, ge=1)
+    fallback_to_sequential: bool = True
+
+
+class ChainOfThoughtConfig(BaseModel):
+    """Chain-of-thought reasoning configuration."""
+    enabled: bool = False
+    min_complexity_threshold: str = "medium"
+    include_in_response: bool = False
+    max_reasoning_steps: int = Field(default=10, ge=1)
+
+
+class TaskPlanningConfig(BaseModel):
+    """Task planning configuration."""
+    enabled: bool = False
+    auto_plan_threshold: str = "medium"
+    visualize_plan: bool = True
+    allow_user_approval: bool = False
+    max_subtasks: int = Field(default=15, ge=1)
+
+
+class WebUISessionsConfig(BaseModel):
+    """Web UI sessions configuration."""
+    storage_path: str = "./web_sessions"
+    max_age_hours: int = Field(default=24, ge=1)
+    auto_cleanup: bool = True
+
+
+class WebUIAnalyticsConfig(BaseModel):
+    """Web UI analytics configuration."""
+    enabled: bool = True
+    refresh_interval: int = Field(default=30, ge=1)
+    max_chart_points: int = Field(default=50, ge=1)
+
+
+class WebUIConfig(BaseModel):
+    """Web UI configuration."""
+    enabled: bool = True
+    host: str = "127.0.0.1"
+    port: int = Field(default=7860, ge=1, le=65535)
+    share: bool = False
+    auth: Optional[str] = None
+    theme: str = "soft"
+    max_file_size_mb: int = Field(default=10, ge=1)
+    sessions: WebUISessionsConfig = Field(default_factory=WebUISessionsConfig)
+    analytics: WebUIAnalyticsConfig = Field(default_factory=WebUIAnalyticsConfig)
+
+
+class AnalyticsConfig(BaseModel):
+    """Analytics configuration."""
+    enabled: bool = True
+    storage_path: str = "./analytics_data"
+    auto_export_interval: int = Field(default=100, ge=1)
+    retention_days: int = Field(default=90, ge=1)
+
+
+class LongTermMemoryConfig(BaseModel):
+    """Long-term memory configuration."""
+    enabled: bool = True
+    storage_path: str = "./memory"
+    max_memories: int = Field(default=10000, ge=1)
+    consolidation_threshold: float = Field(default=0.95, ge=0.0, le=1.0)
+    decay_rate: float = Field(default=0.1, ge=0.0, le=1.0)
+    auto_consolidate: bool = True
+    auto_decay: bool = True
+    min_importance_for_retrieval: float = Field(default=0.3, ge=0.0, le=1.0)
+
+
+class CrossSessionLearningConfig(BaseModel):
+    """Cross-session learning configuration."""
+    enabled: bool = True
+    analysis_interval_hours: int = Field(default=24, ge=1)
+    min_occurrences_for_pattern: int = Field(default=5, ge=1)
+    min_confidence: float = Field(default=0.7, ge=0.0, le=1.0)
+    auto_apply_insights: bool = False
+    lookback_days: int = Field(default=30, ge=1)
+
+
+class TemplatesConfig(BaseModel):
+    """Templates configuration."""
+    enabled: bool = True
+    templates_dir: str = "templates/templates"
+    default_author: Optional[str] = None
+    default_email: Optional[str] = None
+    auto_setup: bool = True
+
+
+class ProfilesConfig(BaseModel):
+    """Profiles configuration."""
+    enabled: bool = True
+    profiles_dir: str = "config/profiles"
+    default_profile: Optional[str] = None
+    auto_switch: bool = False
+
+
+class ExportConfig(BaseModel):
+    """Export/import configuration."""
+    export_dir: str = "./exports"
+    backup_dir: str = "./backups"
+
+
 class ProjectConfig(BaseModel):
     """Project metadata."""
     name: str = "Meton"
@@ -190,6 +333,20 @@ class MetonConfig(BaseModel):
     cli: CLIConfig = Field(default_factory=CLIConfig)
     rag: RAGConfig = Field(default_factory=RAGConfig)
     skills: SkillsConfig = Field(default_factory=SkillsConfig)
+    multi_agent: MultiAgentConfig = Field(default_factory=MultiAgentConfig)
+    reflection: ReflectionConfig = Field(default_factory=ReflectionConfig)
+    iterative_improvement: IterativeImprovementConfig = Field(default_factory=IterativeImprovementConfig)
+    feedback_learning: FeedbackLearningConfig = Field(default_factory=FeedbackLearningConfig)
+    parallel_execution: ParallelExecutionConfig = Field(default_factory=ParallelExecutionConfig)
+    chain_of_thought: ChainOfThoughtConfig = Field(default_factory=ChainOfThoughtConfig)
+    task_planning: TaskPlanningConfig = Field(default_factory=TaskPlanningConfig)
+    analytics: AnalyticsConfig = Field(default_factory=AnalyticsConfig)
+    web_ui: WebUIConfig = Field(default_factory=WebUIConfig)
+    long_term_memory: LongTermMemoryConfig = Field(default_factory=LongTermMemoryConfig)
+    cross_session_learning: CrossSessionLearningConfig = Field(default_factory=CrossSessionLearningConfig)
+    templates: TemplatesConfig = Field(default_factory=TemplatesConfig)
+    profiles: ProfilesConfig = Field(default_factory=ProfilesConfig)
+    export: ExportConfig = Field(default_factory=ExportConfig)
     optimization: OptimizationConfig = Field(default_factory=OptimizationConfig)
 
 
