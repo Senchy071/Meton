@@ -887,8 +887,31 @@ Error details below:"""
                     total_steps_needed = step_keywords + 1  # +1 for the first step
                     steps_completed = len([tc for tc in state["tool_calls"] if tc["output"] is not None and not tc["output"].startswith("✗")])
 
+                    # Check if we just successfully read a file
+                    last_tool_call = state["tool_calls"][-1]
+                    read_file_successfully = (
+                        last_tool_call["tool_name"] == "file_operations" and
+                        tool_output.startswith("✓ Read") and
+                        "lines from" in tool_output
+                    )
+
                     if steps_completed < total_steps_needed:
                         instruction = f"User asked for {total_steps_needed} steps. You completed {steps_completed}. Call the NEXT tool now (leave ANSWER empty)."
+                    elif read_file_successfully:
+                        # Just read a file - FORCE agent to use its content
+                        instruction = """FILE READ SUCCESSFULLY - YOU MUST USE THE CONTENT BELOW!
+
+The tool just read a file for you. The FULL FILE CONTENT is shown below.
+
+CRITICAL INSTRUCTIONS:
+1. The user's question is about THIS PROJECT's code, not general concepts
+2. You MUST extract information from the file content below to answer
+3. DO NOT say "this is a general question" - it's about the specific code you just read
+4. DO NOT provide generic textbook answers - use the actual code details
+5. Your ANSWER must reference specific details from the file (function names, class names, line numbers)
+6. Start your answer with: "Based on the code in [filename], ..."
+
+If you provide a generic answer instead of using the file content, you have FAILED."""
                     else:
                         instruction = "You completed ALL steps. Provide your final ANSWER now with ACTION: NONE."
 
