@@ -243,6 +243,14 @@ AVAILABLE TOOLS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {tool_descriptions}
 
+CRITICAL - EXACT TOOL NAMES (copy these exactly in your ACTION field):
+{", ".join([tool.name for tool in self.tools])}
+
+WARNING: Do NOT confuse file names with tool names!
+- The file "tools/file_ops.py" contains the "file_operations" tool
+- Always use the exact tool names listed above
+- NEVER use "file_ops", "file_ops.read_file", or similar incorrect names
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 YOUR RESPONSE FORMAT (ReAct Pattern):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -516,6 +524,33 @@ ACTION: NONE
 ACTION_INPUT:
 ANSWER: No codebase is currently indexed. To search the codebase, you need to index it first using the indexer, then enable codebase search in config.yaml by setting tools.codebase_search.enabled=true.
 
+Example 15 - Error Recovery (CRITICAL - ALWAYS RETRY ON TOOL ERRORS):
+User: "How does the agent work?"
+
+Step 1 (First attempt with wrong tool name):
+THOUGHT: I'll search for agent-related code
+ACTION: file_ops
+ACTION_INPUT: {{"action": "read", "path": "{cwd}/core/agent.py"}}
+ANSWER:
+
+[Tool returns: ✗ Tool 'file_ops' not found. Available tools: file_operations, code_executor, web_search, codebase_search]
+
+Step 2 (After error - MUST RETRY, DO NOT GIVE UP):
+THOUGHT: I got an error! The tool 'file_ops' doesn't exist. The error shows available tools include 'file_operations'. I need to retry with the CORRECT tool name and proper JSON format.
+ACTION: file_operations
+ACTION_INPUT: {{"action": "read", "path": "{cwd}/core/agent.py"}}
+ANSWER:
+
+[Tool returns: ✓ Read 1375 lines from /path/core/agent.py... [file contents showing ReAct implementation]]
+
+Step 3 (After successful retry):
+THOUGHT: Success! Now I have the agent.py file contents. I can see it implements a ReAct pattern with LangGraph. Let me provide a complete answer.
+ACTION: NONE
+ACTION_INPUT:
+ANSWER: The agent is implemented in core/agent.py using LangGraph's StateGraph with a ReAct (Reasoning + Acting) pattern. It has three main nodes: reasoning_node (thinks about what to do), tool_execution_node (executes tools), and observation_node (processes results). The agent loops through these nodes until it reaches a final answer or hits max iterations.
+
+CRITICAL: This example shows you MUST retry after tool errors. Never give up on the first error!
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CRITICAL RULE - PRIORITIZE CODEBASE SEARCH:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -601,6 +636,17 @@ CRITICAL RULES - FOLLOW EXACTLY:
    - If asked about code, you MUST read it first, then describe ONLY what's in the result
    - Say "Based on the actual code I see..." to indicate you read it
    - If unsure, say "I would need to read the file to confirm"
+
+⚠️  ERROR RECOVERY RULES - NEVER GIVE UP ON ERRORS:
+   - When a tool returns an error (starts with ✗), DO NOT provide an ANSWER
+   - Read the error message to understand what went wrong
+   - Retry with the CORRECT tool name and input format
+   - Common errors:
+     • "Tool 'X' not found" → Check available tools list and use correct name
+     • "Invalid JSON" → Fix your ACTION_INPUT to be valid JSON
+     • "Path not allowed" → Use paths from allowed_paths list
+   - You can retry up to max_iterations times - use them!
+   - Only provide final ANSWER after successful tool execution or if truly unable to proceed
 
 ⚠️  ANSWER RULES - THIS IS CRITICAL:
    - When you call a tool, leave ANSWER empty on that same response
@@ -713,16 +759,32 @@ The examples above show the COMPLETE flow - notice how ANSWER is provided AFTER 
             recent_tool_result = ""
             if state["tool_calls"] and state["tool_calls"][-1]["output"]:
                 tool_output = state["tool_calls"][-1]["output"]
-                # Count how many steps the user asked for (look for THEN, AND, comma-separated)
-                user_query = state['messages'][-1] if state['messages'] else ''
-                step_keywords = user_query.lower().count(' then ') + user_query.lower().count(' and then ')
-                total_steps_needed = step_keywords + 1  # +1 for the first step
-                steps_completed = len([tc for tc in state["tool_calls"] if tc["output"] is not None])
 
-                if steps_completed < total_steps_needed:
-                    instruction = f"User asked for {total_steps_needed} steps. You completed {steps_completed}. Call the NEXT tool now (leave ANSWER empty)."
+                # Check if the tool call resulted in an error
+                is_error = tool_output.startswith("✗")
+
+                if is_error:
+                    # Tool failed - instruct agent to retry with correct parameters
+                    instruction = f"""TOOL ERROR OCCURRED - DO NOT GIVE UP!
+
+The tool call failed with an error. You MUST:
+1. Read the error message carefully
+2. Identify what went wrong (wrong tool name? wrong input format?)
+3. Retry with the CORRECT tool name and input format
+4. DO NOT provide an ANSWER yet - fix the error first
+
+Error details below:"""
                 else:
-                    instruction = "You completed ALL steps. Provide your final ANSWER now with ACTION: NONE."
+                    # Tool succeeded - determine next steps
+                    user_query = state['messages'][-1] if state['messages'] else ''
+                    step_keywords = user_query.lower().count(' then ') + user_query.lower().count(' and then ')
+                    total_steps_needed = step_keywords + 1  # +1 for the first step
+                    steps_completed = len([tc for tc in state["tool_calls"] if tc["output"] is not None and not tc["output"].startswith("✗")])
+
+                    if steps_completed < total_steps_needed:
+                        instruction = f"User asked for {total_steps_needed} steps. You completed {steps_completed}. Call the NEXT tool now (leave ANSWER empty)."
+                    else:
+                        instruction = "You completed ALL steps. Provide your final ANSWER now with ACTION: NONE."
 
                 recent_tool_result = f"""
 
@@ -811,6 +873,8 @@ CRITICAL RULES:
                 print(f"🎯 ACTION: {parsed['action']}")
                 if parsed['action_input']:
                     print(f"📥 INPUT: {parsed['action_input'][:100]}...")
+                if parsed['answer']:
+                    print(f"💬 ANSWER: {parsed['answer'][:150]}...")
 
             # LOOP DETECTION: Check if agent is trying to call the same tool again
             if parsed["action"] != "NONE" and len(state["tool_calls"]) >= 1:
@@ -841,7 +905,9 @@ CRITICAL RULES:
                     return state
 
             # Store action for tool execution
-            if parsed["action"] != "NONE" and parsed["action"] in self.tool_map:
+            if parsed["action"] != "NONE":
+                # Always add the tool call, even if invalid
+                # Tool execution node will handle validation
                 state["tool_calls"].append({
                     "tool_name": parsed["action"],
                     "input": parsed["action_input"],
@@ -897,8 +963,11 @@ CRITICAL RULES:
             # Get tool
             tool = self.tool_map.get(tool_name)
             if not tool:
-                error_msg = f"Tool '{tool_name}' not found"
+                available_tools = ", ".join(self.tool_map.keys())
+                error_msg = f"Tool '{tool_name}' not found. Available tools: {available_tools}"
                 tool_call["output"] = f"✗ {error_msg}"
+                if self.verbose:
+                    print(f"✗ Error: {error_msg}")
                 if self.logger:
                     self.logger.warning(error_msg)
                 return state
