@@ -1,16 +1,16 @@
 project:
   name: Meton
-  version: 0.1.0
+  version: 1.0.0
   description: Local AI Coding Assistant
 models:
-  primary: qwen2.5:32b-instruct-q5_K_M
-  fallback: llama3.1:8b
-  quick: mistral:latest
+  primary: qwen2.5-coder:32b
+  fallback: qwen2.5-instruct-q5_K_M
+  quick: qwen3-coder:30b
   settings:
     temperature: 0.0
     max_tokens: 2048
     top_p: 0.9
-    num_ctx: 4096
+    num_ctx: 32768  # Increased from 4096 to fit large files
 agent:
   max_iterations: 10
   verbose: true
@@ -31,7 +31,7 @@ tools:
     timeout: 5
     max_output_length: 10000
   web_search:
-    enabled: false
+    enabled: true
     max_results: 5
     timeout: 10
   codebase_search:
@@ -39,11 +39,6 @@ tools:
     top_k: 5
     similarity_threshold: 0.3
     max_code_length: 500
-  git_operations:
-    enabled: true
-    auto_detect_repo: true
-    max_diff_size: 5000
-    commit_message_style: conventional
 conversation:
   max_history: 20
   save_path: ./conversations/
@@ -145,58 +140,42 @@ cross_session_learning:
   lookback_days: 30
 templates:
   enabled: true
-  templates_dir: "templates/templates"
-  default_author: null  # Set default author name
-  default_email: null  # Set default email
-  auto_setup: true  # Run setup commands after creation
+  templates_dir: templates/templates
+  default_author: null
+  default_email: null
+  auto_setup: true
 profiles:
   enabled: true
-  profiles_dir: "config/profiles"
-  default_profile: null  # Use default config if null
-  auto_switch: false  # Auto-suggest profiles based on query
+  profiles_dir: config/profiles
+  default_profile: null
+  auto_switch: false
 export:
-  export_dir: "./exports"
-  backup_dir: "./backups"
-  auto_backup: false
-  auto_backup_interval_days: 7
-  compression: "gzip"  # gzip, zip, none
-  include_conversations: true
-  include_analytics: true
+  export_dir: ./exports
+  backup_dir: ./backups
 optimization:
   enabled: true
-
-  # Caching configuration
   cache:
     enabled: true
-    cache_dir: "./cache"
-    ttl_seconds: 3600  # 1 hour
+    cache_dir: ./cache
+    ttl_seconds: 3600
     max_memory_items: 1000
-
-  # Performance profiling
   profiling:
     enabled: true
     auto_profile_queries: true
     bottleneck_threshold_seconds: 5.0
-
-  # Query optimization
   query_optimization:
     enabled: true
     auto_optimize_tools: true
     auto_optimize_rag: true
-
-  # Parallel execution
   parallel:
     enabled: true
     max_workers: 3
-
-  # Lazy loading
   lazy_loading:
     enabled: true
-    preload_skills: ["code_explainer"]  # Skills to preload
-
-  # Resource monitoring
+    preload_skills:
+    - code_explainer
   resource_monitoring:
     enabled: true
-    sample_interval: 5  # seconds
-    alert_cpu_threshold: 90  # percentage
-    alert_memory_threshold: 90  # percentage
+    sample_interval: 5
+    alert_cpu_threshold: 90
+    alert_memory_threshold: 90

@@ -895,10 +895,17 @@ Error details below:"""
                         "lines from" in tool_output
                     )
 
+                    if self.verbose and read_file_successfully:
+                        print(f"\n🔍 DETECTED: File read successfully - adding CRITICAL instruction")
+                        print(f"   Tool: {last_tool_call['tool_name']}")
+                        print(f"   Output starts with: {tool_output[:50]}")
+
                     if steps_completed < total_steps_needed:
                         instruction = f"User asked for {total_steps_needed} steps. You completed {steps_completed}. Call the NEXT tool now (leave ANSWER empty)."
                     elif read_file_successfully:
                         # Just read a file - FORCE agent to use its content
+                        if self.verbose:
+                            print(f"   🚨 INJECTING CRITICAL INSTRUCTION TO FORCE FILE CONTENT USAGE")
                         instruction = """FILE READ SUCCESSFULLY - YOU MUST USE THE CONTENT BELOW!
 
 The tool just read a file for you. The FULL FILE CONTENT is shown below.
