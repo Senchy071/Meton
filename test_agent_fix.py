@@ -95,6 +95,24 @@ def test_agent_error_recovery():
         print("✓ No errors encountered (agent used correct tool names from start)")
         print("✓ TOOL NAME LEARNING: WORKING")
 
+    # Check if agent read the main implementation file
+    print("\n" + "-"*60)
+    print("COMPLETE INVESTIGATION CHECK:")
+    print("-"*60)
+
+    read_core_agent = False
+    for tc in result['tool_calls']:
+        if tc['tool_name'] == 'file_operations' and 'core/agent.py' in tc.get('input', ''):
+            output = tc.get('output', '')
+            if output.startswith('✓ Read'):
+                read_core_agent = True
+                print("✓ Agent read core/agent.py (main implementation)")
+                break
+
+    if not read_core_agent:
+        print("✗ Agent did NOT read core/agent.py")
+        print("  This is the main implementation file and should have been read!")
+
     # Check answer quality
     print("\n" + "-"*60)
     print("ANSWER QUALITY CHECK:")
@@ -104,11 +122,13 @@ def test_agent_error_recovery():
 
     # Quality indicators
     quality_indicators = {
+        'read_implementation': read_core_agent,
         'mentions_react': 'react' in result['output'].lower(),
         'mentions_langgraph': 'langgraph' in result['output'].lower(),
         'mentions_nodes': 'node' in result['output'].lower(),
-        'mentions_tools': 'tool' in result['output'].lower(),
-        'has_details': len(result['output']) > 200,
+        'mentions_stategraph': 'stategraph' in result['output'].lower(),
+        'has_line_numbers': any(char.isdigit() for char in result['output']) and 'line' in result['output'].lower(),
+        'has_details': len(result['output']) > 300,
     }
 
     print("\nQuality indicators:")
@@ -118,6 +138,20 @@ def test_agent_error_recovery():
 
     quality_score = sum(quality_indicators.values()) / len(quality_indicators) * 100
     print(f"\nQuality score: {quality_score:.0f}%")
+
+    # Overall assessment
+    print("\n" + "-"*60)
+    print("OVERALL ASSESSMENT:")
+    print("-"*60)
+
+    if quality_score >= 80:
+        print("✓ EXCELLENT: Agent performed thorough investigation with detailed answer")
+    elif quality_score >= 60:
+        print("⚠ GOOD: Agent completed task but could be more thorough")
+    elif quality_score >= 40:
+        print("⚠ FAIR: Agent needs improvement in investigation depth")
+    else:
+        print("✗ POOR: Agent did not complete thorough investigation")
 
     print("\n" + "="*60)
     print("TEST COMPLETED")

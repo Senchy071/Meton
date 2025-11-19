@@ -551,6 +551,51 @@ ANSWER: The agent is implemented in core/agent.py using LangGraph's StateGraph w
 
 CRITICAL: This example shows you MUST retry after tool errors. Never give up on the first error!
 
+Example 16 - Complete Investigation (CRITICAL - READ FILES YOU MENTION):
+User: "How does the agent work?"
+
+Step 1 (Search for relevant files):
+THOUGHT: I should search for agent-related code
+ACTION: codebase_search
+ACTION_INPUT: {{"query": "agent implementation"}}
+ANSWER:
+
+[Tool returns: Results showing /path/core/agent.py and /path/agent/__init__.py]
+
+Step 2 (Read overview file):
+THOUGHT: I found relevant files. Let me start by reading the overview.
+ACTION: file_operations
+ACTION_INPUT: {{"action": "read", "path": "{cwd}/agent/__init__.py"}}
+ANSWER:
+
+[Tool returns: ✓ Read 27 lines... showing package overview]
+
+Step 3 - WRONG APPROACH (DO NOT DO THIS):
+THOUGHT: I see the overview mentions core/agent.py has the implementation. I'll answer now.
+ACTION: NONE
+ANSWER: The agent is in core/agent.py and uses multi-step reasoning...
+❌ WRONG! You mentioned core/agent.py but didn't read it!
+
+Step 3 - CORRECT APPROACH (DO THIS INSTEAD):
+THOUGHT: The overview mentions core/agent.py has the implementation. I MUST read it before answering.
+ACTION: file_operations
+ACTION_INPUT: {{"action": "read", "path": "{cwd}/core/agent.py"}}
+ANSWER:
+
+[Tool returns: ✓ Read 1375 lines... showing full ReAct implementation with StateGraph, nodes, etc.]
+
+Step 4 (Now you can answer with details):
+THOUGHT: Perfect! I've read both files. Now I can provide a complete, detailed answer based on actual code.
+ACTION: NONE
+ANSWER: The AI agent is implemented in core/agent.py using LangGraph's StateGraph with a ReAct pattern. Based on the actual code I read:
+- Three nodes: reasoning_node (line 689), tool_execution_node (line 887), observation_node (line 952)
+- AgentState tracks: messages, thoughts, tool_calls, iteration, finished, final_answer
+- Loop detection at lines 817-841 prevents infinite tool calls
+- Max iterations: 10 (configurable)
+The agent loops: reasoning → tool execution → observation → repeat until ANSWER or max iterations.
+
+CRITICAL: NEVER mention files without reading them. If you say "X is in file.py", you MUST read file.py first!
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CRITICAL RULE - PRIORITIZE CODEBASE SEARCH:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -647,6 +692,18 @@ CRITICAL RULES - FOLLOW EXACTLY:
      • "Path not allowed" → Use paths from allowed_paths list
    - You can retry up to max_iterations times - use them!
    - Only provide final ANSWER after successful tool execution or if truly unable to proceed
+
+⚠️  COMPLETE INVESTIGATION RULES - READ BEFORE ANSWERING:
+   - If you mention a file in your THOUGHT but haven't read it yet, READ IT FIRST
+   - NEVER say "the code is in X file" without actually reading X file
+   - NEVER say "X is implemented in Y" without reading Y to verify
+   - When you identify the relevant file, you MUST read it before answering
+   - Example violations:
+     • THOUGHT: "The implementation is in core/agent.py" + ACTION: NONE → WRONG!
+     • Correct: "The implementation is in core/agent.py" + ACTION: file_operations to read it
+   - If user asks "how does X work", you must READ the actual implementation
+   - Surface-level descriptions without reading the code are NOT acceptable
+   - Only provide ANSWER after you've read all relevant files you identified
 
 ⚠️  ANSWER RULES - THIS IS CRITICAL:
    - When you call a tool, leave ANSWER empty on that same response
@@ -920,6 +977,51 @@ CRITICAL RULES:
                 # Check if there are pending tool calls
                 pending_tools = [tc for tc in state["tool_calls"] if tc["output"] is None]
                 if not pending_tools:
+                    # VALIDATION: Check if agent mentioned files it hasn't read
+                    import re
+                    mentioned_files = set()
+                    read_files = set()
+
+                    # Extract file paths mentioned in thought and answer
+                    combined_text = parsed["thought"] + " " + parsed["answer"]
+                    # Look for patterns like "core/agent.py", "/path/to/file.py", "file.py"
+                    file_patterns = re.findall(r'[\w/]+\.py', combined_text)
+                    for pattern in file_patterns:
+                        # Normalize path
+                        if pattern.startswith('/'):
+                            mentioned_files.add(pattern)
+                        else:
+                            # Relative path - add with cwd
+                            from pathlib import Path
+                            full_path = str(Path.cwd() / pattern)
+                            mentioned_files.add(full_path)
+
+                    # Check which files were actually read
+                    for tc in state["tool_calls"]:
+                        if tc["tool_name"] == "file_operations" and tc["output"] and tc["output"].startswith("✓ Read"):
+                            # Extract path from successful read operations
+                            try:
+                                input_data = __import__('json').loads(tc["input"])
+                                if input_data.get("action") == "read":
+                                    path = input_data.get("path", "")
+                                    read_files.add(path)
+                            except:
+                                pass
+
+                    # Find unread but mentioned files
+                    unread_files = mentioned_files - read_files
+
+                    if unread_files and self.verbose:
+                        print(f"\n⚠️  WARNING: Agent mentioned files it hasn't read yet:")
+                        for f in unread_files:
+                            print(f"   - {f}")
+                        print(f"   Agent should read these files before answering!")
+
+                    # Allow answer to proceed anyway (agent will learn from examples)
+                    # But log the issue for debugging
+                    if unread_files and self.logger:
+                        self.logger.warning(f"Agent mentioned unread files: {unread_files}")
+
                     # No pending tools, so this is the final answer
                     state["finished"] = True
                     state["final_answer"] = parsed["answer"]
