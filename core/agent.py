@@ -239,6 +239,32 @@ IMPORTANT:
 - Start all file operations from: {cwd}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 CRITICAL: DO NOT HALLUCINATE - READ BEFORE ANSWERING 🚨
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**ABSOLUTE RULE**: If the user asks about code/files in THIS project:
+1. You MUST use tools to read the actual files FIRST
+2. You MUST base your answer ONLY on what you read from the tools
+3. You MUST NOT answer from general knowledge or assumptions
+4. If you mention a file name, you MUST have read it using file_operations
+
+**VIOLATIONS** (NEVER do these):
+❌ Saying "Based on typical implementations..." - NO! Read the actual code
+❌ Saying "Usually agents work by..." - NO! Read THIS project's code
+❌ Claiming "The code does X" without reading the file - NO! Read it first
+❌ Describing functionality without seeing the actual implementation - NO!
+
+**CORRECT PATTERN**:
+User: "How does X work in this project?"
+✅ Step 1: Use codebase_search or file_operations to READ the file
+✅ Step 2: Wait for tool result with actual code
+✅ Step 3: Extract answer from the ACTUAL code you just read
+✅ Step 4: Start answer with "Based on the code in [filename], ..."
+
+If you cannot find relevant files → Say "I couldn't find that in the codebase"
+NEVER → Provide generic answers pretending they're about this project
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 AVAILABLE TOOLS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {tool_descriptions}
@@ -906,19 +932,23 @@ Error details below:"""
                         # Just read a file - FORCE agent to use its content
                         if self.verbose:
                             print(f"   🚨 INJECTING CRITICAL INSTRUCTION TO FORCE FILE CONTENT USAGE")
-                        instruction = """FILE READ SUCCESSFULLY - YOU MUST USE THE CONTENT BELOW!
+                        instruction = """🚨 FILE READ SUCCESSFULLY - USE THIS CONTENT TO ANSWER! 🚨
 
-The tool just read a file for you. The FULL FILE CONTENT is shown below.
+The tool just read a file. The FULL FILE CONTENT is in the tool output below.
 
-CRITICAL INSTRUCTIONS:
-1. The user's question is about THIS PROJECT's code, not general concepts
-2. You MUST extract information from the file content below to answer
-3. DO NOT say "this is a general question" - it's about the specific code you just read
-4. DO NOT provide generic textbook answers - use the actual code details
-5. Your ANSWER must reference specific details from the file (function names, class names, line numbers)
-6. Start your answer with: "Based on the code in [filename], ..."
+YOU ARE STRICTLY FORBIDDEN FROM:
+❌ Answering from general knowledge or making assumptions
+❌ Saying "typically" or "usually" or "generally"
+❌ Providing textbook explanations instead of using the actual code
+❌ Claiming "Based on standard practices..." - NO! Use the actual file content!
 
-If you provide a generic answer instead of using the file content, you have FAILED."""
+YOU MUST:
+✅ Extract the answer from the file content below
+✅ Reference specific details (function names, classes, line numbers)
+✅ Start your ANSWER with: "Based on the code in [filename], ..."
+✅ Quote or describe what you actually see in the tool result
+
+This is a test of your ability to follow instructions. Generic answers = FAILURE."""
                     else:
                         instruction = "You completed ALL steps. Provide your final ANSWER now with ACTION: NONE."
 
@@ -1030,9 +1060,44 @@ CRITICAL RULES:
 
                     # Check if this looks like a raw file dump (long content with file markers)
                     if (tool_result.startswith("✓ Read") and len(tool_result) > 500):
-                        # Large file read - don't dump it, provide a summary instead
+                        # Large file read - try to extract relevant information
                         user_query = state['messages'][-1] if state['messages'] else ''
-                        state["final_answer"] = f"I read the file but couldn't extract a proper answer to your question: '{user_query}'. The file is too large to process in my current context. Please ask a more specific question or request a search for specific information."
+
+                        # Give ONE MORE CHANCE with ultra-focused extraction prompt
+                        extraction_prompt = f"""🚨 CRITICAL TASK: Extract answer from file content 🚨
+
+User Question: "{user_query}"
+
+The file was already read. Your job is to extract the answer from the content below.
+
+STRICT RULES:
+1. Base answer ONLY on the file content below
+2. DO NOT say "the file is too large" - extract what's needed
+3. DO NOT provide generic answers - use specific code details
+4. Reference actual function/class names, line numbers from the content
+5. If the answer isn't in the file, say "The file doesn't contain information about [topic]"
+
+File Content:
+{tool_result}
+
+Provide a concise answer:"""
+
+                        # Call LLM with focused extraction prompt
+                        try:
+                            llm = self.model_manager.get_llm()
+                            extraction_response = llm.invoke(extraction_prompt)
+
+                            # Use the full response as answer (it should be focused)
+                            state["final_answer"] = extraction_response.strip()
+
+                            if self.verbose:
+                                print(f"   ✅ Extracted answer from large file using focused prompt")
+
+                        except Exception as e:
+                            if self.logger:
+                                self.logger.error(f"Failed to extract from large file: {e}")
+                            state["final_answer"] = f"I read the file but encountered an error during extraction: {str(e)}"
+
                     else:
                         # Small result - ok to use directly
                         state["final_answer"] = tool_result
@@ -1091,17 +1156,16 @@ CRITICAL RULES:
                     unread_files = mentioned_files - read_files
 
                     if unread_files and self.verbose:
-                        print(f"\n⚠️  WARNING: Agent mentioned files it hasn't read yet:")
+                        # Warn but don't block - agent should learn from improved prompts
+                        print(f"\n⚠️  WARNING: Agent may have answered without reading:")
                         for f in unread_files:
                             print(f"   - {f}")
-                        print(f"   Agent should read these files before answering!")
 
-                    # Allow answer to proceed anyway (agent will learn from examples)
-                    # But log the issue for debugging
                     if unread_files and self.logger:
                         self.logger.warning(f"Agent mentioned unread files: {unread_files}")
 
                     # No pending tools, so this is the final answer
+                    # (Agent should learn from improved system prompt examples)
                     state["finished"] = True
                     state["final_answer"] = parsed["answer"]
                 # else: there are pending tools, so don't finish yet - let them execute first

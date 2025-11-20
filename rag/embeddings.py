@@ -41,7 +41,8 @@ class EmbeddingModel:
             Loaded SentenceTransformer model
         """
         if self._model is None:
-            self._model = SentenceTransformer(self.model_name)
+            # Force CPU to avoid CUDA OOM errors (embeddings are fast enough on CPU)
+            self._model = SentenceTransformer(self.model_name, device='cpu')
         return self._model
 
     def encode(self, text: str) -> np.ndarray:

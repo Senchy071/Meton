@@ -233,6 +233,37 @@ Tool selection is driven by examples in system prompt showing when to use each t
 3. Update default values if adding new optional fields
 4. Remember: Changes require `config.save()` for persistence
 
+## Problem-Solving Guidelines
+
+### When to Search for Solutions
+
+When debugging or fixing issues in Meton:
+
+**Rule**: After **two unsuccessful attempts** to solve an issue, search the web for solutions.
+
+**Why**:
+- Prevents spending excessive time on approaches that aren't working
+- Leverages existing solutions and best practices from the community
+- Helps identify if the problem is a known issue with dependencies (LangChain, LangGraph, etc.)
+
+**What to search for**:
+- Error messages (exact error text + library name)
+- Best practices for the specific pattern or architecture (e.g., "ReAct agent loop detection")
+- Known issues or workarounds for the libraries being used
+- Recent discussions (include year: "2024" or "2025" for current solutions)
+
+**Example workflow**:
+1. Attempt 1: Try initial fix based on code analysis
+2. Attempt 2: Try alternative approach or refinement
+3. **Attempt 3**: Search web for solutions before trying a third code approach
+4. Apply researched solution with understanding of why it works
+
+This guideline prevents:
+- Infinite debugging loops
+- Over-engineering solutions
+- Missing simple, well-known fixes
+- Wasting time reinventing solutions
+
 ## Testing Patterns
 
 Tests are standalone Python scripts (not pytest-based). Pattern:
