@@ -567,3 +567,159 @@ class ModelManager:
         # Cache and return
         self._llm_cache[model_name] = llm
         return llm
+
+    def update_parameter(self, param_name: str, value: Any) -> bool:
+        """Update a single model parameter at runtime.
+
+        Args:
+            param_name: Name of the parameter to update
+            value: New value for the parameter
+
+        Returns:
+            True if successful
+
+        Raises:
+            ValueError: If parameter name is invalid or value is out of range
+
+        Example:
+            >>> manager.update_parameter("temperature", 0.7)
+            >>> manager.update_parameter("top_k", 40)
+        """
+        # Map of valid parameter names to their types and validation
+        valid_params = {
+            "temperature": (float, 0.0, 2.0),
+            "max_tokens": (int, 1, None),
+            "top_p": (float, 0.0, 1.0),
+            "num_ctx": (int, 1, None),
+            "top_k": (int, 0, None),
+            "min_p": (float, 0.0, 1.0),
+            "repeat_penalty": (float, 0.0, 2.0),
+            "repeat_last_n": (int, -1, None),
+            "presence_penalty": (float, -2.0, 2.0),
+            "frequency_penalty": (float, -2.0, 2.0),
+            "mirostat": (int, 0, 2),
+            "mirostat_tau": (float, 0.0, None),
+            "mirostat_eta": (float, 0.0, 1.0),
+            "seed": (int, -1, None),
+        }
+
+        if param_name not in valid_params:
+            raise ValueError(
+                f"Invalid parameter '{param_name}'. "
+                f"Valid parameters: {', '.join(valid_params.keys())}"
+            )
+
+        param_type, min_val, max_val = valid_params[param_name]
+
+        # Type conversion
+        try:
+            if param_type == int:
+                value = int(value)
+            elif param_type == float:
+                value = float(value)
+        except (ValueError, TypeError):
+            raise ValueError(f"Invalid value type for {param_name}. Expected {param_type.__name__}")
+
+        # Range validation
+        if min_val is not None and value < min_val:
+            raise ValueError(f"{param_name} must be >= {min_val}")
+        if max_val is not None and value > max_val:
+            raise ValueError(f"{param_name} must be <= {max_val}")
+
+        # Update the config
+        setattr(self.config.config.models.settings, param_name, value)
+
+        # Clear LLM cache to force recreation with new parameters
+        self._llm_cache.clear()
+
+        if self.logger:
+            self.logger.info(f"Updated parameter {param_name} = {value}")
+
+        return True
+
+    def get_current_parameters(self) -> Dict[str, Any]:
+        """Get current model parameters.
+
+        Returns:
+            Dictionary of all current parameter values
+
+        Example:
+            >>> params = manager.get_current_parameters()
+            >>> print(params["temperature"])
+        """
+        settings = self.config.config.models.settings
+        return {
+            "temperature": settings.temperature,
+            "max_tokens": settings.max_tokens,
+            "top_p": settings.top_p,
+            "num_ctx": settings.num_ctx,
+            "top_k": settings.top_k,
+            "min_p": settings.min_p,
+            "repeat_penalty": settings.repeat_penalty,
+            "repeat_last_n": settings.repeat_last_n,
+            "presence_penalty": settings.presence_penalty,
+            "frequency_penalty": settings.frequency_penalty,
+            "mirostat": settings.mirostat,
+            "mirostat_tau": settings.mirostat_tau,
+            "mirostat_eta": settings.mirostat_eta,
+            "seed": settings.seed,
+        }
+
+    def apply_preset(self, preset_name: str) -> bool:
+        """Apply a parameter preset.
+
+        Args:
+            preset_name: Name of the preset to apply
+
+        Returns:
+            True if successful
+
+        Raises:
+            ValueError: If preset name is invalid
+
+        Example:
+            >>> manager.apply_preset("creative")
+            >>> manager.apply_preset("precise")
+        """
+        from core.config import PARAMETER_PRESETS
+
+        if preset_name not in PARAMETER_PRESETS:
+            available = ", ".join(PARAMETER_PRESETS.keys())
+            raise ValueError(
+                f"Invalid preset '{preset_name}'. "
+                f"Available presets: {available}"
+            )
+
+        preset = PARAMETER_PRESETS[preset_name]
+
+        # Apply all settings from the preset
+        for param_name, value in preset.settings.items():
+            setattr(self.config.config.models.settings, param_name, value)
+
+        # Clear LLM cache
+        self._llm_cache.clear()
+
+        if self.logger:
+            self.logger.info(f"Applied preset '{preset_name}': {preset.description}")
+
+        return True
+
+    def reset_parameters(self) -> bool:
+        """Reset parameters to config file defaults.
+
+        Returns:
+            True if successful
+
+        Example:
+            >>> manager.reset_parameters()
+        """
+        # Reload config from file
+        self.config.reload()
+
+        # Clear LLM cache
+        self._llm_cache.clear()
+
+        if self.logger:
+            self.logger.info("Reset parameters to config defaults")
+
+        return True

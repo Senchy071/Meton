@@ -41,6 +41,80 @@ class ModelSettings(BaseModel):
     seed: int = Field(default=-1, ge=-1)  # -1 = random
 
 
+class ParameterPreset(BaseModel):
+    """Parameter preset configuration."""
+    name: str
+    description: str
+    settings: Dict[str, Any]
+
+
+# Predefined parameter presets
+PARAMETER_PRESETS = {
+    "precise": ParameterPreset(
+        name="precise",
+        description="Deterministic output for precise coding tasks",
+        settings={
+            "temperature": 0.0,
+            "top_k": 40,
+            "min_p": 0.1,
+            "repeat_penalty": 1.1,
+            "mirostat": 0,
+            "seed": -1,
+        }
+    ),
+    "creative": ParameterPreset(
+        name="creative",
+        description="More exploratory and creative coding",
+        settings={
+            "temperature": 0.7,
+            "top_p": 0.95,
+            "min_p": 0.05,
+            "repeat_penalty": 1.2,
+            "mirostat": 0,
+            "seed": -1,
+        }
+    ),
+    "balanced": ParameterPreset(
+        name="balanced",
+        description="Balanced between creativity and precision",
+        settings={
+            "temperature": 0.3,
+            "top_k": 40,
+            "top_p": 0.9,
+            "min_p": 0.1,
+            "repeat_penalty": 1.15,
+            "mirostat": 0,
+            "seed": -1,
+        }
+    ),
+    "debugging": ParameterPreset(
+        name="debugging",
+        description="Consistent methodical debugging approach",
+        settings={
+            "temperature": 0.2,
+            "top_k": 20,
+            "mirostat": 2,
+            "mirostat_tau": 4.0,
+            "mirostat_eta": 0.1,
+            "repeat_penalty": 1.15,
+            "seed": -1,
+        }
+    ),
+    "explanation": ParameterPreset(
+        name="explanation",
+        description="Clear explanations with reduced repetition",
+        settings={
+            "temperature": 0.5,
+            "top_p": 0.9,
+            "repeat_penalty": 1.25,
+            "presence_penalty": 0.1,
+            "mirostat": 0,
+            "seed": -1,
+        }
+    ),
+}
+
+
 class ModelsConfig(BaseModel):
     """Models configuration."""
     primary: str = "codellama:34b"

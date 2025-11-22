@@ -144,6 +144,11 @@ class MetonCLI:
         table.add_row("/clear, /c", "Clear conversation history")
         table.add_row("/model <name>", "Switch model (primary/fallback/quick)")
         table.add_row("/models", "List available models")
+        table.add_row("/param show", "Show current model parameters")
+        table.add_row("/param <name> <value>", "Set parameter value")
+        table.add_row("/param reset", "Reset to config defaults")
+        table.add_row("/preset <name>", "Apply parameter preset")
+        table.add_row("/preset", "List available presets")
         table.add_row("/status", "Show current status")
         table.add_row("/verbose on/off", "Toggle verbose mode")
         table.add_row("/save", "Save conversation")
@@ -329,6 +334,16 @@ class MetonCLI:
                 self.switch_model(args[0])
             else:
                 self.console.print("[yellow]Usage: /model <name>[/yellow]")
+        elif cmd == '/param':
+            if args:
+                self.handle_param_command(args[0])
+            else:
+                self.console.print("[yellow]Usage: /param [show|reset|<name> <value>][/yellow]")
+        elif cmd == '/preset':
+            if args:
+                self.handle_preset_command(args[0])
+            else:
+                self.list_presets()
         elif cmd == '/verbose':
             if args:
                 self.toggle_verbose(args[0])
@@ -667,6 +682,174 @@ class MetonCLI:
 
         except Exception as e:
             self.console.print(f"[red]❌ Failed to reload config: {str(e)}[/red]")
+
+    def handle_param_command(self, args: str):
+        """Handle /param command."""
+        parts = args.split(maxsplit=1)
+        subcommand = parts[0].lower()
+
+        if subcommand == 'show':
+            self.show_parameters()
+        elif subcommand == 'reset':
+            self.reset_parameters()
+        else:
+            # Assume it's <name> <value>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /param <name> <value>[/yellow]")
+                return
+            param_name = parts[0]
+            value_str = parts[1]
+            self.set_parameter(param_name, value_str)
+
+    def show_parameters(self):
+        """Display current model parameters."""
+        if not self.model_manager:
+            self.console.print("[red]❌ Model manager not initialized[/red]")
+            return
+
+        try:
+            params = self.model_manager.get_current_parameters()
+
+            table = Table(title="Current Model Parameters", show_header=True, header_style="bold cyan")
+            table.add_column("Parameter", style="yellow", width=20)
+            table.add_column("Value", style="white", width=15)
+            table.add_column("Description", style="dim", width=40)
+
+            # Group parameters by category
+            core_params = {
+                "temperature": "Randomness control (0.0-2.0)",
+                "max_tokens": "Max generation length",
+                "top_p": "Nucleus sampling (0.0-1.0)",
+                "num_ctx": "Context window size",
+            }
+
+            advanced_params = {
+                "top_k": "Token diversity (0 = disabled)",
+                "min_p": "Adaptive filtering (0.0-1.0)",
+            }
+
+            repetition_params = {
+                "repeat_penalty": "Repetition penalty (0.0-2.0)",
+                "repeat_last_n": "Repetition window",
+                "presence_penalty": "Presence penalty (-2.0 to 2.0)",
+                "frequency_penalty": "Frequency penalty (-2.0 to 2.0)",
+            }
+
+            mirostat_params = {
+                "mirostat": "Mirostat mode (0/1/2)",
+                "mirostat_tau": "Target entropy",
+                "mirostat_eta": "Learning rate (0.0-1.0)",
+            }
+
+            other_params = {
+                "seed": "Random seed (-1 = random)",
+            }
+
+            # Add core parameters
+            table.add_row("[bold]Core Parameters[/bold]", "", "", style="cyan")
+            for param, desc in core_params.items():
+                value = params.get(param, "N/A")
+                table.add_row(f"  {param}", str(value), desc)
+
+            # Add advanced parameters
+            table.add_row("", "", "")
+            table.add_row("[bold]Advanced Sampling[/bold]", "", "", style="cyan")
+            for param, desc in advanced_params.items():
+                value = params.get(param, "N/A")
+                table.add_row(f"  {param}", str(value), desc)
+
+            # Add repetition parameters
+            table.add_row("", "", "")
+            table.add_row("[bold]Repetition Control[/bold]", "", "", style="cyan")
+            for param, desc in repetition_params.items():
+                value = params.get(param, "N/A")
+                table.add_row(f"  {param}", str(value), desc)
+
+            # Add mirostat parameters
+            table.add_row("", "", "")
+            table.add_row("[bold]Mirostat[/bold]", "", "", style="cyan")
+            for param, desc in mirostat_params.items():
+                value = params.get(param, "N/A")
+                table.add_row(f"  {param}", str(value), desc)
+
+            # Add other parameters
+            table.add_row("", "", "")
+            table.add_row("[bold]Other[/bold]", "", "", style="cyan")
+            for param, desc in other_params.items():
+                value = params.get(param, "N/A")
+                table.add_row(f"  {param}", str(value), desc)
+
+            self.console.print()
+            self.console.print(table)
+            self.console.print()
+            self.console.print("[dim]💡 Tip: Use /param <name> <value> to change, /preset <name> for presets[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to get parameters: {str(e)}[/red]")
+
+    def set_parameter(self, param_name: str, value_str: str):
+        """Set a single parameter value."""
+        if not self.model_manager:
+            self.console.print("[red]❌ Model manager not initialized[/red]")
+            return
+
+        try:
+            self.model_manager.update_parameter(param_name, value_str)
+            self.console.print(f"[green]✓ Set {param_name} = {value_str}[/green]")
+            self.console.print("[dim]  New value will apply to next query[/dim]")
+
+        except ValueError as e:
+            self.console.print(f"[red]❌ {str(e)}[/red]")
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to set parameter: {str(e)}[/red]")
+
+    def reset_parameters(self):
+        """Reset parameters to config defaults."""
+        if not self.model_manager:
+            self.console.print("[red]❌ Model manager not initialized[/red]")
+            return
+
+        try:
+            with self.console.status("[cyan]🔄 Resetting parameters...[/cyan]", spinner="dots"):
+                self.model_manager.reset_parameters()
+
+            self.console.print("[green]✓ Parameters reset to config defaults[/green]")
+            self.console.print("[dim]  Run /param show to see current values[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to reset parameters: {str(e)}[/red]")
+
+    def handle_preset_command(self, preset_name: str):
+        """Handle /preset <name> command."""
+        if not self.model_manager:
+            self.console.print("[red]❌ Model manager not initialized[/red]")
+            return
+
+        try:
+            self.model_manager.apply_preset(preset_name)
+            self.console.print(f"[green]✓ Applied preset '{preset_name}'[/green]")
+            self.console.print("[dim]  Run /param show to see new values[/dim]")
+
+        except ValueError as e:
+            self.console.print(f"[red]❌ {str(e)}[/red]")
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to apply preset: {str(e)}[/red]")
+
+    def list_presets(self):
+        """List available parameter presets."""
+        from core.config import PARAMETER_PRESETS
+
+        table = Table(title="Available Parameter Presets", show_header=True, header_style="bold cyan")
+        table.add_column("Preset", style="yellow", width=15)
+        table.add_column("Description", style="white", width=50)
+
+        for name, preset in PARAMETER_PRESETS.items():
+            table.add_row(name, preset.description)
+
+        self.console.print()
+        self.console.print(table)
+        self.console.print()
+        self.console.print("[dim]💡 Usage: /preset <name> to apply[/dim]")
 
     def process_query(self, query: str):
         """Process a user query through the agent."""
