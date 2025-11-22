@@ -264,10 +264,29 @@ class ModelManager:
         """
         settings = self.config.config.models.settings
         options = {
+            # Core parameters
             'temperature': settings.temperature,
             'num_predict': settings.max_tokens,
             'top_p': settings.top_p,
             'num_ctx': settings.num_ctx,
+
+            # Advanced sampling
+            'top_k': settings.top_k,
+            'min_p': settings.min_p,
+
+            # Repetition control
+            'repeat_penalty': settings.repeat_penalty,
+            'repeat_last_n': settings.repeat_last_n,
+            'presence_penalty': settings.presence_penalty,
+            'frequency_penalty': settings.frequency_penalty,
+
+            # Mirostat
+            'mirostat': settings.mirostat,
+            'mirostat_tau': settings.mirostat_tau,
+            'mirostat_eta': settings.mirostat_eta,
+
+            # Reproducibility
+            'seed': settings.seed,
         }
 
         if override_options:
@@ -524,10 +543,25 @@ class ModelManager:
         settings = self.config.config.models.settings
         llm = OllamaLLM(
             model=model_name,
+            # Core parameters
             temperature=settings.temperature,
             num_predict=settings.max_tokens,
             top_p=settings.top_p,
             num_ctx=settings.num_ctx,
+            # Advanced sampling
+            top_k=settings.top_k,
+            min_p=settings.min_p,
+            # Repetition control
+            repeat_penalty=settings.repeat_penalty,
+            repeat_last_n=settings.repeat_last_n,
+            presence_penalty=settings.presence_penalty,
+            frequency_penalty=settings.frequency_penalty,
+            # Mirostat
+            mirostat=settings.mirostat,
+            mirostat_tau=settings.mirostat_tau,
+            mirostat_eta=settings.mirostat_eta,
+            # Reproducibility
+            seed=settings.seed,
         )
 
         # Cache and return

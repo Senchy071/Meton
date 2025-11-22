@@ -16,10 +16,29 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 class ModelSettings(BaseModel):
     """LLM model settings."""
+    # Core sampling parameters
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int = Field(default=2048, ge=1)
     top_p: float = Field(default=0.9, ge=0.0, le=1.0)
     num_ctx: int = Field(default=4096, ge=1)
+
+    # Advanced sampling parameters
+    top_k: int = Field(default=40, ge=0)  # 0 = disabled
+    min_p: float = Field(default=0.1, ge=0.0, le=1.0)  # Adaptive filtering
+
+    # Repetition control
+    repeat_penalty: float = Field(default=1.1, ge=0.0, le=2.0)
+    repeat_last_n: int = Field(default=64, ge=-1)  # -1 = ctx_size, 0 = disabled
+    presence_penalty: float = Field(default=0.0, ge=-2.0, le=2.0)
+    frequency_penalty: float = Field(default=0.0, ge=-2.0, le=2.0)
+
+    # Mirostat sampling (alternative to top_k/top_p)
+    mirostat: int = Field(default=0, ge=0, le=2)  # 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0
+    mirostat_tau: float = Field(default=5.0, ge=0.0)  # Target entropy
+    mirostat_eta: float = Field(default=0.1, ge=0.0, le=1.0)  # Learning rate
+
+    # Reproducibility
+    seed: int = Field(default=-1, ge=-1)  # -1 = random
 
 
 class ModelsConfig(BaseModel):
