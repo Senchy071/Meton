@@ -409,13 +409,98 @@ Default models (configurable in config.yaml):
 - Fallback llama3.1:8b (backup)
 - Quick mistral:latest (fast responses)
 
-Generation settings:
-- Temperature: 0.0 (deterministic)
-- Max tokens: 2048
-- Top-p: 0.9
-- Context window: 4096 tokens
+### Generation Parameters
+
+Meton provides comprehensive control over LLM sampling and output quality through 14 configurable parameters:
+
+**Core Parameters:**
+- Temperature: 0.0-2.0 (default: 0.0 for deterministic output)
+- Max tokens: 2048 (maximum generation length)
+- Top-p: 0.9 (nucleus sampling)
+- Context window: 32768 tokens (increased for large files)
+
+**Advanced Sampling:**
+- Top-k: 40 (sampling diversity, 0 = disabled)
+- Min-p: 0.1 (adaptive filtering, recommended over top-k)
+
+**Repetition Control:**
+- Repeat penalty: 1.1 (penalize repetition, 1.0 = disabled)
+- Repeat last n: 64 (window for repetition analysis)
+- Presence penalty: 0.0 (penalize already-used tokens)
+- Frequency penalty: 0.0 (penalize frequently-used tokens)
+
+**Mirostat Sampling (alternative to top-k/top-p):**
+- Mirostat: 0 (0 = disabled, 1 = v1, 2 = v2)
+- Mirostat tau: 5.0 (target entropy)
+- Mirostat eta: 0.1 (learning rate)
+
+**Reproducibility:**
+- Seed: -1 (random seed, -1 = random, set for deterministic output)
+
+All parameters are defined in `core/config.py` (ModelSettings), configured in `config.yaml`, and automatically passed to Ollama. Edit `config.yaml` and run `/reload` to apply changes.
 
 Switch models at runtime: `/model <name>` or `/model primary|fallback|quick`
+
+### Runtime Parameter Tuning (Phase 2)
+
+Meton supports dynamic parameter adjustment without restart through CLI commands:
+
+**Commands:**
+- `/param show` - Display all current parameters in organized table
+- `/param <name> <value>` - Set individual parameter at runtime
+- `/param reset` - Reset all parameters to config.yaml defaults
+- `/preset` - List available parameter presets
+- `/preset <name>` - Apply a preset configuration
+
+**Parameter Presets:**
+
+Five predefined presets for common use cases:
+
+1. **precise** - Deterministic output for precise coding tasks
+   ```
+   temperature: 0.0, top_k: 40, repeat_penalty: 1.1
+   ```
+
+2. **creative** - More exploratory and creative coding
+   ```
+   temperature: 0.7, top_p: 0.95, repeat_penalty: 1.2
+   ```
+
+3. **balanced** - Balanced between creativity and precision
+   ```
+   temperature: 0.3, top_k: 40, repeat_penalty: 1.15
+   ```
+
+4. **debugging** - Consistent methodical debugging approach
+   ```
+   temperature: 0.2, mirostat: 2, top_k: 20
+   ```
+
+5. **explanation** - Clear explanations with reduced repetition
+   ```
+   temperature: 0.5, repeat_penalty: 1.25, presence_penalty: 0.1
+   ```
+
+**Example Workflow:**
+```bash
+# View current parameters
+/param show
+
+# Adjust for creative exploration
+/preset creative
+
+# Fine-tune specific parameter
+/param temperature 0.5
+
+# Reset to config defaults
+/param reset
+```
+
+**Implementation Details:**
+- Changes are applied immediately to in-memory config
+- LLM cache is cleared to ensure new parameters take effect on next query
+- Use `/param reset` to reload from config.yaml
+- Use `/reload` to reload entire configuration including model selection
 
 ## Conversation Management
 

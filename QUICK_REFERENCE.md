@@ -26,6 +26,11 @@ python launch_web.py --share --port 8080 # With options
 | `/status` | Show current session info |
 | `/models` | List available models |
 | `/model <name>` | Switch model (primary/fallback/quick) |
+| `/param show` | Display all current parameters |
+| `/param <name> <value>` | Set parameter value at runtime |
+| `/param reset` | Reset parameters to config defaults |
+| `/preset` | List available parameter presets |
+| `/preset <name>` | Apply parameter preset |
 | `/tools` | List available tools with status |
 | `/verbose on\|off` | Toggle verbose mode |
 | `/history` | Show conversation history |
@@ -68,6 +73,63 @@ python launch_web.py --share --port 8080 # With options
 ```bash
 /model quick # Switch to fast model
 /model primary # Switch to quality model
+```
+
+---
+
+## Model Parameters
+
+### Available Parameters (config.yaml)
+
+**Core:**
+- `temperature` (0.0-2.0) - Randomness (0 = deterministic)
+- `max_tokens` (int) - Max generation length
+- `top_p` (0.0-1.0) - Nucleus sampling
+- `num_ctx` (int) - Context window size
+
+**Advanced Sampling:**
+- `top_k` (int) - Token diversity (0 = disabled)
+- `min_p` (0.0-1.0) - Adaptive filtering
+
+**Repetition Control:**
+- `repeat_penalty` (0.0-2.0) - Penalize repetition (1.0 = off)
+- `repeat_last_n` (int) - Repetition window
+- `presence_penalty` (-2.0 to 2.0) - Penalize used tokens
+- `frequency_penalty` (-2.0 to 2.0) - Penalize common tokens
+
+**Mirostat (alternative sampling):**
+- `mirostat` (0/1/2) - Mode (0 = off)
+- `mirostat_tau` (float) - Target entropy (5.0)
+- `mirostat_eta` (0.0-1.0) - Learning rate (0.1)
+
+**Reproducibility:**
+- `seed` (int) - Random seed (-1 = random)
+
+### Parameter Presets
+
+```yaml
+# Precise coding (deterministic)
+temperature: 0.0
+top_k: 40
+repeat_penalty: 1.1
+seed: -1
+
+# Creative coding (exploratory)
+temperature: 0.7
+top_p: 0.95
+min_p: 0.05
+repeat_penalty: 1.2
+
+# Debugging (consistent)
+temperature: 0.2
+mirostat: 2
+mirostat_tau: 4.0
+repeat_penalty: 1.15
+
+# Reproducible (testing)
+temperature: 0.0
+seed: 42
+top_k: 40
 ```
 
 ---
@@ -141,6 +203,23 @@ Find FAISS documentation
 /learn summary # Statistics
 ```
 
+### Parameter Tuning (Phase 2)
+
+```
+/param show # View all current parameters
+/preset creative # Apply creative preset
+/param temperature 0.5 # Fine-tune specific parameter
+/preset debugging # Switch to debugging mode
+/param reset # Reset to config defaults
+```
+
+**Available Presets:**
+- `precise` - Deterministic output (temp=0.0)
+- `creative` - Exploratory coding (temp=0.7)
+- `balanced` - Balanced approach (temp=0.3)
+- `debugging` - Methodical debugging (temp=0.2, mirostat=2)
+- `explanation` - Clear explanations (temp=0.5)
+
 ### Multi-Step
 
 ```
@@ -180,6 +259,16 @@ Read config.yaml and explain the settings
 2. Test some queries
 3. /model primary
 4. Get detailed answer
+```
+
+### Parameter Tuning
+
+```
+1. /param show
+2. /preset creative
+3. Ask exploratory questions
+4. /param temperature 0.3
+5. /param reset
 ```
 
 ### Memory & Learning
@@ -230,11 +319,21 @@ nano config.yaml
 models:
  primary: "deepseek-coder:33b"
 
+# Adjust sampling parameters
+models:
+ settings:
+  temperature: 0.7      # More creative (0.0 = deterministic)
+  top_k: 40            # Sampling diversity
+  min_p: 0.1           # Adaptive filtering
+  repeat_penalty: 1.1  # Reduce repetition
+  mirostat: 0          # Alternative sampling (0/1/2)
+  seed: 42             # Reproducible output (-1 = random)
+
 # Add allowed path
 tools:
  file_ops:
- allowed_paths:
- - /your/project/path
+  allowed_paths:
+   - /your/project/path
 
 # Change context window
 conversation:

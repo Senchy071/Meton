@@ -138,6 +138,105 @@ Query -> get_llm() -> check cache
  cache hit? return cached instance
 ```
 
+#### Model Parameters & Sampling Control
+
+Meton exposes comprehensive sampling parameters for fine-grained control over LLM output quality:
+
+**Core Parameters:**
+- `temperature` (0.0-2.0): Randomness control (0 = deterministic, higher = more creative)
+- `max_tokens` (int): Maximum generation length
+- `top_p` (0.0-1.0): Nucleus sampling threshold
+- `num_ctx` (int): Context window size
+
+**Advanced Sampling:**
+- `top_k` (int): Limits token candidates to top K (0 = disabled)
+- `min_p` (0.0-1.0): Adaptive filtering, recommended over top_k for better quality
+
+**Repetition Control:**
+- `repeat_penalty` (0.0-2.0): Penalizes repetitive tokens (1.0 = disabled, 1.1 = light penalty)
+- `repeat_last_n` (int): Window size for repetition analysis (-1 = ctx_size, 0 = disabled)
+- `presence_penalty` (-2.0 to 2.0): Penalizes tokens that already appeared
+- `frequency_penalty` (-2.0 to 2.0): Penalizes frequently used tokens
+
+**Mirostat Sampling:**
+- `mirostat` (0/1/2): Alternative sampling method for consistent perplexity
+  - 0 = disabled (use top_k/top_p)
+  - 1 = Mirostat v1
+  - 2 = Mirostat v2 (recommended)
+- `mirostat_tau` (float): Target entropy/perplexity (default: 5.0)
+- `mirostat_eta` (0.0-1.0): Learning rate for perplexity control (default: 0.1)
+
+**Reproducibility:**
+- `seed` (int): Random seed for deterministic output (-1 = random)
+
+These parameters are defined in `core/config.py` (ModelSettings Pydantic model), configured in `config.yaml`, and passed to Ollama via `core/models.py`.
+
+Example configuration:
+```yaml
+models:
+  settings:
+    temperature: 0.0        # Deterministic
+    top_k: 40              # Moderate diversity
+    min_p: 0.1             # Adaptive filtering
+    repeat_penalty: 1.1    # Light repetition penalty
+    mirostat: 0            # Disabled (using top_k/top_p)
+    seed: -1               # Random
+```
+
+#### Runtime Parameter Tuning (Phase 2)
+
+Meton supports dynamic parameter modification without restart through CLI commands and parameter presets.
+
+**CLI Commands:**
+- `/param show` - Display all current parameters in organized table
+- `/param <name> <value>` - Set individual parameter at runtime
+- `/param reset` - Reset to config.yaml defaults
+- `/preset` - List available presets
+- `/preset <name>` - Apply preset configuration
+
+**ModelManager Methods (core/models.py):**
+
+```python
+def update_parameter(param_name: str, value: Any) -> bool
+    # Updates single parameter with type/range validation
+    # Clears LLM cache to ensure new settings take effect
+
+def get_current_parameters() -> Dict[str, Any]
+    # Returns dictionary of all 14 current parameter values
+
+def apply_preset(preset_name: str) -> bool
+    # Applies predefined parameter preset
+    # Available presets: precise, creative, balanced, debugging, explanation
+
+def reset_parameters() -> bool
+    # Reloads parameters from config.yaml
+```
+
+**Parameter Presets (core/config.py):**
+
+Five predefined presets for common use cases:
+
+1. **precise** - Deterministic output for precise coding tasks
+   - `temperature: 0.0, top_k: 40, repeat_penalty: 1.1`
+
+2. **creative** - More exploratory and creative coding
+   - `temperature: 0.7, top_p: 0.95, repeat_penalty: 1.2`
+
+3. **balanced** - Balanced between creativity and precision
+   - `temperature: 0.3, top_k: 40, repeat_penalty: 1.15`
+
+4. **debugging** - Consistent methodical debugging approach
+   - `temperature: 0.2, mirostat: 2, top_k: 20`
+
+5. **explanation** - Clear explanations with reduced repetition
+   - `temperature: 0.5, repeat_penalty: 1.25, presence_penalty: 0.1`
+
+**Implementation:**
+- Presets defined as `ParameterPreset` Pydantic models in `PARAMETER_PRESETS` dict
+- Runtime updates clear LLM cache (`_llm_cache.clear()`) to force recreation with new parameters
+- Validation includes type checking (int/float) and range validation (min/max bounds)
+- Changes are in-memory only; use `/param reset` to reload from config file
+
 ### 4. Conversation Manager (`core/conversation.py`)
 
 Purpose: Thread-safe conversation persistence

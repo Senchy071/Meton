@@ -1012,12 +1012,193 @@ learning:
  lookback_days: 30
 ```
 
+### Model Parameter Configuration
+
+Meton provides 14 configurable parameters for fine-grained control over LLM output quality:
+
+**Core Parameters:**
+- `temperature` (0.0-2.0) - Controls randomness. 0.0 = deterministic, higher = more creative
+- `max_tokens` - Maximum response length
+- `top_p` (0.0-1.0) - Nucleus sampling threshold
+- `num_ctx` - Context window size
+
+**Advanced Sampling:**
+- `top_k` - Limits token candidates to top K (0 = disabled, 40 = default)
+- `min_p` (0.0-1.0) - Adaptive filtering, recommended over top_k for better quality
+
+**Repetition Control:**
+- `repeat_penalty` (1.0-2.0) - Penalizes repetitive tokens (1.0 = off, 1.1 = light)
+- `repeat_last_n` - Window for repetition analysis (-1 = entire context)
+- `presence_penalty` (-2.0 to 2.0) - Penalizes tokens that already appeared
+- `frequency_penalty` (-2.0 to 2.0) - Penalizes frequently used tokens
+
+**Mirostat Sampling (alternative to top_k/top_p):**
+- `mirostat` (0/1/2) - Enables consistent perplexity mode (0 = off)
+- `mirostat_tau` - Target entropy level (default: 5.0)
+- `mirostat_eta` (0.0-1.0) - Learning rate (default: 0.1)
+
+**Reproducibility:**
+- `seed` - Random seed for deterministic output (-1 = random)
+
+**Example Presets:**
+
+Precise Coding (deterministic):
+```yaml
+models:
+  settings:
+    temperature: 0.0
+    top_k: 40
+    repeat_penalty: 1.1
+    seed: -1
+```
+
+Creative Coding (exploratory):
+```yaml
+models:
+  settings:
+    temperature: 0.7
+    top_p: 0.95
+    min_p: 0.05
+    repeat_penalty: 1.2
+```
+
+Debugging (consistent):
+```yaml
+models:
+  settings:
+    temperature: 0.2
+    mirostat: 2
+    mirostat_tau: 4.0
+    repeat_penalty: 1.15
+```
+
+Testing (reproducible):
+```yaml
+models:
+  settings:
+    temperature: 0.0
+    seed: 42
+    top_k: 40
+```
+
+### Runtime Parameter Tuning (Phase 2)
+
+Meton supports dynamic parameter adjustment without restart through CLI commands and presets.
+
+#### Commands
+
+**View Parameters:**
+```bash
+/param show
+```
+Displays all 14 parameters in an organized table grouped by category (Core, Advanced Sampling, Repetition Control, Mirostat, Other).
+
+**Set Individual Parameter:**
+```bash
+/param <name> <value>
+
+# Examples:
+/param temperature 0.7
+/param top_k 40
+/param seed 42
+/param repeat_penalty 1.2
+```
+
+**Reset to Defaults:**
+```bash
+/param reset
+```
+Reloads all parameters from config.yaml.
+
+**List Presets:**
+```bash
+/preset
+```
+Shows all available parameter presets with descriptions.
+
+**Apply Preset:**
+```bash
+/preset <name>
+
+# Examples:
+/preset creative
+/preset debugging
+/preset precise
+```
+
+#### Available Presets
+
+**1. precise** - Deterministic output for precise coding tasks
+- Best for: Production code, bug fixes, specific implementations
+- Settings: `temperature=0.0, top_k=40, repeat_penalty=1.1`
+
+**2. creative** - More exploratory and creative coding
+- Best for: Brainstorming, exploring alternatives, prototyping
+- Settings: `temperature=0.7, top_p=0.95, repeat_penalty=1.2`
+
+**3. balanced** - Balanced between creativity and precision
+- Best for: General coding, refactoring, code reviews
+- Settings: `temperature=0.3, top_k=40, repeat_penalty=1.15`
+
+**4. debugging** - Consistent methodical debugging approach
+- Best for: Debugging, troubleshooting, systematic analysis
+- Settings: `temperature=0.2, mirostat=2, top_k=20`
+
+**5. explanation** - Clear explanations with reduced repetition
+- Best for: Code explanations, documentation, teaching
+- Settings: `temperature=0.5, repeat_penalty=1.25, presence_penalty=0.1`
+
+#### Example Workflows
+
+**Exploratory Coding Session:**
+```bash
+1. /preset creative
+2. Brainstorm different approaches
+3. /param temperature 0.3
+4. Refine chosen approach
+5. /preset precise
+6. Generate final implementation
+```
+
+**Debugging Session:**
+```bash
+1. /preset debugging
+2. Analyze error systematically
+3. /param show  # Verify settings
+4. Debug with consistent responses
+5. /param reset  # Return to defaults
+```
+
+**Learning/Documentation:**
+```bash
+1. /preset explanation
+2. Ask for explanations
+3. /param repeat_penalty 1.3  # Even less repetition
+4. Get clearer explanations
+```
+
+#### How It Works
+
+- Changes are applied immediately to in-memory configuration
+- LLM cache is cleared automatically to ensure new parameters take effect
+- Parameters persist for current session only
+- Use `/param reset` to reload from config.yaml
+- Use `/reload` to reload entire configuration including model selection
+
+#### Tips
+
+- Start with a preset, then fine-tune individual parameters
+- Use `/param show` regularly to see current settings
+- Different tasks benefit from different parameter combinations
+- Temperature is usually the most impactful parameter to adjust
+- For reproducible testing, set `seed` to a specific number
+
 ### Runtime Configuration
 
 Change settings without restart:
 
 ```bash
-# Reload config
+# Reload config after editing config.yaml
 /reload
 
 # Change model
