@@ -13,7 +13,7 @@
  <img src="https://img.shields.io/badge/Version-1.0.0-brightgreen" alt="Version 1.0.0"/>
  <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License"/>
  <img src="https://img.shields.io/badge/Status-Production-success" alt="Production Ready"/>
- <img src="https://img.shields.io/badge/Tests-353%2B-blue" alt="353+ Tests"/>
+ <img src="https://img.shields.io/badge/Tests-381%2B-blue" alt="381+ Tests"/>
  <img src="https://img.shields.io/badge/Coverage-95%25-brightgreen" alt="95% Coverage"/>
 </p>
 
@@ -24,14 +24,16 @@
 ### Core Capabilities
 - 100% Local Execution - No external API calls, complete privacy
 - Semantic Code Search - FAISS-based RAG for intelligent codebase understanding
+- Symbol Lookup - Fast exact definition lookup for functions, classes, methods with `/find` command
+- Import Graph Analysis - Dependency visualization, cycle detection, coupling metrics with Mermaid diagrams
 - Advanced Skills - 7 specialized skills for code analysis and generation
 - Multi-Agent Coordination - Sophisticated task decomposition and execution
-- Self-Reflection - Iterative improvement of responses
+- Self-Reflection - Iterative improvement of responses with quality synthesis
 - Performance Analytics - Track and optimize agent performance
 - Git Integration - Intelligent commit messages and code review
 - Long-Term Memory - Cross-session learning and pattern detection
 - Performance Optimization - Intelligent caching, profiling, and resource monitoring
-- Comprehensive Testing - 353+ tests with 95%+ pass rate, CI/CD pipeline
+- Comprehensive Testing - 381+ tests with 95%+ pass rate, CI/CD pipeline
 
 ### Skills Available
 1. Code Explainer - Detailed code analysis with complexity metrics

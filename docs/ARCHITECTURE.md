@@ -631,6 +631,40 @@ Implementation Details:
 - Returns public/private scope based on naming conventions (_prefix)
 - Case-insensitive fallback for fuzzy matching
 
+Import Graph Analyzer Tool (`tools/import_graph.py`):
+
+Features:
+- Analyzes import dependencies in Python codebases using grimp library
+- Detects circular dependencies (cycles) between modules
+- Calculates coupling metrics (density, fan-in, fan-out)
+- Identifies orphan modules (not imported by anything)
+- Generates Mermaid diagrams and text visualizations
+- Uses NetworkX for graph analysis algorithms
+- Enabled by default
+
+Usage:
+```json
+{
+  "path": "core",                  // Required: package to analyze
+  "include_external": false,       // Optional: include external packages
+  "output_format": "mermaid",      // Optional: "mermaid" or "text"
+  "max_nodes": 50                  // Optional: max nodes in visualization
+}
+```
+
+Output:
+- Graph structure (modules and edges)
+- Circular dependencies with severity classification
+- Metrics: coupling coefficient, fan-in, fan-out, orphan count
+- Mermaid diagram or text tree visualization
+
+Implementation Details:
+- Built on grimp library (battle-tested, powers import-linter)
+- NetworkX integration for cycle detection (`simple_cycles()`)
+- Module classification (internal/external/stdlib)
+- Smart visualization limiting for large graphs
+- Cycle highlighting in Mermaid diagrams
+
 ---
 
 ## RAG System (`rag/`)
