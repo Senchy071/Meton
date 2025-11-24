@@ -41,7 +41,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from core.config import ConfigLoader
 from core.models import ModelManager
 from core.conversation import ConversationManager
-from core.agent import create_agent
+from core.agent import MetonAgent
 from tools.codebase_search import CodebaseSearchTool
 from tools.symbol_lookup import SymbolLookupTool
 from tools.import_graph import ImportGraphTool
@@ -332,15 +332,20 @@ class MetonTester:
                 ImportGraphTool()
             ]
 
-            agent = create_agent(
-                self.model_manager,
-                self.conversation_manager,
-                tools
+            agent = MetonAgent(
+                config=self.config,
+                model_manager=self.model_manager,
+                conversation=self.conversation_manager,
+                tools=tools,
+                verbose=False
             )
 
             # Run query
-            response = agent.run(scenario['query'])
+            result = agent.run(scenario['query'])
             elapsed = time.time() - start_time
+
+            # Get response from result
+            response = result.get('output', '')
 
             # Check success indicators
             indicators_found = sum(
@@ -357,7 +362,9 @@ class MetonTester:
                 'indicators_found': indicators_found,
                 'total_indicators': len(scenario['success_indicators']),
                 'response_length': len(response),
-                'response_preview': response[:500]
+                'response_preview': response[:500],
+                'agent_success': result.get('success', False),
+                'iterations': result.get('iterations', 0)
             }
         except Exception as e:
             elapsed = time.time() - start_time
