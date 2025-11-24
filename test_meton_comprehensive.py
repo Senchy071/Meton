@@ -5,7 +5,7 @@ Comprehensive Testing Script for Meton
 Tests Meton's capabilities against real-world Python projects:
 1. FastAPI RealWorld Example App (~3-4K lines)
 2. HTTPie CLI (~10-15K lines)
-3. FastAPI Todo API (~500-1K lines)
+3. FastAPI Framework (~2K lines core code)
 
 Test Coverage:
 - RAG Indexing and Semantic Search
@@ -21,7 +21,7 @@ Usage:
     python test_meton_comprehensive.py [--quick] [--projects PROJECT1,PROJECT2]
 
     --quick: Skip large projects (HTTPie)
-    --projects: Comma-separated list of projects to test (fastapi_realworld, httpie, fastapi_todo)
+    --projects: Comma-separated list of projects to test (fastapi_realworld, httpie, fastapi_example)
 """
 
 import os
@@ -65,13 +65,13 @@ TEST_PROJECTS = {
         'size': 'large',
         'description': '10-15K lines, popular CLI tool (36K stars)'
     },
-    'fastapi_todo': {
-        'name': 'FastAPI Todo API',
-        'url': 'https://github.com/Youngestdev/fastapi-todo.git',
-        'dir': 'test_projects/fastapi-todo',
-        'index_path': '.',
+    'fastapi_example': {
+        'name': 'FastAPI Example',
+        'url': 'https://github.com/tiangolo/fastapi.git',
+        'dir': 'test_projects/fastapi',
+        'index_path': 'fastapi',
         'size': 'small',
-        'description': '500-1K lines, simple REST API'
+        'description': '~2K lines, FastAPI core framework code'
     }
 }
 
@@ -123,24 +123,24 @@ TEST_SCENARIOS = {
             'success_indicators': ['coupling', 'fan-in', 'fan-out', 'density']
         }
     ],
-    'fastapi_todo': [
+    'fastapi_example': [
         {
-            'name': 'Simple Architecture',
-            'query': 'How is the todo API structured? What endpoints are available?',
+            'name': 'Framework Architecture',
+            'query': 'How does FastAPI handle HTTP requests and routing?',
             'expected_tools': ['codebase_search', 'symbol_lookup'],
-            'success_indicators': ['route', 'endpoint', 'todo', 'get', 'post']
+            'success_indicators': ['route', 'request', 'response', 'decorator', 'path']
         },
         {
-            'name': 'Full Analysis',
-            'query': 'Analyze the entire codebase structure and dependencies.',
+            'name': 'Dependency Analysis',
+            'query': 'Analyze the module structure and dependencies in fastapi core.',
             'expected_tools': ['import_graph', 'codebase_search'],
-            'success_indicators': ['import', 'module', 'dependency']
+            'success_indicators': ['import', 'module', 'dependency', 'fastapi']
         },
         {
-            'name': 'Code Review',
-            'query': 'Review the main application file for best practices and potential issues.',
-            'expected_tools': ['codebase_search', 'code_reviewer'],
-            'success_indicators': ['security', 'error', 'validation', 'type']
+            'name': 'API Symbol Lookup',
+            'query': 'Find the FastAPI main application class definition.',
+            'expected_tools': ['symbol_lookup', 'codebase_search'],
+            'success_indicators': ['FastAPI', 'class', 'application']
         }
     ]
 }
@@ -413,7 +413,7 @@ class MetonTester:
         test_symbols = {
             'fastapi_realworld': 'User',
             'httpie': 'main',
-            'fastapi_todo': 'Todo'
+            'fastapi_example': 'FastAPI'
         }
         if project_key in test_symbols:
             results['tests']['symbol_lookup'] = self.test_symbol_lookup(
@@ -579,7 +579,7 @@ Examples:
   python test_meton_comprehensive.py --quick
 
   # Test specific projects
-  python test_meton_comprehensive.py --projects fastapi_todo,fastapi_realworld
+  python test_meton_comprehensive.py --projects fastapi_example,fastapi_realworld
 
   # Save results and cleanup
   python test_meton_comprehensive.py --output results.json --cleanup
