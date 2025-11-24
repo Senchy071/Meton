@@ -224,7 +224,7 @@ class MetonTester:
         start_time = time.time()
 
         try:
-            search_tool = CodebaseSearchTool()
+            search_tool = CodebaseSearchTool(self.config)
             results = search_tool._run(query)
             elapsed = time.time() - start_time
 
@@ -254,7 +254,7 @@ class MetonTester:
         start_time = time.time()
 
         try:
-            lookup_tool = SymbolLookupTool()
+            lookup_tool = SymbolLookupTool(self.config)
             # Format as JSON input
             input_json = json.dumps({
                 'symbol': symbol,
@@ -326,9 +326,9 @@ class MetonTester:
             from tools.code_executor import CodeExecutorTool
 
             tools = [
-                FileOperationsTool(),
-                CodebaseSearchTool(),
-                SymbolLookupTool(),
+                FileOperationsTool(self.config),
+                CodebaseSearchTool(self.config),
+                SymbolLookupTool(self.config),
                 ImportGraphTool()
             ]
 
