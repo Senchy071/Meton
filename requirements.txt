@@ -27,6 +27,10 @@ transformers>=4.30.0  # Required by sentence-transformers
 faiss-cpu>=1.7.4
 sentence-transformers>=2.3.0
 
+# Phase 2 - Import Graph Analysis
+networkx>=3.0  # Graph algorithms for import analysis
+grimp>=3.13  # Import dependency graph builder
+
 # Phase 5 - Web UI, Git Integration & HTTP API
 gradio>=4.0.0
 markdown2>=2.4.0

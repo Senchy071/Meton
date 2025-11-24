@@ -29,6 +29,7 @@ from tools.code_executor import CodeExecutorTool
 from tools.web_search import WebSearchTool
 from tools.codebase_search import CodebaseSearchTool
 from tools.symbol_lookup import SymbolLookupTool
+from tools.import_graph import ImportGraphTool
 from utils.logger import setup_logger
 
 
@@ -52,6 +53,7 @@ class MetonCLI:
         self.web_tool: Optional[WebSearchTool] = None
         self.codebase_search_tool: Optional[CodebaseSearchTool] = None
         self.symbol_lookup_tool: Optional[SymbolLookupTool] = None
+        self.import_graph_tool: Optional[ImportGraphTool] = None
 
         # CLI state
         self.running = True
@@ -92,6 +94,7 @@ class MetonCLI:
             self.web_tool = WebSearchTool(self.config)
             self.codebase_search_tool = CodebaseSearchTool(self.config)
             self.symbol_lookup_tool = SymbolLookupTool(self.config)
+            self.import_graph_tool = ImportGraphTool()
 
             # Initialize Agent
             self.console.print("  [dim]Loading agent...[/dim]")
@@ -99,7 +102,7 @@ class MetonCLI:
                 config=self.config,
                 model_manager=self.model_manager,
                 conversation=self.conversation,
-                tools=[self.file_tool, self.code_tool, self.web_tool, self.codebase_search_tool, self.symbol_lookup_tool],
+                tools=[self.file_tool, self.code_tool, self.web_tool, self.codebase_search_tool, self.symbol_lookup_tool, self.import_graph_tool],
                 verbose=self.verbose
             )
             

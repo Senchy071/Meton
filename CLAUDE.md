@@ -151,6 +151,17 @@ SymbolLookupTool
 - CLI command: `/find <symbol> [type:function|class|method]`
 - Example: `/find MetonAgent` or `/find _run type:method`
 
+ImportGraphTool
+- Analyzes import dependencies in Python codebases using grimp library
+- Detects circular dependencies (cycles) between modules
+- Calculates coupling metrics (density, fan-in, fan-out)
+- Identifies orphan modules (not imported by anything)
+- Generates Mermaid diagrams and text visualizations
+- Uses NetworkX for graph analysis algorithms
+- Enabled by default
+- JSON input: `{"path": "core", "output_format": "mermaid"}`
+- Example: Analyze project architecture, find tightly coupled modules, detect import cycles
+
 ### Data Flow Patterns
 
 Query Execution Flow:
