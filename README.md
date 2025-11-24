@@ -96,8 +96,9 @@ Access web UI at: http://localhost:7860
 - [Development Guide](docs/DEVELOPMENT.md) - Contributing and extending
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 - [Examples](docs/EXAMPLES.md) - Usage examples and workflows
-- [Architecture](ARCHITECTURE.md) - System design details
-- [Status](STATUS.md) - Current development status
+- [Architecture](docs/ARCHITECTURE.md) - System design details
+- [Status](docs/STATUS.md) - Current development status
+- [Quick Reference](docs/QUICK_REFERENCE.md) - Command cheat sheet
 
 ---
 
@@ -336,7 +337,7 @@ Status: Production Ready
 - Export/Import system - Full state backup and restore
 - Configuration profiles - 5 built-in profiles for different use cases
 
-See [STATUS.md](STATUS.md) for complete project history and [CHANGELOG.md](docs/CHANGELOG.md) for version details.
+See [STATUS.md](docs/STATUS.md) for complete project history and [CHANGELOG.md](docs/CHANGELOG.md) for version details.
 
 ---
 

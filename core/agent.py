@@ -660,6 +660,46 @@ This is NOT a generic AI agent - it's a specific LangGraph-based implementation 
 
 CRITICAL: After reading a file, your answer MUST use the content from that file! NEVER fall back to generic knowledge when you have the actual code!
 
+Example 18 - Architectural Explanation (CRITICAL - READ DOCS FIRST):
+User: "Explain the basic architecture of this project"
+
+Step 1 (Find documentation):
+THOUGHT: User wants architectural overview. I should look for documentation files like README.md, ARCHITECTURE.md, CLAUDE.md. Let me list the directory first.
+ACTION: file_operations
+ACTION_INPUT: {{"action": "list", "path": "{cwd}"}}
+ANSWER:
+
+[Tool returns: Directory listing showing README.md, ARCHITECTURE.md, CLAUDE.md, core/, tools/, etc.]
+
+Step 2 (Read main documentation):
+THOUGHT: I see README.md and ARCHITECTURE.md. I MUST read these before answering - directory names alone are NOT enough. Starting with README.md.
+ACTION: file_operations
+ACTION_INPUT: {{"action": "read", "path": "{cwd}/README.md"}}
+ANSWER:
+
+[Tool returns: ✓ Read 347 lines from README.md showing project overview, components, architecture diagram, etc.]
+
+Step 3 (Read detailed architecture docs):
+THOUGHT: README has overview. Let me also read ARCHITECTURE.md for technical details before answering.
+ACTION: file_operations
+ACTION_INPUT: {{"action": "read", "path": "{cwd}/ARCHITECTURE.md"}}
+ANSWER:
+
+[Tool returns: ✓ Read 892 lines from ARCHITECTURE.md with detailed component descriptions, data flows, etc.]
+
+Step 4 (Synthesize from actual documentation):
+THOUGHT: Perfect! I've read both README and ARCHITECTURE docs. Now I can provide a factual explanation based on actual documentation.
+ACTION: NONE
+ACTION_INPUT:
+ANSWER: The project uses a ReAct (Reasoning + Acting) agent architecture with LangGraph. Key components from the docs: 1) Core agent system with three-node StateGraph (reasoning, tool execution, observation), 2) Tool system with file operations, code execution, web search, and RAG-based semantic search, 3) Skills framework providing high-level capabilities like code explanation and debugging, 4) RAG system using FAISS vector store for semantic code search, 5) Memory system with long-term storage. The architecture follows a Think → Act → Observe loop with loop detection to prevent infinite iterations. All processing runs locally via Ollama integration.
+
+CRITICAL LESSONS:
+❌ WRONG: List directory → speculate about contents → answer with "likely", "possibly"
+✅ CORRECT: List directory → read README.md → read ARCHITECTURE.md → synthesize facts from actual docs
+- Never answer "how does X work" from directory names alone!
+- Always read relevant documentation/code files first!
+- Use specific facts from files you read, not speculation!
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CRITICAL RULE - PRIORITIZE CODEBASE SEARCH:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -724,6 +764,17 @@ CRITICAL RULES - FOLLOW EXACTLY:
 3. Provide ACTION_INPUT as JSON with ACTUAL paths (use {cwd} as base)
 4. NEVER use placeholder paths like "/path/to/file" - always use real paths from above
 5. If you don't know a specific filename, list the directory first
+
+⚠️  ANTI-SPECULATION RULES - CRITICAL:
+   - NEVER use speculation words: "likely", "possibly", "presumably", "may contain", "probably", "might be", "appears to", "seems to"
+   - If you're guessing about directory/file contents from names alone, you are SPECULATING (forbidden!)
+   - WRONG: "agent/ likely contains agent-related code"
+   - WRONG: "core/ possibly has core functionality"
+   - WRONG: "This file may contain the implementation"
+   - CORRECT: List/read the directory/file FIRST, then state facts: "agent/ contains X.py which implements Y (I read this file)"
+   - If you don't have the information yet, say "I need to read X to confirm" - don't guess
+   - When explaining architecture/code: you MUST read documentation files (README.md, ARCHITECTURE.md, etc.) BEFORE answering
+   - Directory listings alone are NOT sufficient to explain "how things work" - you must read the actual code/docs
 
 ⚠️  MULTI-STEP RULES (when user says "THEN", "AND", or lists multiple tasks):
    - Count the steps the user requests
@@ -864,6 +915,86 @@ The examples above show the COMPLETE flow - notice how ANSWER is provided AFTER 
         except Exception as e:
             raise AgentParsingError(f"Failed to parse agent output: {e}") from e
 
+    def _force_synthesis(self, state: AgentState) -> str:
+        """Force synthesis of gathered information when agent hasn't provided natural answer.
+
+        This is called when:
+        1. Agent hits max iterations without providing ANSWER
+        2. Agent provides ANSWER but it's just raw tool output
+
+        Args:
+            state: Current agent state with tool results
+
+        Returns:
+            Synthesized natural language answer
+        """
+        try:
+            user_query = state['messages'][-1] if state['messages'] else ''
+
+            # Gather all successful tool results
+            tool_summaries = []
+            for tc in state["tool_calls"]:
+                if tc["output"] and not tc["output"].startswith("✗"):
+                    output = tc["output"]
+
+                    # Don't truncate file reads - they contain the key information for synthesis
+                    # For other tools, limit to avoid overwhelming the synthesis prompt
+                    if tc['tool_name'] == 'file_operations' and '✓ Read' in output:
+                        # Keep full file content for synthesis (no truncation)
+                        pass
+                    else:
+                        # Other tools - keep truncation at 500 chars
+                        if len(output) > 500:
+                            output = output[:500] + "... (truncated)"
+
+                    tool_summaries.append(f"• {tc['tool_name']}: {output}")
+
+            # If no successful tool results, provide a helpful message
+            if not tool_summaries:
+                return "I attempted to gather information but encountered issues with the tools. Could you please rephrase your question or provide more details?"
+
+            # Create focused synthesis prompt
+            synthesis_prompt = f"""You have gathered the following information through tool execution:
+
+{chr(10).join(tool_summaries)}
+
+User's original question: "{user_query}"
+
+TASK: Based ONLY on the information above, provide a clear, natural language answer to the user's question.
+
+CRITICAL RULES:
+1. Use ONLY facts from the tool results above - NO speculation, NO guessing
+2. FORBIDDEN WORDS: "likely", "possibly", "presumably", "may contain", "probably", "might be", "appears to", "seems to"
+3. If you don't have information, say "Based on X, I can confirm Y" (be specific about what you DO know)
+4. Synthesize into 2-4 sentences of DEFINITE factual statements
+5. Do NOT include tool markers (✓, ✗, JSON) - use natural language only
+6. Do NOT say "the tool returned" or "based on the code in" - just state the facts
+7. Be conversational but FACTUAL - if information is incomplete, acknowledge what's missing
+
+WRONG: "The agent/ directory likely contains agent code"
+RIGHT: "The agent/ directory contains X.py and Y.py which implement [specific functionality from tool results]"
+
+Your evidence-based answer (NO speculation):"""
+
+            # Call LLM to synthesize
+            llm = self.model_manager.get_llm()
+            response = llm.invoke(synthesis_prompt)
+
+            # Clean up response
+            answer = response.strip()
+
+            # Remove any remaining tool markers
+            for marker in ["✓", "✗", "ANSWER:", "THOUGHT:", "ACTION:"]:
+                answer = answer.replace(marker, "")
+
+            return answer.strip()
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Force synthesis failed: {e}")
+            # Fallback to a helpful error message
+            return f"I gathered information from {len(state['tool_calls'])} tools but encountered an error synthesizing the answer. Please try rephrasing your question."
+
     def _reasoning_node(self, state: AgentState) -> AgentState:
         """Reasoning node: Agent thinks about what to do.
 
@@ -878,9 +1009,11 @@ The examples above show the COMPLETE flow - notice how ANSWER is provided AFTER 
             if state["iteration"] >= self.max_iterations:
                 if self.verbose:
                     print(f"\n⚠ Reached max iterations ({self.max_iterations})")
+                    print("   Forcing synthesis of gathered information...")
 
+                # Force synthesis of gathered information instead of generic error
                 state["finished"] = True
-                state["final_answer"] = "I've reached the maximum number of reasoning steps. Please try rephrasing your question or breaking it into smaller parts."
+                state["final_answer"] = self._force_synthesis(state)
                 return state
 
             # Build prompt with system message, conversation context, and current state
@@ -1165,9 +1298,52 @@ Provide a concise answer:"""
                         self.logger.warning(f"Agent mentioned unread files: {unread_files}")
 
                     # No pending tools, so this is the final answer
-                    # (Agent should learn from improved system prompt examples)
+                    # Quality check: ensure this isn't raw tool output OR speculation
+                    answer = parsed["answer"]
+
+                    # Tool output markers (check first 200 chars)
+                    tool_markers = ["✓ Read", "✓ Found", "✓ Wrote", "✓ Contents", "{", "success"]
+
+                    # Mechanical phrasing that indicates file dump instead of synthesis
+                    mechanical_phrases = [
+                        "Based on the code in",
+                        "According to the file",
+                        "The file shows",
+                        "The file contains",
+                        "Based on the directory listing"
+                    ]
+
+                    # Speculation words (check entire answer for these)
+                    speculation_words = [
+                        "likely", "possibly", "presumably", "may contain",
+                        "probably", "might be", "appears to", "seems to",
+                        "may be", "could be", "perhaps"
+                    ]
+
+                    # Check for quality issues
+                    has_tool_marker = any(marker in answer[:200] for marker in tool_markers)
+                    has_mechanical = any(phrase in answer[:200] for phrase in mechanical_phrases)
+                    has_speculation = any(word in answer.lower() for word in speculation_words)
+
+                    if has_tool_marker or has_mechanical or has_speculation:
+                        if self.verbose:
+                            if has_tool_marker:
+                                print(f"\n⚠️  Quality check failed - answer contains raw tool output")
+                            if has_mechanical:
+                                print(f"\n⚠️  Quality check failed - mechanical phrasing detected")
+                            if has_speculation:
+                                # Find which speculation words were used
+                                found_words = [w for w in speculation_words if w in answer.lower()]
+                                print(f"\n⚠️  Quality check failed - speculation detected: {', '.join(found_words[:3])}")
+                            print(f"   Forcing re-synthesis...")
+
+                        # Force synthesis to get natural language without speculation
+                        state["final_answer"] = self._force_synthesis(state)
+                    else:
+                        # Answer looks good
+                        state["final_answer"] = answer
+
                     state["finished"] = True
-                    state["final_answer"] = parsed["answer"]
                 # else: there are pending tools, so don't finish yet - let them execute first
 
             state["iteration"] += 1

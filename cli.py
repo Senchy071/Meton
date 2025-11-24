@@ -28,6 +28,7 @@ from tools.file_ops import FileOperationsTool
 from tools.code_executor import CodeExecutorTool
 from tools.web_search import WebSearchTool
 from tools.codebase_search import CodebaseSearchTool
+from tools.symbol_lookup import SymbolLookupTool
 from utils.logger import setup_logger
 
 
@@ -50,6 +51,7 @@ class MetonCLI:
         self.code_tool: Optional[CodeExecutorTool] = None
         self.web_tool: Optional[WebSearchTool] = None
         self.codebase_search_tool: Optional[CodebaseSearchTool] = None
+        self.symbol_lookup_tool: Optional[SymbolLookupTool] = None
 
         # CLI state
         self.running = True
@@ -89,6 +91,7 @@ class MetonCLI:
             self.code_tool = CodeExecutorTool(self.config)
             self.web_tool = WebSearchTool(self.config)
             self.codebase_search_tool = CodebaseSearchTool(self.config)
+            self.symbol_lookup_tool = SymbolLookupTool(self.config)
 
             # Initialize Agent
             self.console.print("  [dim]Loading agent...[/dim]")
@@ -96,7 +99,7 @@ class MetonCLI:
                 config=self.config,
                 model_manager=self.model_manager,
                 conversation=self.conversation,
-                tools=[self.file_tool, self.code_tool, self.web_tool, self.codebase_search_tool],
+                tools=[self.file_tool, self.code_tool, self.web_tool, self.codebase_search_tool, self.symbol_lookup_tool],
                 verbose=self.verbose
             )
             
@@ -149,6 +152,13 @@ class MetonCLI:
         table.add_row("/param reset", "Reset to config defaults")
         table.add_row("/preset <name>", "Apply parameter preset")
         table.add_row("/preset", "List available presets")
+        table.add_row("/pprofile", "List parameter profiles")
+        table.add_row("/pprofile apply <name>", "Apply parameter profile")
+        table.add_row("/pprofile show <name>", "Show profile details")
+        table.add_row("/pprofile create <name>", "Create new profile")
+        table.add_row("/pprofile delete <name>", "Delete profile")
+        table.add_row("/pprofile export <name>", "Export profile to JSON")
+        table.add_row("/pprofile import <path>", "Import profile from JSON")
         table.add_row("/status", "Show current status")
         table.add_row("/verbose on/off", "Toggle verbose mode")
         table.add_row("/save", "Save conversation")
@@ -166,6 +176,7 @@ class MetonCLI:
         table.add_row("/index clear", "Clear the current index")
         table.add_row("/index refresh", "Re-index the last indexed path")
         table.add_row("/csearch <query>", "Test semantic code search")
+        table.add_row("/find <symbol>", "Find symbol definition (function, class, method)")
 
         # Add memory commands section
         table.add_section()
@@ -384,6 +395,12 @@ class MetonCLI:
                 self.search_codebase(args[0])
             else:
                 self.console.print("[yellow]Usage: /csearch <query>[/yellow]")
+        elif cmd == '/find':
+            # Symbol lookup command
+            if args:
+                self.find_symbol(args[0])
+            else:
+                self.console.print("[yellow]Usage: /find <symbol> [type:function|class|method][/yellow]")
         elif cmd == '/memory':
             # Memory management command
             if args:
@@ -408,6 +425,12 @@ class MetonCLI:
                 self.handle_profile_command(args[0])
             else:
                 self.console.print("[yellow]Usage: /profile [list|use|current|save|compare|preview][/yellow]")
+        elif cmd == '/pprofile':
+            # Parameter profile management command
+            if args:
+                self.handle_pprofile_command(args[0])
+            else:
+                self.list_pprofiles()
         elif cmd == '/export':
             # Export data command
             if args:
@@ -851,6 +874,237 @@ class MetonCLI:
         self.console.print()
         self.console.print("[dim]💡 Usage: /preset <name> to apply[/dim]")
 
+    # ========== Parameter Profile Commands ==========
+
+    def handle_pprofile_command(self, command_str: str):
+        """Handle /pprofile subcommands."""
+        parts = command_str.split(maxsplit=3)
+        subcmd = parts[0].lower()
+
+        if subcmd == 'list':
+            # /pprofile list
+            self.list_pprofiles()
+        elif subcmd == 'show':
+            # /pprofile show <name>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /pprofile show <name>[/yellow]")
+                return
+            self.show_pprofile(parts[1])
+        elif subcmd == 'apply':
+            # /pprofile apply <name>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /pprofile apply <name>[/yellow]")
+                return
+            self.apply_pprofile(parts[1])
+        elif subcmd == 'create':
+            # /pprofile create <name>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /pprofile create <name>[/yellow]")
+                return
+            self.create_pprofile(parts[1])
+        elif subcmd == 'delete':
+            # /pprofile delete <name>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /pprofile delete <name>[/yellow]")
+                return
+            self.delete_pprofile(parts[1])
+        elif subcmd == 'export':
+            # /pprofile export <name> [path]
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /pprofile export <name> [path][/yellow]")
+                return
+            path = parts[2] if len(parts) > 2 else None
+            self.export_pprofile(parts[1], path)
+        elif subcmd == 'import':
+            # /pprofile import <path>
+            if len(parts) < 2:
+                self.console.print("[yellow]Usage: /pprofile import <path>[/yellow]")
+                return
+            self.import_pprofile(parts[1])
+        else:
+            self.console.print(f"[red]Unknown pprofile command: {subcmd}[/red]")
+            self.console.print("[yellow]Usage: /pprofile [list|show|apply|create|delete|export|import][/yellow]")
+
+    def list_pprofiles(self):
+        """List all parameter profiles."""
+        if not self.model_manager:
+            self.console.print("[red]❌ Model manager not initialized[/red]")
+            return
+
+        profiles = self.model_manager.list_profiles()
+
+        if not profiles:
+            self.console.print()
+            self.console.print("[yellow]No parameter profiles defined[/yellow]")
+            self.console.print("[dim]💡 Create one with: /pprofile create <name>[/dim]")
+            self.console.print()
+            return
+
+        table = Table(title="Parameter Profiles", show_header=True, header_style="bold cyan")
+        table.add_column("Profile", style="yellow", width=20)
+        table.add_column("Description", style="white", width=40)
+        table.add_column("Parameters", style="dim", width=30)
+
+        for name, info in profiles.items():
+            params = ', '.join(info['settings'].keys())
+            if len(params) > 27:
+                params = params[:24] + "..."
+            table.add_row(name, info['description'], params)
+
+        self.console.print()
+        self.console.print(table)
+        self.console.print()
+        self.console.print("[dim]💡 Use: /pprofile show <name> to see details[/dim]")
+        self.console.print("[dim]💡 Use: /pprofile apply <name> to activate[/dim]")
+
+    def show_pprofile(self, name: str):
+        """Show details of a specific profile."""
+        if not self.model_manager:
+            self.console.print("[red]❌ Model manager not initialized[/red]")
+            return
+
+        profile = self.model_manager.get_profile(name)
+
+        if not profile:
+            self.console.print(f"[red]❌ Profile not found: {name}[/red]")
+            return
+
+        self.console.print()
+        self.console.print(f"[bold cyan]Profile: {profile['name']}[/bold cyan]")
+        self.console.print(f"[dim]{profile['description']}[/dim]")
+        self.console.print()
+
+        table = Table(show_header=True, header_style="bold yellow")
+        table.add_column("Parameter", style="cyan", width=20)
+        table.add_column("Value", style="white", width=20)
+
+        for param, value in profile['settings'].items():
+            table.add_row(param, str(value))
+
+        self.console.print(table)
+        self.console.print()
+
+    def apply_pprofile(self, name: str):
+        """Apply a parameter profile."""
+        if not self.model_manager:
+            self.console.print("[red]❌ Model manager not initialized[/red]")
+            return
+
+        if self.model_manager.apply_profile(name):
+            self.console.print(f"[green]✓ Applied profile '{name}'[/green]")
+            self.console.print("[dim]  Run /param show to see new values[/dim]")
+        else:
+            self.console.print(f"[red]❌ Failed to apply profile '{name}'[/red]")
+
+    def create_pprofile(self, name: str):
+        """Create a new parameter profile interactively."""
+        if not self.model_manager:
+            self.console.print("[red]❌ Model manager not initialized[/red]")
+            return
+
+        self.console.print()
+        self.console.print(f"[bold cyan]Creating new parameter profile: {name}[/bold cyan]")
+        self.console.print()
+
+        # Get description
+        description = input("Description: ").strip()
+        if not description:
+            description = f"Custom profile: {name}"
+
+        # Get current parameters as starting point
+        current_params = self.model_manager.get_current_parameters()
+
+        self.console.print()
+        self.console.print("[yellow]Enter parameter values (press Enter to skip):[/yellow]")
+        self.console.print("[dim]Available parameters:[/dim]")
+        self.console.print("[dim]  temperature, max_tokens, top_p, num_ctx, top_k, min_p,[/dim]")
+        self.console.print("[dim]  repeat_penalty, repeat_last_n, presence_penalty, frequency_penalty,[/dim]")
+        self.console.print("[dim]  mirostat, mirostat_tau, mirostat_eta, seed[/dim]")
+        self.console.print()
+
+        settings = {}
+
+        # Core parameters
+        for param in ['temperature', 'top_p', 'top_k', 'min_p']:
+            value_str = input(f"{param} [{current_params.get(param, '')}]: ").strip()
+            if value_str:
+                try:
+                    settings[param] = float(value_str) if '.' in value_str else int(value_str)
+                except ValueError:
+                    self.console.print(f"[yellow]⚠ Invalid value for {param}, skipping[/yellow]")
+
+        # Repetition control
+        for param in ['repeat_penalty', 'presence_penalty', 'frequency_penalty']:
+            value_str = input(f"{param} [{current_params.get(param, '')}]: ").strip()
+            if value_str:
+                try:
+                    settings[param] = float(value_str)
+                except ValueError:
+                    self.console.print(f"[yellow]⚠ Invalid value for {param}, skipping[/yellow]")
+
+        # Mirostat
+        for param in ['mirostat', 'mirostat_tau', 'mirostat_eta']:
+            value_str = input(f"{param} [{current_params.get(param, '')}]: ").strip()
+            if value_str:
+                try:
+                    settings[param] = int(value_str) if param == 'mirostat' else float(value_str)
+                except ValueError:
+                    self.console.print(f"[yellow]⚠ Invalid value for {param}, skipping[/yellow]")
+
+        if not settings:
+            self.console.print("[red]❌ No parameters specified, profile not created[/red]")
+            return
+
+        # Create profile
+        if self.model_manager.create_profile(name, description, settings):
+            self.console.print()
+            self.console.print(f"[green]✓ Created profile '{name}'[/green]")
+            self.console.print("[dim]  Use /pprofile apply <name> to activate[/dim]")
+        else:
+            self.console.print()
+            self.console.print(f"[red]❌ Failed to create profile '{name}'[/red]")
+
+    def delete_pprofile(self, name: str):
+        """Delete a parameter profile."""
+        if not self.model_manager:
+            self.console.print("[red]❌ Model manager not initialized[/red]")
+            return
+
+        # Confirm deletion
+        confirm = input(f"Delete profile '{name}'? (yes/no): ").strip().lower()
+        if confirm not in ['yes', 'y']:
+            self.console.print("[yellow]Cancelled[/yellow]")
+            return
+
+        if self.model_manager.delete_profile(name):
+            self.console.print(f"[green]✓ Deleted profile '{name}'[/green]")
+        else:
+            self.console.print(f"[red]❌ Failed to delete profile '{name}'[/red]")
+
+    def export_pprofile(self, name: str, path: Optional[str] = None):
+        """Export a parameter profile to JSON."""
+        if not self.model_manager:
+            self.console.print("[red]❌ Model manager not initialized[/red]")
+            return
+
+        if self.model_manager.export_profile(name, path):
+            output_path = path or f"./{name}_profile.json"
+            self.console.print(f"[green]✓ Exported profile '{name}' to {output_path}[/green]")
+        else:
+            self.console.print(f"[red]❌ Failed to export profile '{name}'[/red]")
+
+    def import_pprofile(self, path: str):
+        """Import a parameter profile from JSON."""
+        if not self.model_manager:
+            self.console.print("[red]❌ Model manager not initialized[/red]")
+            return
+
+        if self.model_manager.import_profile(path):
+            self.console.print(f"[green]✓ Imported profile from {path}[/green]")
+            self.console.print("[dim]  Use /pprofile list to see all profiles[/dim]")
+        else:
+            self.console.print(f"[red]❌ Failed to import profile from {path}[/red]")
+
     def process_query(self, query: str):
         """Process a user query through the agent."""
         if not self.agent:
@@ -1177,6 +1431,95 @@ class MetonCLI:
             self.console.print(f"\n[red]❌ Search failed: {str(e)}[/red]\n")
             if self.logger:
                 self.logger.error(f"Search error: {e}")
+
+    def find_symbol(self, query_str: str):
+        """Find symbol definitions in the codebase."""
+        if not self.symbol_lookup_tool:
+            self.console.print("[red]❌ Symbol lookup tool not initialized[/red]")
+            return
+
+        if not self.symbol_lookup_tool.is_enabled():
+            self.console.print("[yellow]⚠ Symbol lookup is disabled. Enable in config.yaml[/yellow]")
+            return
+
+        try:
+            # Parse query string
+            # Format: "symbol_name [type:function|class|method]"
+            parts = query_str.split()
+            symbol_name = parts[0]
+            symbol_type = "all"
+
+            # Check for type filter
+            for part in parts[1:]:
+                if part.startswith("type:"):
+                    symbol_type = part.split(":")[1]
+
+            self.console.print(f"\n[cyan]🔍 Finding: [bold]{symbol_name}[/bold]", end="")
+            if symbol_type != "all":
+                self.console.print(f" (type: {symbol_type})", end="")
+            self.console.print("[/cyan]\n")
+
+            # Perform lookup using the tool
+            input_json = json.dumps({
+                "symbol": symbol_name,
+                "type": symbol_type
+            })
+            result_json = self.symbol_lookup_tool._run(input_json)
+            result = json.loads(result_json)
+
+            if not result['success']:
+                self.console.print(f"[red]❌ Lookup failed: {result['error']}[/red]\n")
+                return
+
+            if result['count'] == 0:
+                self.console.print(f"[yellow]No definitions found for '{symbol_name}'[/yellow]\n")
+                return
+
+            # Display results in a table
+            table = Table(title=f"Symbol Definitions for '{symbol_name}'", box=box.ROUNDED)
+            table.add_column("File", style="cyan", no_wrap=False)
+            table.add_column("Type", style="magenta", width=10)
+            table.add_column("Line", style="yellow", justify="right", width=8)
+            table.add_column("Signature", style="green")
+
+            for res in result['results']:
+                file_path = res['file']
+                sym_type = res['type']
+                line = str(res['line'])
+                signature = res['signature'][:80] + "..." if len(res['signature']) > 80 else res['signature']
+
+                table.add_row(file_path, sym_type, line, signature)
+
+            self.console.print(table)
+            self.console.print()
+
+            # Show detailed view of first result
+            if result['count'] > 0:
+                first = result['results'][0]
+                self.console.print(f"[bold]First definition:[/bold] {first['file']}:{first['line']}\n")
+
+                # Show code snippet
+                snippet = first['code_snippet']
+                try:
+                    syntax = Syntax(snippet, "python", theme="monokai", line_numbers=True, start_line=first['line'])
+                    self.console.print(syntax)
+                except:
+                    self.console.print(snippet)
+
+                self.console.print()
+
+                # Show docstring if available
+                if first.get('docstring'):
+                    self.console.print(f"[dim]Docstring:[/dim]\n{first['docstring']}\n")
+
+            self.console.print(f"[dim]Found {result['count']} definition(s)[/dim]\n")
+
+        except Exception as e:
+            self.console.print(f"\n[red]❌ Lookup failed: {str(e)}[/red]\n")
+            if self.logger:
+                self.logger.error(f"Symbol lookup error: {e}")
+            import traceback
+            traceback.print_exc()
 
     # ========== End RAG Commands ==========
 

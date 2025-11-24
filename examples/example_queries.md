@@ -94,10 +94,10 @@ Find warnings in the log file
 
 ```
 Read README.md and summarize the project
-What's in STATUS.md?
-Explain USAGE.md
+What's in docs/STATUS.md?
+Explain docs/USER_GUIDE.md
 Show me the quick reference
-Read ARCHITECTURE.md and describe the system design
+Read docs/ARCHITECTURE.md and describe the system design
 ```
 
 ---
@@ -131,7 +131,7 @@ List all markdown files, then summarize each one
 ```
 Read test_agent.py and explain what it tests
 What test files exist?
-Show me the test results in STATUS.md
+Show me the test results in docs/STATUS.md
 ```
 
 ---

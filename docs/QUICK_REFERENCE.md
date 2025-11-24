@@ -31,6 +31,13 @@ python launch_web.py --share --port 8080 # With options
 | `/param reset` | Reset parameters to config defaults |
 | `/preset` | List available parameter presets |
 | `/preset <name>` | Apply parameter preset |
+| `/pprofile` | List parameter profiles |
+| `/pprofile apply <name>` | Apply parameter profile |
+| `/pprofile show <name>` | Show profile details |
+| `/pprofile create <name>` | Create new profile |
+| `/pprofile delete <name>` | Delete profile |
+| `/pprofile export <name>` | Export profile to JSON |
+| `/pprofile import <path>` | Import profile from JSON |
 | `/tools` | List available tools with status |
 | `/verbose on\|off` | Toggle verbose mode |
 | `/history` | Show conversation history |
@@ -43,6 +50,7 @@ python launch_web.py --share --port 8080 # With options
 | `/index clear` | Delete current index |
 | `/index refresh` | Re-index last path |
 | `/csearch <query>` | Test semantic code search |
+| `/find <symbol>` | Find symbol definition (function/class/method) |
 | `/web on\|off\|status` | Control web search tool |
 | `/memory stats` | Show memory statistics |
 | `/memory search <query>` | Search memories semantically |
@@ -166,6 +174,8 @@ Find database connection code
 Show me error handling patterns
 Where is user input validated?
 /csearch authentication # Direct search test
+/find MetonAgent # Find symbol definition
+/find _run type:method # Find methods named _run
 ```
 
 ### Code Execution
@@ -271,6 +281,22 @@ Read config.yaml and explain the settings
 5. /param reset
 ```
 
+### Parameter Profiles (Phase 4)
+
+```
+1. /pprofile                          # List profiles
+2. /pprofile apply creative_coding    # Apply profile
+3. /pprofile create my_profile        # Create custom
+4. /pprofile export my_profile        # Share with team
+5. /pprofile import ./shared.json     # Load from team
+```
+
+**Default Profiles:**
+- `creative_coding` - High temp (0.7) for exploration
+- `precise_coding` - Deterministic (0.0) with mirostat
+- `debugging` - Low temp (0.2) for analysis
+- `explanation` - Moderate temp (0.5) for clarity
+
 ### Memory & Learning
 
 ```
@@ -342,6 +368,58 @@ conversation:
 
 ---
 
+## Fine-Tuning (Phase 3)
+
+### Quick Workflow
+
+```bash
+# 1. Extract training data from conversations
+python utils/prepare_training_data.py \
+    --conversations-dir ./conversations \
+    --output training_data.txt \
+    --deduplicate
+
+# 2. Fine-tune with llama.cpp (offline)
+cd /path/to/llama.cpp
+./finetune \
+    --model-base codellama-7b.gguf \
+    --lora-out custom-lora.gguf \
+    --train-data training_data.txt \
+    --epochs 3
+
+# 3. Export model
+./export-lora \
+    --model-base codellama-7b.gguf \
+    --lora custom-lora.gguf \
+    --model-out custom-model.gguf
+
+# 4. Create Ollama model
+ollama create meton-custom -f templates/modelfiles/basic.Modelfile
+
+# 5. Use in Meton
+./meton.py
+> /model meton-custom
+```
+
+### Resources
+
+| Resource | Location | Purpose |
+|----------|----------|---------|
+| Complete Guide | `docs/FINE_TUNING.md` | Full documentation |
+| Data Utility | `utils/prepare_training_data.py` | Extract conversations |
+| Templates | `templates/modelfiles/` | Modelfile examples |
+| Examples | `examples/training_data/` | Sample training data |
+
+### Modelfile Templates
+
+- `basic.Modelfile` - General-purpose
+- `python-specialist.Modelfile` - Python dev
+- `fastapi-expert.Modelfile` - Web APIs
+- `langchain-expert.Modelfile` - Agents
+- `explainer.Modelfile` - Teaching
+
+---
+
 ## Troubleshooting
 
 | Issue | Solution |
@@ -358,14 +436,19 @@ conversation:
 
 ```
 meton/
-├── config.yaml # Configuration
-├── logs/ # Daily log files
-├── conversations/ # Saved conversations
-├── memory/ # Long-term memory storage
-├── analytics_data/ # Performance analytics
-├── web_sessions/ # Web UI session data
-├── venv/ # Python environment
-└── meton # Convenience launcher
+├── config.yaml                 # Configuration
+├── logs/                       # Daily log files
+├── conversations/              # Saved conversations
+├── memory/                     # Long-term memory storage
+├── analytics_data/             # Performance analytics
+├── web_sessions/               # Web UI session data
+├── utils/                      # Utilities
+│   └── prepare_training_data.py # Training data extraction
+├── templates/modelfiles/       # Modelfile templates
+├── examples/training_data/     # Example training data
+├── docs/FINE_TUNING.md         # Fine-tuning guide
+├── venv/                       # Python environment
+└── meton                       # Convenience launcher
 ```
 
 ---

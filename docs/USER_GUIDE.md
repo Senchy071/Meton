@@ -110,6 +110,11 @@ RAG/Code Search:
  /index . # Current directory
  ```
 - `/csearch "query"` - Test semantic search
+- `/find <symbol>` - Find symbol definition (function/class/method)
+ ```
+ /find MetonAgent
+ /find _run type:method
+ ```
 - `/index status` - Show index stats
 - `/index clear` - Delete index
 - `/index refresh` - Re-index last path
@@ -325,6 +330,30 @@ Search Tips:
 - Use technical terms: "REST endpoint" > "API thing"
 - Ask for locations: "Where is..." / "Find..."
 - Ask for explanations: "How does..."
+
+#### Symbol/Function Lookup
+
+Find exact definitions of functions, classes, and methods:
+
+```bash
+# Find class definition
+/find MetonAgent
+
+# Find function
+/find setup_logger
+
+# Filter by type
+/find _run type:method
+/find Config type:class
+/find validate type:function
+```
+
+Features:
+- Instant symbol lookup across entire codebase
+- Returns file path, line number, signature, and code snippet
+- Supports filtering by type (function/class/method)
+- Shows docstrings and context
+- Results displayed in a formatted table
 
 ### 2. Code Review
 
@@ -1192,6 +1221,203 @@ Shows all available parameter presets with descriptions.
 - Different tasks benefit from different parameter combinations
 - Temperature is usually the most impactful parameter to adjust
 - For reproducible testing, set `seed` to a specific number
+
+### Parameter Profiles (Phase 4)
+
+Phase 4 introduces persistent, user-customizable parameter profiles that can be saved, loaded, and shared.
+
+#### Key Differences from Presets
+
+| Feature | Presets (Phase 2) | Profiles (Phase 4) |
+|---------|-------------------|-------------------|
+| Storage | Hardcoded in Python | Stored in config.yaml |
+| Customizable | No | Yes |
+| Runtime Creation | No | Yes |
+| Sharing | No | Yes (export/import) |
+| Persistence | No | Yes |
+
+#### Commands
+
+**List Profiles:**
+```bash
+/pprofile
+```
+Shows all available parameter profiles with descriptions and parameter counts.
+
+**Show Profile Details:**
+```bash
+/pprofile show <name>
+
+# Example:
+/pprofile show creative_coding
+```
+
+**Apply Profile:**
+```bash
+/pprofile apply <name>
+
+# Examples:
+/pprofile apply creative_coding
+/pprofile apply debugging
+```
+
+**Create New Profile:**
+```bash
+/pprofile create <name>
+
+# Interactive creation:
+> /pprofile create api_dev
+Description: Settings for API development
+temperature [0.0]: 0.3
+top_p [0.9]: 0.95
+repeat_penalty [1.1]: 1.15
+... (press Enter to skip parameters)
+```
+
+**Delete Profile:**
+```bash
+/pprofile delete <name>
+
+# Example:
+/pprofile delete my_old_profile
+```
+
+**Export Profile:**
+```bash
+/pprofile export <name> [path]
+
+# Examples:
+/pprofile export api_dev                    # Exports to ./api_dev_profile.json
+/pprofile export api_dev ./team/shared.json # Exports to specific path
+```
+
+**Import Profile:**
+```bash
+/pprofile import <path>
+
+# Example:
+/pprofile import ./team/shared.json
+```
+
+#### Default Profiles
+
+Four profiles are included in `config.yaml`:
+
+**1. creative_coding** - High temperature for exploratory coding
+- Best for: Brainstorming, exploring alternatives, prototyping
+- Settings: `temperature=0.7, top_p=0.95, min_p=0.05, repeat_penalty=1.2`
+
+**2. precise_coding** - Deterministic with mirostat for precision
+- Best for: Production code, critical implementations
+- Settings: `temperature=0.0, top_p=0.9, repeat_penalty=1.1, mirostat=2`
+
+**3. debugging** - Low temperature for methodical analysis
+- Best for: Debugging, troubleshooting, systematic analysis
+- Settings: `temperature=0.2, mirostat=2, mirostat_tau=4.0, top_k=20`
+
+**4. explanation** - Moderate temperature for clear explanations
+- Best for: Documentation, code explanations, teaching
+- Settings: `temperature=0.5, top_p=0.9, repeat_penalty=1.25, presence_penalty=0.1`
+
+#### Example Workflows
+
+**Project-Specific Configuration:**
+```bash
+# Create profile for your API project
+> /pprofile create fastapi_project
+Description: Optimized for FastAPI development
+temperature [0.0]: 0.3
+top_p [0.9]: 0.95
+repeat_penalty [1.1]: 1.15
+# ... save settings
+
+# Use throughout project
+> /pprofile apply fastapi_project
+```
+
+**Team Standardization:**
+```bash
+# Create and test profile
+> /pprofile create team_standard
+> /pprofile apply team_standard
+> # Test and validate...
+
+# Share with team
+> /pprofile export team_standard ./shared/team_profile.json
+# Commit to git, share via Slack, etc.
+
+# Team members import
+> /pprofile import ./shared/team_profile.json
+> /pprofile apply team_standard
+```
+
+**A/B Testing Parameters:**
+```bash
+# Save current working settings
+> /pprofile create approach_a
+
+# Try different settings
+> /param temperature 0.5
+> /param top_p 0.85
+> /pprofile create approach_b
+
+# Compare both
+> /pprofile apply approach_a
+> # Test queries...
+> /pprofile apply approach_b
+> # Test same queries...
+```
+
+**Task-Based Switching:**
+```bash
+# Feature development
+> /pprofile apply creative_coding
+
+# Code review
+> /pprofile create code_review
+> # Set moderate temperature, high repeat_penalty
+
+# Debugging
+> /pprofile apply debugging
+
+# Documentation
+> /pprofile apply explanation
+```
+
+#### Profile Storage
+
+Profiles are stored in `config.yaml`:
+
+```yaml
+parameter_profiles:
+  my_custom_profile:
+    name: my_custom_profile
+    description: Custom settings for API development
+    settings:
+      temperature: 0.3
+      top_p: 0.95
+      repeat_penalty: 1.15
+      mirostat: 0
+```
+
+#### How It Works
+
+- Profiles are loaded from `config.yaml` on startup
+- Creating/deleting profiles updates both in-memory config and disk
+- Applying a profile updates current parameters and clears LLM cache
+- Export creates standalone JSON file with profile data
+- Import validates and creates profile from JSON file
+- All changes are persistent across sessions
+
+#### Tips
+
+- Start with default profiles, create custom ones as needs arise
+- Use descriptive names for profiles (e.g., `python_debugging`, `fastapi_dev`)
+- Export profiles before major experiments
+- Share profiles with team to standardize settings
+- Create project-specific profiles for different codebases
+- Use profiles as starting points, then fine-tune with `/param`
+- Keep a "working" profile for settings you're currently testing
 
 ### Runtime Configuration
 

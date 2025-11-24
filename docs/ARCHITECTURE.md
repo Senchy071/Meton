@@ -237,6 +237,195 @@ Five predefined presets for common use cases:
 - Validation includes type checking (int/float) and range validation (min/max bounds)
 - Changes are in-memory only; use `/param reset` to reload from config file
 
+#### Fine-Tuning Workflow (Phase 3)
+
+Meton supports using fine-tuned models created with llama.cpp and imported into Ollama.
+
+**Workflow:**
+1. **Prepare training data** - Use `utils/prepare_training_data.py` to extract from conversations
+2. **Fine-tune with llama.cpp** - Create LoRA adapter from base GGUF model
+3. **Create Ollama model** - Import using Modelfile template
+4. **Use in Meton** - Switch with `/model` command or set as primary
+
+**Components:**
+
+**Training Data Preparation (`utils/prepare_training_data.py`):**
+- Extracts user-assistant exchanges from conversation JSON files
+- Filters by length, keyword, quality score
+- Deduplicates similar exchanges
+- Formats for llama.cpp training (Llama-2, Alpaca, ChatML)
+- Supports quality thresholds and keyword filtering
+
+**Modelfile Templates (`templates/modelfiles/`):**
+- `basic.Modelfile` - General-purpose template
+- `python-specialist.Modelfile` - Python development focus
+- `fastapi-expert.Modelfile` - FastAPI/web development
+- `langchain-expert.Modelfile` - LangChain/LangGraph agents
+- `explainer.Modelfile` - Code explanation and teaching
+
+**Example Training Data (`examples/training_data/`):**
+- Python coding examples with best practices
+- Code explanation examples for teaching
+- Demonstrates proper format and style
+
+**Documentation (`docs/FINE_TUNING.md`):**
+- Complete guide to fine-tuning workflow
+- llama.cpp setup and usage
+- Training data preparation strategies
+- Modelfile customization
+- Troubleshooting and best practices
+- Example workflows for different use cases
+
+**Typical Fine-Tuning Process:**
+
+1. Collect training data:
+   ```bash
+   python utils/prepare_training_data.py \
+       --conversations-dir ./conversations \
+       --output training_data.txt \
+       --min-length 100 \
+       --deduplicate
+   ```
+
+2. Fine-tune with llama.cpp:
+   ```bash
+   cd /path/to/llama.cpp
+   ./finetune \
+       --model-base codellama-13b.gguf \
+       --lora-out meton-custom-lora.gguf \
+       --train-data training_data.txt \
+       --epochs 3
+   ```
+
+3. Export full model:
+   ```bash
+   ./export-lora \
+       --model-base codellama-13b.gguf \
+       --lora meton-custom-lora.gguf \
+       --model-out meton-custom-13b.gguf
+   ```
+
+4. Create Ollama model:
+   ```bash
+   ollama create meton-custom -f templates/modelfiles/basic.Modelfile
+   ```
+
+5. Use in Meton:
+   ```bash
+   ./meton.py
+   > /model meton-custom
+   ```
+
+**Benefits:**
+- Specialize models for specific domains
+- Learn your coding style and preferences
+- Improve performance on frequent tasks
+- Maintain full local control (no cloud fine-tuning services)
+
+See `docs/FINE_TUNING.md` for complete documentation.
+
+#### Parameter Profiles (Phase 4)
+
+Phase 4 adds user-customizable parameter profiles that can be saved, loaded, and shared. Unlike Phase 2 presets (which are hardcoded), profiles are persistent and fully customizable.
+
+**Key Differences from Presets:**
+- **Presets** (Phase 2): Hardcoded in `core/config.py`, cannot be modified at runtime
+- **Profiles** (Phase 4): Stored in `config.yaml`, can be created/modified/deleted by users
+
+**Implementation:**
+
+**Configuration (`core/config.py`):**
+- `ParameterProfile` class with validation
+- Validates parameter names and types
+- Stored as `Dict[str, ParameterProfile]` in config
+- Automatically persisted to `config.yaml`
+
+**Model Manager Methods (`core/models.py`):**
+- `list_profiles()` - List all available profiles
+- `get_profile(name)` - Get specific profile details
+- `apply_profile(name)` - Apply profile settings
+- `create_profile(name, description, settings)` - Create new profile
+- `delete_profile(name)` - Remove profile
+- `export_profile(name, path)` - Export to JSON file
+- `import_profile(path)` - Import from JSON file
+
+**CLI Commands:**
+- `/pprofile` - List all parameter profiles
+- `/pprofile apply <name>` - Apply a profile
+- `/pprofile show <name>` - Show profile details
+- `/pprofile create <name>` - Create new profile (interactive)
+- `/pprofile delete <name>` - Delete a profile
+- `/pprofile export <name> [path]` - Export profile to JSON
+- `/pprofile import <path>` - Import profile from JSON
+
+**Default Profiles (in `config.yaml`):**
+- `creative_coding` - High temperature (0.7) for exploratory coding
+- `precise_coding` - Deterministic (0.0) with mirostat for precision
+- `debugging` - Low temperature (0.2) for methodical analysis
+- `explanation` - Moderate temperature (0.5) for clear explanations
+
+**Example Workflow:**
+
+1. List available profiles:
+   ```bash
+   > /pprofile
+   ```
+
+2. Apply a profile:
+   ```bash
+   > /pprofile apply creative_coding
+   ```
+
+3. Create custom profile:
+   ```bash
+   > /pprofile create my_profile
+   Description: Custom settings for API development
+   temperature [0.0]: 0.3
+   top_p [0.9]: 0.95
+   repeat_penalty [1.1]: 1.15
+   ...
+   ```
+
+4. Export for sharing:
+   ```bash
+   > /pprofile export my_profile ./my_settings.json
+   ```
+
+5. Import on another machine:
+   ```bash
+   > /pprofile import ./my_settings.json
+   ```
+
+**Use Cases:**
+- **Project-specific settings** - Different profiles for different projects
+- **Task-specific tuning** - Debugging vs feature development vs documentation
+- **Team sharing** - Export/import profiles to standardize settings across team
+- **A/B testing** - Compare different parameter combinations
+- **Experimentation** - Save working configurations for later reuse
+
+**Profile Storage:**
+
+Profiles are stored in `config.yaml` under `parameter_profiles`:
+
+```yaml
+parameter_profiles:
+  my_custom_profile:
+    name: my_custom_profile
+    description: Custom settings for API development
+    settings:
+      temperature: 0.3
+      top_p: 0.95
+      repeat_penalty: 1.15
+      mirostat: 0
+```
+
+**Benefits:**
+- Persistent configuration across sessions
+- Share settings with team members
+- Quick switching between tested configurations
+- Experiment without fear of losing settings
+- Build a library of profiles for different scenarios
+
 ### 4. Conversation Manager (`core/conversation.py`)
 
 Purpose: Thread-safe conversation persistence
@@ -409,6 +598,38 @@ Features:
 - Returns ranked results with similarity scores
 - Lazy-loads indexer for performance
 - Configurable top_k, similarity_threshold, max_code_length
+
+Symbol Lookup Tool (`tools/symbol_lookup.py`):
+
+Features:
+- Fast exact symbol definition lookup (functions, classes, methods)
+- AST-based parsing using CodeParser
+- In-memory indexing with 60-second cache
+- Returns file path, line number, signature, docstring, code snippet
+- Filtering by symbol type (function/class/method) and scope (public/private)
+- Configurable max_results, context_lines
+- Enabled by default
+
+Usage:
+```json
+{
+  "symbol": "MetonAgent",
+  "type": "class"  // Optional: "function", "class", "method", "all"
+}
+```
+
+CLI Command:
+```bash
+/find MetonAgent          # Find any symbol
+/find _run type:method    # Find methods only
+```
+
+Implementation Details:
+- Uses importlib to load CodeParser directly (avoids rag/__init__.py dependency issues)
+- Builds symbol index on first use (walks Python files, parses AST)
+- Index refreshes automatically after 60 seconds
+- Returns public/private scope based on naming conventions (_prefix)
+- Case-insensitive fallback for fuzzy matching
 
 ---
 

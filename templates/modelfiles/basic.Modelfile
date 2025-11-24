@@ -1,0 +1,32 @@
+# Basic Modelfile Template for Meton Custom Models
+#
+# This is a minimal template for importing fine-tuned GGUF models into Ollama.
+#
+# Usage:
+#   1. Replace './your-model.gguf' with path to your fine-tuned model
+#   2. Run: ollama create meton-custom -f basic.Modelfile
+#   3. Test: ollama run meton-custom "Write a Python function"
+
+FROM ./your-model.gguf
+
+# Basic system prompt
+SYSTEM """
+You are Meton, a local AI coding assistant. You provide clear, well-formatted code with explanations.
+"""
+
+# Core parameters (adjust based on your needs)
+PARAMETER temperature 0.0
+PARAMETER top_k 40
+PARAMETER top_p 0.9
+PARAMETER repeat_penalty 1.1
+PARAMETER num_ctx 4096
+
+# Template for Llama-2 style models
+TEMPLATE """
+{{ if .System }}<s>[INST] <<SYS>>
+{{ .System }}
+<</SYS>>
+
+{{ end }}{{ if .Prompt }}{{ .Prompt }} [/INST]{{ end }}
+{{ .Response }}</s>
+"""

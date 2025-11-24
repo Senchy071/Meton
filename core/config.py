@@ -48,6 +48,35 @@ class ParameterPreset(BaseModel):
     settings: Dict[str, Any]
 
 
+class ParameterProfile(BaseModel):
+    """User-defined parameter profile configuration.
+
+    Profiles are persistent user-created parameter configurations
+    stored in config.yaml. Unlike presets (which are hardcoded),
+    profiles can be created, modified, and deleted at runtime.
+    """
+    name: str
+    description: str
+    settings: Dict[str, Any]
+
+    @field_validator('settings')
+    @classmethod
+    def validate_settings(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate that profile settings contain valid parameter names and values."""
+        valid_params = {
+            'temperature', 'max_tokens', 'top_p', 'num_ctx',
+            'top_k', 'min_p', 'repeat_penalty', 'repeat_last_n',
+            'presence_penalty', 'frequency_penalty', 'mirostat',
+            'mirostat_tau', 'mirostat_eta', 'seed'
+        }
+
+        for key in v.keys():
+            if key not in valid_params:
+                raise ValueError(f"Invalid parameter name: {key}. Must be one of {valid_params}")
+
+        return v
+
+
 # Predefined parameter presets
 PARAMETER_PRESETS = {
     "precise": ParameterPreset(
@@ -441,6 +470,7 @@ class MetonConfig(BaseModel):
     profiles: ProfilesConfig = Field(default_factory=ProfilesConfig)
     export: ExportConfig = Field(default_factory=ExportConfig)
     optimization: OptimizationConfig = Field(default_factory=OptimizationConfig)
+    parameter_profiles: Optional[Dict[str, ParameterProfile]] = Field(default_factory=dict)
 
 
 class ConfigLoader:

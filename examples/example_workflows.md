@@ -18,7 +18,7 @@ I can see 16 files and 7 directories in /media/development/projects/meton:
 
 Files:
 - config.yaml (configuration)
-- README.md, STATUS.md, USAGE.md (documentation)
+- README.md, docs/STATUS.md, docs/USER_GUIDE.md (documentation)
 - meton.py (entry point)
 - cli.py (interactive interface)
 - setup.sh (installation script)
@@ -126,7 +126,7 @@ Key Techniques:
 Scenario: Planning to add a new tool to Meton.
 
 ```
-You: Read ARCHITECTURE.md and explain how to add a new tool
+You: Read docs/ARCHITECTURE.md and explain how to add a new tool
 
  Assistant:
 To add a new tool to Meton:
@@ -137,7 +137,7 @@ To add a new tool to Meton:
 4. Update config.yaml if needed
 5. Test the integration
 
-[Shows code examples from ARCHITECTURE.md]
+[Shows code examples from docs/ARCHITECTURE.md]
 
 You: Show me how FileOperationsTool is implemented
 
@@ -326,10 +326,10 @@ You: List all markdown files in this directory
  Assistant:
 Found 8 markdown files:
 1. README.md - Project overview
-2. STATUS.md - Development status
-3. USAGE.md - Usage guide
-4. ARCHITECTURE.md - System design
-5. QUICK_REFERENCE.md - Command cheat sheet
+2. docs/STATUS.md - Development status
+3. docs/USER_GUIDE.md - Usage guide
+4. docs/ARCHITECTURE.md - System design
+5. docs/QUICK_REFERENCE.md - Command cheat sheet
 6. CONVERSATION_MANAGER.md - Conversation manager docs
 7. INFRASTRUCTURE.md - Infrastructure docs
 8. MODEL_MANAGER.md - Model manager docs
@@ -342,9 +342,9 @@ The README mentions:
 OK INFRASTRUCTURE.md
 OK MODEL_MANAGER.md
 OK CONVERSATION_MANAGER.md
-FAIL USAGE.md - Missing!
-FAIL ARCHITECTURE.md - Missing!
-FAIL QUICK_REFERENCE.md - Missing!
+FAIL docs/USER_GUIDE.md - Missing!
+FAIL docs/ARCHITECTURE.md - Missing!
+FAIL docs/QUICK_REFERENCE.md - Missing!
 
 Recommendation: Add links to the new documentation files.
 
@@ -353,9 +353,9 @@ You: What section of README.md should I update?
  Assistant:
 The README has a "Documentation" section around line 164.
 You should add:
-- USAGE.md - Complete usage guide with examples
-- ARCHITECTURE.md - System design and extension guide
-- QUICK_REFERENCE.md - One-page command reference
+- docs/USER_GUIDE.md - Complete usage guide with examples
+- docs/ARCHITECTURE.md - System design and extension guide
+- docs/QUICK_REFERENCE.md - One-page command reference
 
 You: Perfect, I'll update it. /save
 OK Conversation saved
@@ -570,4 +570,4 @@ Benefits of Semantic Search:
 ---
 
 For more query examples, see [example_queries.md](example_queries.md).
-For command reference, see [QUICK_REFERENCE.md](../QUICK_REFERENCE.md).
+For command reference, see [docs/QUICK_REFERENCE.md](../docs/QUICK_REFERENCE.md).

@@ -1,0 +1,281 @@
+<s>[INST] Write a Python function to validate email addresses [/INST]
+```python
+import re
+from typing import Optional
+
+
+def validate_email(email: str) -> bool:
+    """Validate email address format using regex.
+
+    Args:
+        email: Email address string to validate
+
+    Returns:
+        True if email format is valid, False otherwise
+
+    Example:
+        >>> validate_email("user@example.com")
+        True
+        >>> validate_email("invalid.email")
+        False
+    """
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email))
+```
+
+This function uses a regular expression to validate email format. It checks for:
+- Valid characters before @
+- Valid domain name
+- Valid TLD (2+ characters)
+</s>
+
+<s>[INST] Create a dataclass for a User with validation [/INST]
+```python
+from dataclasses import dataclass, field
+from typing import Optional
+from datetime import datetime
+
+
+@dataclass
+class User:
+    """User dataclass with validation.
+
+    Attributes:
+        username: Unique username (3-20 characters)
+        email: Valid email address
+        created_at: Account creation timestamp
+        is_active: Account active status
+        full_name: Optional full name
+    """
+    username: str
+    email: str
+    created_at: datetime = field(default_factory=datetime.now)
+    is_active: bool = True
+    full_name: Optional[str] = None
+
+    def __post_init__(self):
+        """Validate fields after initialization."""
+        if not 3 <= len(self.username) <= 20:
+            raise ValueError("Username must be 3-20 characters")
+
+        if '@' not in self.email:
+            raise ValueError("Invalid email format")
+
+        if not self.username.isalnum():
+            raise ValueError("Username must be alphanumeric")
+
+
+# Usage example
+user = User(
+    username="john_doe",
+    email="john@example.com",
+    full_name="John Doe"
+)
+```
+</s>
+
+<s>[INST] Write an async function to fetch data from an API with retry logic [/INST]
+```python
+import asyncio
+import aiohttp
+from typing import Dict, Any, Optional
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10)
+)
+async def fetch_api_data(
+    url: str,
+    params: Optional[Dict[str, Any]] = None,
+    timeout: int = 30
+) -> Dict[str, Any]:
+    """Fetch data from API with automatic retry on failure.
+
+    Args:
+        url: API endpoint URL
+        params: Optional query parameters
+        timeout: Request timeout in seconds
+
+    Returns:
+        JSON response as dictionary
+
+    Raises:
+        aiohttp.ClientError: On HTTP errors after retries
+        asyncio.TimeoutError: On timeout
+
+    Example:
+        >>> data = await fetch_api_data(
+        ...     "https://api.example.com/users",
+        ...     params={"page": 1}
+        ... )
+    """
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            url,
+            params=params,
+            timeout=aiohttp.ClientTimeout(total=timeout)
+        ) as response:
+            response.raise_for_status()
+            return await response.json()
+```
+
+This implementation uses:
+- `aiohttp` for async HTTP requests
+- `tenacity` for exponential backoff retry logic
+- Proper timeout handling
+- Type hints for better IDE support
+</s>
+
+<s>[INST] Create a context manager for database transactions [/INST]
+```python
+from contextlib import contextmanager
+from typing import Generator
+import sqlite3
+
+
+@contextmanager
+def database_transaction(db_path: str) -> Generator[sqlite3.Cursor, None, None]:
+    """Context manager for database transactions with auto-commit/rollback.
+
+    Args:
+        db_path: Path to SQLite database file
+
+    Yields:
+        Database cursor for executing queries
+
+    Example:
+        >>> with database_transaction("users.db") as cursor:
+        ...     cursor.execute("INSERT INTO users VALUES (?, ?)", (1, "Alice"))
+        ...     # Automatically commits on success, rolls back on error
+    """
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    try:
+        yield cursor
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        cursor.close()
+        conn.close()
+```
+
+Benefits of this approach:
+- Automatic transaction management
+- Guaranteed cleanup (connection always closed)
+- Exception handling with rollback
+- Clean, Pythonic API
+</s>
+
+<s>[INST] Implement a decorator for timing function execution [/INST]
+```python
+import time
+import functools
+from typing import Callable, Any
+
+
+def timing_decorator(func: Callable) -> Callable:
+    """Decorator to measure and print function execution time.
+
+    Args:
+        func: Function to be timed
+
+    Returns:
+        Wrapped function with timing
+
+    Example:
+        >>> @timing_decorator
+        ... def slow_function():
+        ...     time.sleep(1)
+        >>> slow_function()
+        slow_function took 1.00 seconds
+    """
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        start_time = time.perf_counter()
+
+        try:
+            result = func(*args, **kwargs)
+            return result
+        finally:
+            end_time = time.perf_counter()
+            execution_time = end_time - start_time
+            print(f"{func.__name__} took {execution_time:.2f} seconds")
+
+    return wrapper
+```
+
+Key features:
+- Uses `time.perf_counter()` for accurate timing
+- Preserves function metadata with `functools.wraps`
+- Prints timing even if function raises exception
+- Type-hinted for better IDE support
+</s>
+
+<s>[INST] Create a simple caching decorator using functools [/INST]
+```python
+from functools import lru_cache
+from typing import Tuple
+
+
+@lru_cache(maxsize=128)
+def fibonacci(n: int) -> int:
+    """Calculate Fibonacci number with memoization.
+
+    Args:
+        n: Position in Fibonacci sequence
+
+    Returns:
+        Fibonacci number at position n
+
+    Example:
+        >>> fibonacci(10)
+        55
+        >>> fibonacci.cache_info()  # View cache statistics
+    """
+    if n < 2:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+
+# Custom cache decorator for more control
+from functools import wraps
+from typing import Callable, Dict, Any
+
+
+def simple_cache(func: Callable) -> Callable:
+    """Simple custom caching decorator.
+
+    Args:
+        func: Function to cache
+
+    Returns:
+        Wrapped function with caching
+    """
+    cache: Dict[Tuple, Any] = {}
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Create cache key from arguments
+        key = (args, tuple(sorted(kwargs.items())))
+
+        if key not in cache:
+            cache[key] = func(*args, **kwargs)
+
+        return cache[key]
+
+    # Add cache inspection methods
+    wrapper.cache = cache
+    wrapper.cache_clear = cache.clear
+
+    return wrapper
+```
+
+Two approaches shown:
+1. `lru_cache` - Built-in, feature-rich, production-ready
+2. Custom cache - Educational, customizable, simple
+</s>

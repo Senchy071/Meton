@@ -141,6 +141,16 @@ CodebaseSearchTool
 - Returns ranked results with file paths, line numbers, similarity scores
 - Lazy-loads indexer for performance
 
+SymbolLookupTool
+- Fast exact symbol definition lookup (functions, classes, methods, variables)
+- AST-based parsing using CodeParser (imported via importlib to avoid dependency issues)
+- In-memory indexing with 60-second cache TTL
+- Returns file path, line number, signature, docstring, code snippet with context
+- Filtering by type (function/class/method) and scope (public/private)
+- Enabled by default
+- CLI command: `/find <symbol> [type:function|class|method]`
+- Example: `/find MetonAgent` or `/find _run type:method`
+
 ### Data Flow Patterns
 
 Query Execution Flow:
@@ -298,8 +308,9 @@ Run directly: `python test_component.py`
 - `tools/base.py` - Base tool class
 - `skills/base.py` - Base skill class
 - `rag/indexer.py` - Codebase indexing orchestration
-- `ARCHITECTURE.md` - Detailed system design documentation
-- `STATUS.md` - Development status and progress tracking
+- `docs/ARCHITECTURE.md` - Detailed system design documentation
+- `docs/STATUS.md` - Development status and progress tracking
+- `docs/QUICK_REFERENCE.md` - Command reference cheat sheet
 
 ## Known Limitations & Gotchas
 
@@ -501,6 +512,184 @@ Five predefined presets for common use cases:
 - LLM cache is cleared to ensure new parameters take effect on next query
 - Use `/param reset` to reload from config.yaml
 - Use `/reload` to reload entire configuration including model selection
+
+### Fine-Tuning Workflow (Phase 3)
+
+Meton supports using custom fine-tuned models created with llama.cpp and Ollama.
+
+**Quick Start:**
+
+```bash
+# 1. Prepare training data from conversations
+python utils/prepare_training_data.py \
+    --conversations-dir ./conversations \
+    --output training_data.txt
+
+# 2. Fine-tune with llama.cpp (offline)
+cd /path/to/llama.cpp
+./finetune --model-base base.gguf --train-data training_data.txt
+
+# 3. Create Ollama model
+ollama create meton-custom -f templates/modelfiles/basic.Modelfile
+
+# 4. Use in Meton
+./meton.py
+> /model meton-custom
+```
+
+**Resources:**
+
+- **Complete Guide:** `docs/FINE_TUNING.md` - Comprehensive fine-tuning documentation
+- **Training Data Utility:** `utils/prepare_training_data.py` - Extract and format conversations
+- **Modelfile Templates:** `templates/modelfiles/` - Ready-to-use templates for different use cases
+- **Example Data:** `examples/training_data/` - Sample training data formats
+
+**Use Cases:**
+
+1. **Style Transfer** - Train model to match your coding conventions and patterns
+2. **Domain Specialization** - Focus on specific frameworks (FastAPI, LangChain, etc.)
+3. **Behavior Tuning** - Adjust response style, explanation depth, documentation format
+4. **Multi-Task** - Combine multiple objectives into one specialized model
+
+**Training Data Preparation:**
+
+The `prepare_training_data.py` utility extracts high-quality examples from Meton conversations:
+
+```bash
+# Basic usage
+python utils/prepare_training_data.py \
+    --conversations-dir ./conversations \
+    --output training.txt
+
+# With filters
+python utils/prepare_training_data.py \
+    --conversations-dir ./conversations \
+    --output python_training.txt \
+    --filter-keyword "Python" \
+    --min-length 100 \
+    --quality-threshold 0.7 \
+    --deduplicate
+```
+
+**Modelfile Templates:**
+
+Five pre-configured templates for common use cases:
+
+- `basic.Modelfile` - General-purpose
+- `python-specialist.Modelfile` - Python development
+- `fastapi-expert.Modelfile` - FastAPI/web APIs
+- `langchain-expert.Modelfile` - LangChain/LangGraph agents
+- `explainer.Modelfile` - Code explanation and teaching
+
+Each template includes:
+- Optimized system prompts
+- Task-appropriate parameters
+- Proper chat format templates
+
+See `docs/FINE_TUNING.md` for complete workflow documentation and best practices.
+
+### Parameter Profiles (Phase 4)
+
+Phase 4 introduces user-customizable parameter profiles for persistent parameter configurations.
+
+**Key Difference from Presets:**
+- **Presets** (Phase 2): Hardcoded in Python, cannot be modified at runtime
+- **Profiles** (Phase 4): Stored in `config.yaml`, fully customizable by users
+
+**Quick Start:**
+
+```bash
+# List available profiles
+> /pprofile
+
+# Apply a profile
+> /pprofile apply creative_coding
+
+# Create custom profile
+> /pprofile create my_profile
+
+# Export for sharing
+> /pprofile export my_profile ./my_settings.json
+
+# Import on another machine
+> /pprofile import ./my_settings.json
+```
+
+**CLI Commands:**
+
+- `/pprofile` - List all parameter profiles
+- `/pprofile apply <name>` - Apply a profile
+- `/pprofile show <name>` - Show profile details
+- `/pprofile create <name>` - Create new profile (interactive)
+- `/pprofile delete <name>` - Delete a profile
+- `/pprofile export <name> [path]` - Export profile to JSON
+- `/pprofile import <path>` - Import profile from JSON
+
+**Default Profiles:**
+
+Four profiles included in `config.yaml`:
+- `creative_coding` - High temperature (0.7) for exploratory coding
+- `precise_coding` - Deterministic (0.0) with mirostat for precision
+- `debugging` - Low temperature (0.2) for methodical analysis
+- `explanation` - Moderate temperature (0.5) for clear explanations
+
+**Implementation Details:**
+
+Configuration Model (`core/config.py`):
+```python
+class ParameterProfile(BaseModel):
+    name: str
+    description: str
+    settings: Dict[str, Any]  # Validated parameter names
+```
+
+Model Manager Methods (`core/models.py`):
+- `list_profiles()` - Dict of all profiles
+- `get_profile(name)` - Get specific profile
+- `apply_profile(name)` - Apply settings and clear cache
+- `create_profile(name, desc, settings)` - Create and persist
+- `delete_profile(name)` - Remove and save config
+- `export_profile(name, path)` - Export to JSON
+- `import_profile(path)` - Import from JSON
+
+Storage (`config.yaml`):
+```yaml
+parameter_profiles:
+  my_custom_profile:
+    name: my_custom_profile
+    description: Custom settings for API development
+    settings:
+      temperature: 0.3
+      top_p: 0.95
+      repeat_penalty: 1.15
+```
+
+**Use Cases:**
+- Project-specific parameter tuning
+- Task-based configurations (debugging vs feature dev)
+- Team standardization (share profiles)
+- A/B testing different parameter combinations
+- Building a library of tested configurations
+
+**Example Workflow:**
+
+```bash
+# Working on a new feature - use creative profile
+> /pprofile apply creative_coding
+
+# Switching to debugging - use debugging profile
+> /pprofile apply debugging
+
+# Found good settings - save as profile
+> /pprofile create api_dev
+Description: Settings optimized for API development
+temperature [0.0]: 0.3
+top_p [0.9]: 0.95
+...
+
+# Share with team
+> /pprofile export api_dev ./team_profiles/api_dev.json
+```
 
 ## Conversation Management
 

@@ -723,3 +723,263 @@ class ModelManager:
             self.logger.info("Reset parameters to config defaults")
 
         return True
+
+    # ========== Profile Management ==========
+
+    def list_profiles(self) -> Dict[str, Dict[str, Any]]:
+        """List all available parameter profiles.
+
+        Returns:
+            Dictionary mapping profile names to profile info (name, description, settings)
+
+        Example:
+            >>> profiles = manager.list_profiles()
+            >>> for name, info in profiles.items():
+            ...     print(f"{name}: {info['description']}")
+        """
+        profiles = {}
+
+        if self.config.config.parameter_profiles:
+            for name, profile in self.config.config.parameter_profiles.items():
+                profiles[name] = {
+                    'name': profile.name,
+                    'description': profile.description,
+                    'settings': profile.settings
+                }
+
+        return profiles
+
+    def get_profile(self, profile_name: str) -> Optional[Dict[str, Any]]:
+        """Get a specific profile by name.
+
+        Args:
+            profile_name: Name of the profile
+
+        Returns:
+            Profile info dict or None if not found
+
+        Example:
+            >>> profile = manager.get_profile("creative_coding")
+            >>> print(profile['description'])
+        """
+        if not self.config.config.parameter_profiles:
+            return None
+
+        profile = self.config.config.parameter_profiles.get(profile_name)
+        if not profile:
+            return None
+
+        return {
+            'name': profile.name,
+            'description': profile.description,
+            'settings': profile.settings
+        }
+
+    def apply_profile(self, profile_name: str) -> bool:
+        """Apply a parameter profile.
+
+        Args:
+            profile_name: Name of the profile to apply
+
+        Returns:
+            True if successful, False if profile not found
+
+        Example:
+            >>> manager.apply_profile("creative_coding")
+        """
+        from core.config import ParameterProfile
+
+        # Check if profile exists
+        if not self.config.config.parameter_profiles:
+            if self.logger:
+                self.logger.error(f"No profiles defined in config")
+            return False
+
+        profile = self.config.config.parameter_profiles.get(profile_name)
+        if not profile:
+            if self.logger:
+                self.logger.error(f"Profile not found: {profile_name}")
+            return False
+
+        # Apply each setting in the profile
+        for param_name, value in profile.settings.items():
+            if not self.update_parameter(param_name, value):
+                if self.logger:
+                    self.logger.error(f"Failed to apply parameter {param_name} from profile {profile_name}")
+                return False
+
+        # Clear LLM cache
+        self._llm_cache.clear()
+
+        if self.logger:
+            self.logger.info(f"Applied profile: {profile_name}")
+
+        return True
+
+    def create_profile(self, name: str, description: str, settings: Dict[str, Any]) -> bool:
+        """Create a new parameter profile.
+
+        Args:
+            name: Profile name
+            description: Profile description
+            settings: Dictionary of parameter settings
+
+        Returns:
+            True if successful, False on error
+
+        Example:
+            >>> manager.create_profile(
+            ...     "my_profile",
+            ...     "Custom profile for my use case",
+            ...     {"temperature": 0.5, "top_p": 0.9}
+            ... )
+        """
+        from core.config import ParameterProfile
+
+        try:
+            # Create profile object (validates settings)
+            profile = ParameterProfile(
+                name=name,
+                description=description,
+                settings=settings
+            )
+
+            # Initialize parameter_profiles if it doesn't exist
+            if self.config.config.parameter_profiles is None:
+                self.config.config.parameter_profiles = {}
+
+            # Add to config
+            self.config.config.parameter_profiles[name] = profile
+
+            # Save to file
+            self.config.save()
+
+            if self.logger:
+                self.logger.info(f"Created profile: {name}")
+
+            return True
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to create profile {name}: {e}")
+            return False
+
+    def delete_profile(self, profile_name: str) -> bool:
+        """Delete a parameter profile.
+
+        Args:
+            profile_name: Name of the profile to delete
+
+        Returns:
+            True if successful, False if profile not found
+
+        Example:
+            >>> manager.delete_profile("my_profile")
+        """
+        if not self.config.config.parameter_profiles:
+            if self.logger:
+                self.logger.error("No profiles defined in config")
+            return False
+
+        if profile_name not in self.config.config.parameter_profiles:
+            if self.logger:
+                self.logger.error(f"Profile not found: {profile_name}")
+            return False
+
+        # Remove from config
+        del self.config.config.parameter_profiles[profile_name]
+
+        # Save to file
+        self.config.save()
+
+        if self.logger:
+            self.logger.info(f"Deleted profile: {profile_name}")
+
+        return True
+
+    def export_profile(self, profile_name: str, output_path: Optional[str] = None) -> bool:
+        """Export a profile to JSON file.
+
+        Args:
+            profile_name: Name of the profile to export
+            output_path: Output file path (default: ./{profile_name}_profile.json)
+
+        Returns:
+            True if successful, False on error
+
+        Example:
+            >>> manager.export_profile("creative_coding", "./my_profile.json")
+        """
+        import json
+        from pathlib import Path
+
+        # Get profile
+        profile = self.get_profile(profile_name)
+        if not profile:
+            if self.logger:
+                self.logger.error(f"Profile not found: {profile_name}")
+            return False
+
+        # Default output path
+        if output_path is None:
+            output_path = f"./{profile_name}_profile.json"
+
+        try:
+            # Write to file
+            output_file = Path(output_path)
+            with open(output_file, 'w') as f:
+                json.dump(profile, f, indent=2)
+
+            if self.logger:
+                self.logger.info(f"Exported profile {profile_name} to {output_path}")
+
+            return True
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to export profile: {e}")
+            return False
+
+    def import_profile(self, input_path: str) -> bool:
+        """Import a profile from JSON file.
+
+        Args:
+            input_path: Path to JSON file
+
+        Returns:
+            True if successful, False on error
+
+        Example:
+            >>> manager.import_profile("./my_profile.json")
+        """
+        import json
+        from pathlib import Path
+
+        try:
+            # Read file
+            input_file = Path(input_path)
+            if not input_file.exists():
+                if self.logger:
+                    self.logger.error(f"File not found: {input_path}")
+                return False
+
+            with open(input_file, 'r') as f:
+                profile_data = json.load(f)
+
+            # Validate required fields
+            if 'name' not in profile_data or 'description' not in profile_data or 'settings' not in profile_data:
+                if self.logger:
+                    self.logger.error("Invalid profile format: missing required fields")
+                return False
+
+            # Create profile
+            return self.create_profile(
+                name=profile_data['name'],
+                description=profile_data['description'],
+                settings=profile_data['settings']
+            )
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to import profile: {e}")
+            return False

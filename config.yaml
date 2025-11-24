@@ -7,29 +7,20 @@ models:
   fallback: qwen2.5-instruct-q5_K_M
   quick: qwen3-coder:30b
   settings:
-    # Core sampling parameters
     temperature: 0.0
     max_tokens: 2048
     top_p: 0.9
-    num_ctx: 32768  # Increased from 4096 to fit large files
-
-    # Advanced sampling parameters
-    top_k: 40              # Sampling diversity (0 = disabled)
-    min_p: 0.1             # Adaptive filtering (recommended over top_k)
-
-    # Repetition control
-    repeat_penalty: 1.1    # Penalize repetition (1.0 = disabled)
-    repeat_last_n: 64      # Window for repeat penalty (-1 = ctx_size, 0 = disabled)
-    presence_penalty: 0.0  # Penalize already-used tokens
-    frequency_penalty: 0.0 # Penalize frequently-used tokens
-
-    # Mirostat sampling (alternative to top_k/top_p)
-    mirostat: 0            # 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0
-    mirostat_tau: 5.0      # Target entropy
-    mirostat_eta: 0.1      # Learning rate
-
-    # Reproducibility
-    seed: -1               # -1 = random, set for reproducible output
+    num_ctx: 32768
+    top_k: 40
+    min_p: 0.1
+    repeat_penalty: 1.1
+    repeat_last_n: 64
+    presence_penalty: 0.0
+    frequency_penalty: 0.0
+    mirostat: 0
+    mirostat_tau: 5.0
+    mirostat_eta: 0.1
+    seed: -1
 agent:
   max_iterations: 10
   verbose: true
@@ -198,3 +189,38 @@ optimization:
     sample_interval: 5
     alert_cpu_threshold: 90
     alert_memory_threshold: 90
+parameter_profiles:
+  precise_coding:
+    name: precise_coding
+    description: Precise and deterministic coding with mirostat
+    settings:
+      temperature: 0.0
+      top_p: 0.9
+      repeat_penalty: 1.1
+      mirostat: 2
+      mirostat_tau: 5.0
+  debugging:
+    name: debugging
+    description: Methodical debugging with consistent output
+    settings:
+      temperature: 0.2
+      mirostat: 2
+      mirostat_tau: 4.0
+      top_k: 20
+      repeat_penalty: 1.15
+  explanation:
+    name: explanation
+    description: Clear explanations with reduced repetition
+    settings:
+      temperature: 0.5
+      top_p: 0.9
+      repeat_penalty: 1.25
+      presence_penalty: 0.1
+  creative_coding:
+    name: creative_coding
+    description: Creative and exploratory coding with higher temperature
+    settings:
+      temperature: 0.7
+      top_p: 0.95
+      min_p: 0.05
+      repeat_penalty: 1.2
