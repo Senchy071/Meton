@@ -198,11 +198,37 @@ class MetonTester:
         start_time = time.time()
 
         try:
-            indexer = CodebaseIndexer(self.config)
-            stats = indexer.index_directory(str(index_path))
+            # Import RAG components
+            from rag.embeddings import EmbeddingModel
+            from rag.vector_store import VectorStore
+            from rag.metadata_store import MetadataStore
+
+            # Initialize components
+            embedder = EmbeddingModel()
+            vector_store = VectorStore(dimension=self.config.config.rag.dimensions)
+
+            # Use temporary metadata file for tests
+            import tempfile
+            temp_metadata = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
+            temp_metadata.close()
+            metadata_store = MetadataStore(temp_metadata.name)
+
+            # Create indexer
+            indexer = CodebaseIndexer(
+                embedder=embedder,
+                vector_store=vector_store,
+                metadata_store=metadata_store,
+                verbose=False
+            )
+
+            # Index the codebase
+            stats = indexer.index_directory(
+                dirpath=str(index_path),
+                recursive=True
+            )
 
             elapsed = time.time() - start_time
-            print(f"✓ Indexed in {elapsed:.2f}s: {stats['files_indexed']} files, {stats['chunks_created']} chunks")
+            print(f"✓ Indexed in {elapsed:.2f}s: {stats['files_processed']} files, {stats['chunks_created']} chunks")
 
             return True, {
                 'success': True,
@@ -212,6 +238,8 @@ class MetonTester:
         except Exception as e:
             elapsed = time.time() - start_time
             print(f"✗ Indexing failed: {e}")
+            import traceback
+            traceback.print_exc()
             return False, {
                 'success': False,
                 'elapsed_time': elapsed,
