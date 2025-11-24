@@ -97,6 +97,7 @@ Access web UI at: http://localhost:7860
 - [API Reference](docs/API_REFERENCE.md) - Agent and tool APIs
 - [Development Guide](docs/DEVELOPMENT.md) - Contributing and extending
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+- [Testing Guide](docs/TESTING.md) - Comprehensive testing instructions
 - [Examples](docs/EXAMPLES.md) - Usage examples and workflows
 - [Architecture](docs/ARCHITECTURE.md) - System design details
 - [Status](docs/STATUS.md) - Current development status
@@ -261,8 +262,32 @@ Resource Usage:
 
 ## Testing
 
+Meton includes comprehensive testing infrastructure for validating all capabilities against real-world Python projects.
+
+### Quick Smoke Test (30-60 seconds)
+
 ```bash
-# Run comprehensive test suite (353+ tests)
+# Fast sanity check of all core components
+python test_quick.py
+```
+
+### Comprehensive Test Suite (10-20 minutes)
+
+```bash
+# Test against real-world GitHub projects
+python test_meton_comprehensive.py
+
+# Quick mode (skip large projects)
+python test_meton_comprehensive.py --quick
+
+# Test specific projects
+python test_meton_comprehensive.py --projects fastapi_todo
+```
+
+### Unit and Integration Tests (381+ tests)
+
+```bash
+# Run all unit tests
 python test_runner.py
 
 # Run with pytest
@@ -272,9 +297,11 @@ python -m pytest tests/ -v
 python tests/integration/test_end_to_end.py
 python tests/performance/test_benchmarks.py
 python tests/optimization/test_optimizations.py
-
-# Current status: 95%+ pass rate
 ```
+
+**Current status**: 95%+ pass rate across all test suites
+
+See [Testing Guide](docs/TESTING.md) for detailed testing instructions, troubleshooting, and CI/CD integration.
 
 ---
 
