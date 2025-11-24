@@ -271,17 +271,27 @@ Meton includes comprehensive testing infrastructure for validating all capabilit
 python test_quick.py
 ```
 
-### Comprehensive Test Suite (10-20 minutes)
+### Indexing Test (2-5 minutes)
 
 ```bash
-# Test against real-world GitHub projects
-python test_meton_comprehensive.py
+# Test RAG indexing pipeline only (no agent scenarios)
+python test_indexing_only.py
 
-# Quick mode (skip large projects)
+# Test with different project
+python test_indexing_only.py --project fastapi_realworld
+```
+
+### Comprehensive Test Suite (requires manual run)
+
+```bash
+# Test against real-world GitHub projects with agent scenarios
+# NOTE: Requires Ollama running and can take 20+ minutes
+# Best run interactively to monitor progress
+
 python test_meton_comprehensive.py --quick
 
 # Test specific projects
-python test_meton_comprehensive.py --projects fastapi_todo
+python test_meton_comprehensive.py --projects fastapi_example
 ```
 
 ### Unit and Integration Tests (381+ tests)
