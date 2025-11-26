@@ -46,6 +46,11 @@ backups/
 test_exports/
 test_backups/
 
+# Test artifacts
+test_projects/
+test_results.json
+documents/
+
 # OS
 .DS_Store
 Thumbs.db
