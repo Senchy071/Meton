@@ -22,7 +22,7 @@
 ## Features
 
 ### Core Capabilities
-- 100% Local Execution - No external API calls, complete privacy
+- 100% Local Execution - No external API calls (web search disabled by default), complete privacy
 - Semantic Code Search - FAISS-based RAG for intelligent codebase understanding
 - Symbol Lookup - Fast exact definition lookup for functions, classes, methods with `/find` command
 - Import Graph Analysis - Dependency visualization, cycle detection, coupling metrics with Mermaid diagrams
@@ -102,6 +102,28 @@ Access web UI at: http://localhost:7860
 - [Architecture](docs/ARCHITECTURE.md) - System design details
 - [Status](docs/STATUS.md) - Current development status
 - [Quick Reference](docs/QUICK_REFERENCE.md) - Command cheat sheet
+
+---
+
+## Privacy & Local Execution
+
+Meton is designed for **complete privacy** with 100% local execution:
+
+### ✅ Fully Local Components
+- **LLM Processing**: All AI inference runs on your machine via Ollama
+- **Code Analysis**: RAG pipeline (parsing, embeddings, search) runs locally
+- **Data Storage**: All conversations, indexes, and memories stored locally
+- **File Operations**: No file uploads to external services
+- **Embeddings**: sentence-transformers runs on CPU, models cached locally
+
+### 🌐 Optional External Tool
+- **Web Search**: Disabled by default, makes external calls to DuckDuckGo when enabled
+  - Enable only when needed: `/web on`
+  - Disable for complete privacy: `/web off`
+  - Your code is never sent to external services
+
+### 🔒 Privacy Guarantee
+**Your code never leaves your machine** (unless you explicitly enable web search). All processing happens locally on your hardware.
 
 ---
 

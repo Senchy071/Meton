@@ -41,7 +41,7 @@ tools:
     timeout: 5
     max_output_length: 10000
   web_search:
-    enabled: true
+    enabled: false  # Disabled by default for 100% local operation
     max_results: 5
     timeout: 10
   codebase_search:
