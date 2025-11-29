@@ -82,11 +82,16 @@ ollama pull mistral:7b
 source venv/bin/activate
 python meton.py
 
+# OR Launch in offline mode (disables library telemetry)
+./meton_offline.sh
+
 # OR Launch Web UI
 python launch_web.py
 ```
 
 Access web UI at: http://localhost:7860
+
+**Note**: For completely offline operation (no internet required after setup), use `./meton_offline.sh`. See [Privacy & Offline Operation](#privacy--offline-operation) below
 
 ---
 
@@ -105,7 +110,7 @@ Access web UI at: http://localhost:7860
 
 ---
 
-## Privacy & Local Execution
+## Privacy & Offline Operation
 
 Meton is designed for **complete privacy** with 100% local execution:
 
@@ -124,6 +129,31 @@ Meton is designed for **complete privacy** with 100% local execution:
 
 ### 🔒 Privacy Guarantee
 **Your code never leaves your machine** (unless you explicitly enable web search). All processing happens locally on your hardware.
+
+### ⚠️ Important: Dependency Library Telemetry
+
+While **Meton itself makes no external calls**, some Python libraries it depends on (HuggingFace, LangChain, Gradio) may attempt to send telemetry or check for updates.
+
+**To ensure 100% offline operation:**
+
+```bash
+# Use the offline launcher (disables all library telemetry)
+./meton_offline.sh
+```
+
+This is required if you want to:
+- Work completely offline after initial setup
+- Ensure no data leaves your machine (even library telemetry)
+- Use Meton in air-gapped environments
+
+**First-time setup requires internet once** to download:
+- Ollama models
+- Sentence-transformers embedding model
+- Python packages
+
+After setup, `./meton_offline.sh` allows 100% offline operation.
+
+See [docs/PRIVACY.md](docs/PRIVACY.md) for complete privacy and security documentation
 
 ---
 

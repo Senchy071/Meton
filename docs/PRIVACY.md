@@ -12,6 +12,44 @@ Meton is designed for **100% local execution** with zero external API calls in i
 
 ---
 
+## ⚠️ Important: True Offline Operation
+
+While **Meton itself makes no external calls**, some Python libraries it depends on (HuggingFace, LangChain) may try to contact external servers for telemetry or update checks.
+
+### The Issue
+
+If you disconnect from the internet after initial setup, Meton may fail to start because:
+- **HuggingFace Transformers**: Checks for model updates on import
+- **LangChain/LangGraph**: May send telemetry data
+- **Gradio** (Web UI only): Analytics and update checks
+
+### The Solution
+
+Use the provided offline launcher script:
+
+```bash
+./meton_offline.sh
+```
+
+This script disables all external calls by setting these environment variables:
+- `HF_HUB_OFFLINE=1` - Forces HuggingFace offline mode
+- `TRANSFORMERS_OFFLINE=1` - Disables transformer library updates
+- `LANGCHAIN_TRACING_V2=false` - Disables LangChain telemetry
+- `GRADIO_ANALYTICS_ENABLED=False` - Disables Gradio analytics
+
+**After using this script, Meton will work completely offline** with no internet dependency.
+
+### First-Time Setup Required
+
+You need internet **once** to download:
+1. Ollama models (`ollama pull qwen2.5-coder:32b`)
+2. Sentence-transformers embedding model (auto-downloads on first use)
+3. Python packages (`pip install -r requirements.txt`)
+
+**After this one-time setup, you can disconnect from internet and use `./meton_offline.sh`**
+
+---
+
 ## Component-by-Component Analysis
 
 ### ✅ 100% Local Components (Default)
@@ -250,10 +288,40 @@ Use this checklist to ensure maximum privacy:
 **A**: Locally in `conversations/` directory as JSON files.
 
 ### Q: Can I use Meton completely offline?
-**A**: Yes! After downloading models:
-- Ollama models: `ollama pull qwen2.5-coder:32b`
-- Embeddings: First run downloads, then cached
-- Then disconnect internet and use normally
+**A**: Yes! But requires initial setup:
+
+**First-Time Setup (requires internet once):**
+```bash
+# 1. Download Ollama models
+ollama pull qwen2.5-coder:32b
+ollama pull llama3.1:8b
+
+# 2. Pre-download sentence-transformers model
+python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-mpnet-base-v2')"
+
+# 3. Install all Python packages
+pip install -r requirements.txt
+```
+
+**After Setup - Run Offline:**
+```bash
+# Use the offline launcher script
+./meton_offline.sh
+
+# This sets environment variables:
+# - HF_HUB_OFFLINE=1 (disable HuggingFace checks)
+# - TRANSFORMERS_OFFLINE=1 (disable model updates)
+# - LANGCHAIN_TRACING_V2=false (disable telemetry)
+# - GRADIO_ANALYTICS_ENABLED=False (disable analytics)
+```
+
+**Manual offline mode (if script doesn't work):**
+```bash
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+export LANGCHAIN_TRACING_V2=false
+python meton.py
+```
 
 ### Q: What data does DuckDuckGo see (if I enable web search)?
 **A**: Only your search queries and IP address. Never your code.
