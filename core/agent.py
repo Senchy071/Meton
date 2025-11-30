@@ -533,6 +533,47 @@ ACTION: NONE
 ACTION_INPUT:
 ANSWER: The indexer is implemented in rag/indexer.py as the CodebaseIndexer class. Based on the actual code, it: [Explain based on code snippet]
 
+Example 13b - Multiple Search Results with Complete Extraction (CRITICAL - USE ALL RESULTS):
+User: "What structured formats does the book recommend?"
+
+Step 1 (First call):
+THOUGHT: User wants to know about structured formats from the book. I'll search for this information.
+ACTION: codebase_search
+ACTION_INPUT: {{"query": "structured formats recommended"}}
+ANSWER:
+
+[Tool returns: {{"success": true, "results": [
+  {{"file": "documents/prompt-eng.py", "type": "function", "name": "section_220", "lines": "7350-7380", "similarity": 0.92, "code_snippet": "for reports, we recommend that you consistently stick to one format: writing your prompts in Markdown. Here's why: It's pretty universal, and the internet is full of Markdown files..."}},
+  {{"file": "documents/prompt-eng.py", "type": "function", "name": "section_221", "lines": "7470-7500", "similarity": 0.89, "code_snippet": "The most suitable formats are XML and YAML. Both are common in technical documents where precision is of the essence..."}},
+  {{"file": "documents/prompt-eng.py", "type": "function", "name": "section_223", "lines": "7514-7547", "similarity": 0.85, "code_snippet": "Another markup language that should feature heavily in any LLM's training set is JSON (or its variant, JSON Lines). At one point, we would have recommended against using JSON since it is very escape heavy and less readable. However, OpenAI in particular has put a lot of effort into making its models generate JSON accurately..."}}
+], "count": 3}}]
+
+Step 2 (After receiving search results - MUST CHECK ALL RESULTS):
+THOUGHT: I received 3 search results. I need to read ALL of them to get complete information:
+- Result 1 mentions MARKDOWN for reports
+- Result 2 mentions XML and YAML for structured documents
+- Result 3 mentions JSON, especially for OpenAI models
+I MUST include ALL four formats (Markdown, XML, YAML, JSON) in my answer since all three results are relevant.
+ACTION: NONE
+ACTION_INPUT:
+ANSWER: Based on the indexed book, the recommended structured formats are:
+
+1. **Markdown** - Recommended for reports and documentation because it's universal, the internet is full of Markdown files, it's simple and lightweight, and easy to render.
+
+2. **XML** - Suitable for structured documents where elements are relatively short and indentation doesn't matter. Common in technical documents where precision is important.
+
+3. **YAML** - Also suitable for structured documents, especially when you need precise indentation control. Common in technical documents.
+
+4. **JSON** - Recommended particularly for OpenAI models. While it used to be discouraged due to being escape-heavy and less readable, OpenAI has optimized their models to generate JSON accurately, making it a good choice for their tools API.
+
+The book follows the "Little Red Riding Hood principle" - use formats that are readily available in training data.
+
+CRITICAL: This example shows you MUST:
+- Check ALL search results returned (count=3 in this case)
+- Read snippets from ALL results, not just the first one
+- Synthesize information from multiple results into one complete answer
+- If result 1 mentions Markdown, result 2 mentions XML/YAML, and result 3 mentions JSON, your answer MUST include ALL FOUR formats
+
 Example 14 - RAG Disabled or No Index:
 User: "How does X work in the code?"
 
@@ -842,11 +883,33 @@ CRITICAL RULES - FOLLOW EXACTLY:
      1. Search results don't contain enough detail, OR
      2. User explicitly asks to read the file, OR
      3. You need to see context around the snippet
-   - Example:
-     • User: "What structured formats does the book recommend?"
-     • codebase_search returns snippet: "The most suitable formats are XML and YAML..."
-     • ANSWER: "Based on the indexed book, the recommended formats are XML and YAML because..." (use the snippet!)
-     • DO NOT: Read the entire documents/book.py file (15,514 lines) - you already have the answer!
+
+⚠️  COMPLETE SNIPPET EXTRACTION - ABSOLUTELY CRITICAL:
+   - When analyzing search result snippets, you MUST extract ALL relevant information, not just the first mention
+   - WRONG: Reading "The formats are XML and YAML. Another format is JSON..." → only mentioning XML and YAML
+   - CORRECT: Reading entire snippet → extracting ALL formats: XML, YAML, JSON
+   - Look for enumeration patterns that indicate multiple items:
+     • "Another...", "Additionally...", "Also...", "Furthermore..."
+     • "In addition to...", "As well as...", "Moreover..."
+     • Numbered lists: "1. X, 2. Y, 3. Z"
+     • "Both X and Y", "Either X or Y", "X, Y, and Z"
+   - When snippet mentions multiple items (formats, methods, techniques, etc.), include ALL of them in your answer
+   - Read the ENTIRE snippet before answering, don't stop after the first sentence
+   - If the snippet says "The most suitable formats are XML and YAML. Both are common... Another markup language that should feature heavily is JSON...", your answer MUST include XML, YAML, AND JSON
+   - Common mistake: Extracting only the first 1-2 items from a list and ignoring the rest
+   - FIX: Read the complete snippet, identify all enumerated items, include them all in your answer
+
+   Example of WRONG extraction (only partial):
+     • Snippet: "The suitable formats are XML and YAML. Both are common in technical documents. Another markup language is JSON. At one point, we would have recommended against JSON, but OpenAI has made their models generate JSON accurately."
+     • WRONG ANSWER: "The recommended formats are XML and YAML"
+     • WHY WRONG: You ignored JSON mentioned later in the snippet
+
+   Example of CORRECT extraction (complete):
+     • Same snippet as above
+     • CORRECT ANSWER: "The recommended formats are XML, YAML, and JSON. XML and YAML are suitable for structured documents because they're common in technical documents where precision is important. JSON is also recommended, especially for OpenAI models, because OpenAI has optimized their models for accurate JSON generation."
+     • WHY CORRECT: Extracted ALL three formats and their reasoning
+
+   CRITICAL RULE: If you see "another", "also", "additionally", or similar words in the snippet, you MUST continue reading and include those additional items in your answer!
 
 ⚠️  TOOL HALLUCINATION PREVENTION - ABSOLUTELY CRITICAL:
    - ONLY use tools from this exact list: {", ".join([tool.name for tool in self.tools])}

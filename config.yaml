@@ -46,9 +46,9 @@ tools:
     timeout: 10
   codebase_search:
     enabled: true
-    top_k: 5
-    similarity_threshold: 0.3
-    max_code_length: 500
+    top_k: 8  # Increased from 5 to capture more relevant snippets for comprehensive answers
+    similarity_threshold: 0.25  # Lowered from 0.3 to include more potentially relevant results
+    max_code_length: 800  # Increased from 500 to get more complete code snippets
 conversation:
   max_history: 20
   save_path: ./conversations/
