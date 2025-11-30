@@ -831,6 +831,34 @@ CRITICAL RULES - FOLLOW EXACTLY:
    - If the question is about THIS project's code and you read the relevant file, do NOT fall back to general knowledge
    - Start your answer with "Based on the code I read in [filename]..." to ensure you're using the file content
 
+⚠️  CODEBASE_SEARCH RESULT USAGE - CRITICAL:
+   - When codebase_search returns successful results with code snippets, ANSWER DIRECTLY from those snippets
+   - DO NOT read the entire source file after getting search results - the snippets ARE the answer
+   - Search results contain: file path, function/class name, line numbers, similarity score, code snippet
+   - These code snippets are specifically selected as relevant to the query - use them directly
+   - WRONG pattern: codebase_search → gets results → reads entire 15,000-line file → gets lost
+   - CORRECT pattern: codebase_search → gets results with snippets → answers from snippets
+   - Only read the full file if:
+     1. Search results don't contain enough detail, OR
+     2. User explicitly asks to read the file, OR
+     3. You need to see context around the snippet
+   - Example:
+     • User: "What structured formats does the book recommend?"
+     • codebase_search returns snippet: "The most suitable formats are XML and YAML..."
+     • ANSWER: "Based on the indexed book, the recommended formats are XML and YAML because..." (use the snippet!)
+     • DO NOT: Read the entire documents/book.py file (15,514 lines) - you already have the answer!
+
+⚠️  TOOL HALLUCINATION PREVENTION - ABSOLUTELY CRITICAL:
+   - ONLY use tools from this exact list: {", ".join([tool.name for tool in self.tools])}
+   - NEVER invent or hallucinate tools that don't exist
+   - If you think you need a tool that's not in the list, use an existing tool instead
+   - WRONG: Using "SEARCH_DOCUMENT_FOR_SECTIONS" (doesn't exist)
+   - WRONG: Using "Extract" tool (doesn't exist)
+   - WRONG: Using "AnalyzeCode" tool (doesn't exist)
+   - CORRECT: Use file_operations for reading, codebase_search for searching, code_executor for running code
+   - If you get error "Tool 'X' not found", check the available tools list and pick the correct one
+   - The tools available are printed at the top of this prompt - ONLY use those exact names
+
 ⚠️  ANSWER RULES - THIS IS CRITICAL:
    - When you call a tool, leave ANSWER empty on that same response
    - After you receive the tool result, you MUST provide an ANSWER in the NEXT response

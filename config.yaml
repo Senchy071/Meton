@@ -22,7 +22,7 @@ models:
     mirostat_eta: 0.1
     seed: -1
 agent:
-  max_iterations: 10
+  max_iterations: 15  # Increased from 10 to handle complex queries with multiple search/read steps
   verbose: true
   show_reasoning: true
   timeout: 300
