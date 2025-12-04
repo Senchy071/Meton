@@ -233,6 +233,12 @@ Reason: Optional enhancement. Semantic search + symbol lookup cover most documen
   - Improved handling of "compare and contrast" + "when to use" style questions
   - Suggests multiple targeted searches instead of single broad query for comprehensive coverage
   - Quality checklist ensures answers include definitions, advantages, challenges, and usage guidance
+- **Indexed Content Search Enforcement**: Critical rule preventing agent from skipping search
+  - Added "NEVER SKIP SEARCH FOR INDEXED CONTENT" rule (33 lines)
+  - Explicitly forbids answering from memory or general knowledge for indexed content
+  - Requires codebase_search on first iteration for all book/documentation questions
+  - Provides clear violation examples and correct behavior patterns
+  - Prevents hallucination and ensures answers are based on actual indexed content
 
 ---
 
