@@ -234,11 +234,15 @@ Reason: Optional enhancement. Semantic search + symbol lookup cover most documen
   - Suggests multiple targeted searches instead of single broad query for comprehensive coverage
   - Quality checklist ensures answers include definitions, advantages, challenges, and usage guidance
 - **Indexed Content Search Enforcement**: Critical rule preventing agent from skipping search
-  - Added "NEVER SKIP SEARCH FOR INDEXED CONTENT" rule (33 lines)
+  - Added "NEVER SKIP SEARCH FOR INDEXED CONTENT" rule (54 lines total)
   - Explicitly forbids answering from memory or general knowledge for indexed content
   - Requires codebase_search on first iteration for all book/documentation questions
-  - Provides clear violation examples and correct behavior patterns
-  - Prevents hallucination and ensures answers are based on actual indexed content
+  - Added "FOLLOW-UP QUESTIONS REQUIRE NEW SEARCHES" section (9 lines)
+  - Each new user question requires a new search, even in same conversation
+  - "I already searched" is explicitly not a valid reason to skip searching
+  - Different question angles require different search queries
+  - Enhanced violation examples including conversation context cases
+  - Prevents hallucination and ensures all answers are based on actual indexed content
 
 ---
 

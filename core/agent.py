@@ -803,6 +803,18 @@ Only fall back to general knowledge after trying codebase_search and getting no 
    - NEVER say "I already have information" or "based on previous snippets"
    - NEVER rely on general knowledge or cached information
    - NEVER use ACTION: NONE on first iteration for indexed content questions
+   - NEVER skip search because you searched earlier in the conversation
+   - NEVER assume previous search results cover the new question
+
+⚠️  FOLLOW-UP QUESTIONS REQUIRE NEW SEARCHES:
+   - CRITICAL: Each NEW user question = NEW search required
+   - "I already searched" is NOT a valid reason to skip searching
+   - Previous search results in same conversation do NOT exempt you from searching again
+   - Follow-up questions often need DIFFERENT search queries for complete answers
+   - Example: First question "Compare X and Y" → Search "X vs Y comparison"
+              Follow-up "When to use X?" → NEW search "when to use X scenarios use cases"
+   - Different angles require different searches: comparison vs usage vs implementation
+   - RULE: Every user message with a question about indexed content = run codebase_search
 
 ⚠️  INDEXED CONTENT DETECTION:
    Questions that require codebase_search include:
@@ -810,23 +822,32 @@ Only fall back to general knowledge after trying codebase_search and getting no 
    - "What are the techniques/methods/patterns in [book/docs]?"
    - "Explain X from [book/documentation]"
    - "How does [indexed project] implement X?"
+   - "When would you use X?" (follow-up about indexed concepts)
+   - "Why choose X over Y?" (follow-up about indexed comparisons)
    - Any question about specific content that was indexed
+   - ANY follow-up question related to previously discussed indexed topics
 
 ⚠️  REQUIRED BEHAVIOR:
    1. First iteration: ALWAYS use ACTION: codebase_search
    2. DO NOT skip to ACTION: NONE without searching first
    3. If you think you "already know" → SEARCH ANYWAY to get actual indexed content
-   4. Verify search was executed before providing answer
-   5. Base answer ONLY on search results, not general knowledge
+   4. If you "already searched earlier" → SEARCH AGAIN with different query
+   5. Verify search was executed before providing answer
+   6. Base answer ONLY on search results, not general knowledge or previous searches
 
 ⚠️  EXAMPLE VIOLATIONS (DO NOT DO THIS):
    ❌ THOUGHT: "I already have a relevant snippet" → ACTION: NONE
    ❌ THOUGHT: "Based on previous information" → ACTION: NONE
    ❌ THOUGHT: "I know about few-shot learning" → ACTION: NONE
+   ❌ THOUGHT: "Since I have already received a relevant snippet from the indexed book" → ACTION: NONE
+   ❌ THOUGHT: "I searched earlier in this conversation" → ACTION: NONE
+   ❌ THOUGHT: "I can use information from previous search" → ACTION: NONE
 
 ⚠️  CORRECT PATTERN (DO THIS):
    ✅ THOUGHT: "User asks about indexed content" → ACTION: codebase_search
    ✅ THOUGHT: "Need to search book for X" → ACTION: codebase_search
+   ✅ THOUGHT: "Follow-up question needs different search angle" → ACTION: codebase_search
+   ✅ THOUGHT: "New question requires new search" → ACTION: codebase_search
    ✅ Wait for search results → THEN provide answer based on results
 
 CRITICAL: If you answer an indexed content question without searching first, your answer is INVALID and will mislead the user!
