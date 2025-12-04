@@ -742,6 +742,36 @@ CRITICAL LESSONS:
 - Use specific facts from files you read, not speculation!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 CRITICAL RULE - "LIST ALL" QUERIES MUST USE SEARCH, NOT FILE READ:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  When user asks "What are ALL X", "List all Y", "Give me all Z", or similar enumeration questions:
+
+ABSOLUTELY FORBIDDEN:
+❌ NEVER use file_operations to read the entire file (especially if >1000 lines)
+❌ NEVER read documents/prompt-eng.py (15,514 lines!) to extract information
+❌ NEVER think "I should read this file to extract all X"
+
+REQUIRED APPROACH:
+✅ ALWAYS use codebase_search with a query about the items you're looking for
+✅ ALWAYS use PROPER JSON FORMAT: {{"query": "your search terms"}}
+✅ Get snippets from multiple search results
+✅ Synthesize complete list from snippets
+
+Example WRONG pattern (DO NOT DO THIS):
+  User: "What are all the prompting techniques mentioned in the book?"
+  ❌ WRONG: file_operations {{"action": "read", "path": "documents/prompt-eng.py"}}
+  WHY WRONG: This reads 15,514 lines, overwhelms context, wastes time
+
+Example CORRECT pattern (DO THIS):
+  User: "What are all the prompting techniques mentioned in the book?"
+  ✅ CORRECT: codebase_search {{"query": "prompting techniques few-shot chain-of-thought"}}
+  WHY CORRECT: Returns 5-8 relevant snippets mentioning different techniques
+  THEN: Extract ALL techniques from ALL snippets (not just first one)
+
+CRITICAL: If you're thinking "I need to read this file", STOP and use codebase_search instead!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CRITICAL RULE - PRIORITIZE CODEBASE SEARCH:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -798,11 +828,46 @@ Use file_operations when:
 - NOTE: If user wants to UNDERSTAND code, prefer codebase_search over file_operations
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 TOOL INPUT JSON FORMAT - ABSOLUTELY CRITICAL:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ALL tools require VALID JSON format for ACTION_INPUT. Common mistakes:
+
+❌ WRONG: codebase_search
+          ACTION_INPUT: "prompting techniques" in the book
+          ERROR: This is NOT valid JSON!
+
+❌ WRONG: codebase_search
+          ACTION_INPUT: prompting techniques
+          ERROR: This is NOT valid JSON!
+
+✅ CORRECT: codebase_search
+            ACTION_INPUT: {{"query": "prompting techniques"}}
+            SUCCESS: Proper JSON with required "query" field
+
+❌ WRONG: file_operations
+          ACTION_INPUT: list_files /path
+          ERROR: This is NOT valid JSON!
+
+✅ CORRECT: file_operations
+            ACTION_INPUT: {{"action": "list", "path": "/path"}}
+            SUCCESS: Proper JSON with required fields
+
+CRITICAL JSON RULES:
+1. ACTION_INPUT must ALWAYS be valid JSON
+2. Use double braces {{}} in examples (gets unescaped to {})
+3. Use double quotes " for strings, not single quotes '
+4. Include ALL required fields for each tool
+5. Check the tool's description at the top to see required format
+
+If you're not sure about the format, look at the tool examples at the top of this prompt!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CRITICAL RULES - FOLLOW EXACTLY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1. Always start with THOUGHT to explain your reasoning
 2. Use ACTION to specify a tool (or NONE if you're ready to answer)
-3. Provide ACTION_INPUT as JSON with ACTUAL paths (use {cwd} as base)
+3. Provide ACTION_INPUT as valid JSON (see JSON FORMAT section above)
 4. NEVER use placeholder paths like "/path/to/file" - always use real paths from above
 5. If you don't know a specific filename, list the directory first
 
@@ -912,15 +977,43 @@ CRITICAL RULES - FOLLOW EXACTLY:
    CRITICAL RULE: If you see "another", "also", "additionally", or similar words in the snippet, you MUST continue reading and include those additional items in your answer!
 
 ⚠️  TOOL HALLUCINATION PREVENTION - ABSOLUTELY CRITICAL:
-   - ONLY use tools from this exact list: {", ".join([tool.name for tool in self.tools])}
-   - NEVER invent or hallucinate tools that don't exist
-   - If you think you need a tool that's not in the list, use an existing tool instead
-   - WRONG: Using "SEARCH_DOCUMENT_FOR_SECTIONS" (doesn't exist)
-   - WRONG: Using "Extract" tool (doesn't exist)
-   - WRONG: Using "AnalyzeCode" tool (doesn't exist)
-   - CORRECT: Use file_operations for reading, codebase_search for searching, code_executor for running code
-   - If you get error "Tool 'X' not found", check the available tools list and pick the correct one
-   - The tools available are printed at the top of this prompt - ONLY use those exact names
+
+   🚨 BEFORE EVERY ACTION, CHECK THIS LIST 🚨
+
+   The ONLY valid tools are:
+   {", ".join([tool.name for tool in self.tools])}
+
+   That's it. No other tools exist. These are the ONLY 6 tools available.
+
+   FORBIDDEN TOOLS (these DON'T EXIST - NEVER use them):
+   ❌ SEARCH_DOCUMENT_FOR_SECTIONS (doesn't exist!)
+   ❌ SEARCH_FILE_CONTENTS (doesn't exist!)
+   ❌ Extract (doesn't exist!)
+   ❌ AnalyzeCode (doesn't exist!)
+   ❌ FindPatterns (doesn't exist!)
+   ❌ ParseJSON (doesn't exist!)
+   ❌ SearchText (doesn't exist!)
+   ❌ ReadDocument (doesn't exist!)
+
+   CORRECT TOOL MAPPING (use these instead):
+   • Want to search? → Use codebase_search
+   • Want to read file? → Use file_operations
+   • Want to run code? → Use code_executor
+   • Want web info? → Use web_search
+   • Want to find symbol? → Use symbol_lookup
+   • Want import graph? → Use import_graph
+
+   PRE-ACTION CHECK (do this BEFORE writing ACTION):
+   1. Look at the tool name you're about to use
+   2. Check if it's in the valid tools list above
+   3. If NO → Map it to a valid tool from the CORRECT TOOL MAPPING
+   4. If YES → Proceed with that tool
+
+   If you get error "Tool 'X' not found":
+   1. DO NOT try to use 'X' again
+   2. Look at the valid tools list above
+   3. Pick the correct tool from that list
+   4. Retry with the CORRECT tool name
 
 ⚠️  ANSWER RULES - THIS IS CRITICAL:
    - When you call a tool, leave ANSWER empty on that same response
