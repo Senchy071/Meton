@@ -197,10 +197,12 @@ Natural language query -> EmbeddingModel.encode(query)
 
 ### Agent System Prompt Structure
 The agent's effectiveness depends heavily on the system prompt (core/agent.py). Structure:
-1. **Path context Current working directory and allowed paths
-2. **Available tools Each tool's name, description, input format
-3. **Examples Complete Think -> Act -> Observe -> Answer flows
-4. **Critical rules ANSWER format rules are critical - agent must end with ANSWER to complete
+1. **Path context** Current working directory and allowed paths
+2. **Available tools** Each tool's name, description, input format
+3. **Examples** Complete Think -> Act -> Observe -> Answer flows
+4. **Critical rules** ANSWER format rules are critical - agent must end with ANSWER to complete
+5. **Multi-part question rules** Identifies and addresses all question components (comparison, usage guidance)
+6. **Answer validation** Self-check checklist ensuring completeness before responding
 
 ### Loop Detection Algorithm
 Located in agent.py reasoning node:

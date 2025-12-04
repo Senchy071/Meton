@@ -224,6 +224,16 @@ Reason: Optional enhancement. Semantic search + symbol lookup cover most documen
 - **Parameter Profiles (Phase 4)**: User-customizable configurations, export/import, 4 default profiles
 - **Fine-Tuning Workflow (Phase 3)**: Training data utility, 5 Modelfile templates, complete documentation
 
+### Latest Improvements (Dec 4, 2025)
+- **Agent Multi-Part Question Handling**: Enhanced system prompt with comprehensive question decomposition rules
+  - Fixed f-string syntax error in agent.py (line 858: empty expression in double braces)
+  - Added Multi-Part Question Rules (15 lines): Identifies and addresses all question components
+  - Added Comparison Question Rules (15 lines): Structured framework for "compare X and Y" questions
+  - Added Answer Completeness Validation (17 lines): Self-check checklist before providing answers
+  - Improved handling of "compare and contrast" + "when to use" style questions
+  - Suggests multiple targeted searches instead of single broad query for comprehensive coverage
+  - Quality checklist ensures answers include definitions, advantages, challenges, and usage guidance
+
 ---
 
 ## KEY FEATURES

@@ -531,6 +531,8 @@ System Prompt Structure:
 2. Available tools
 3. Examples with complete flows
 4. Critical rules (especially ANSWER rules)
+5. Multi-part question handling rules (comparison questions, usage guidance)
+6. Answer completeness validation checklist
 
 ### 6. Tools System (`tools/`)
 
