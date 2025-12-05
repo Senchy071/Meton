@@ -20,7 +20,6 @@ Example:
 
 import ast
 import re
-import traceback as tb_module
 from typing import Dict, Any, List, Optional, Tuple
 from skills.base import BaseSkill, SkillValidationError, SkillExecutionError
 

@@ -23,7 +23,6 @@ Example:
 """
 
 import ollama
-import sys
 from typing import Dict, Any, Optional, List, Union, Iterator
 from langchain_ollama import OllamaLLM
 from core.config import ConfigLoader
@@ -78,7 +77,7 @@ class ModelManager:
         self.config = config
         self.current_model = config.get('models.primary')
         self.logger = logger
-        self._llm_cache: Dict[str, Ollama] = {}
+        self._llm_cache: Dict[str, OllamaLLM] = {}
 
         # Verify Ollama is accessible
         self._verify_ollama()

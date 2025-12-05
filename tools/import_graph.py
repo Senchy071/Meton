@@ -27,11 +27,12 @@ try:
 except ImportError:
     NETWORKX_AVAILABLE = False
 
-from langchain.tools import BaseTool
 from pydantic import Field
+from tools.base import MetonBaseTool, ToolConfig
+from utils.logger import setup_logger
 
 
-class ImportGraphTool(BaseTool):
+class ImportGraphTool(MetonBaseTool):
     """Tool for analyzing import dependencies in Python codebases.
 
     Uses grimp library to build dependency graphs and NetworkX for analysis.
@@ -61,41 +62,66 @@ class ImportGraphTool(BaseTool):
     Returns JSON with graph structure, circular dependencies, metrics, and visualization.
     """
 
-    def _run(self, input: str) -> str:
+    # Enable/disable state
+    _enabled: bool = True
+
+    def __init__(self, config=None, **kwargs):
+        """Initialize ImportGraphTool with optional configuration."""
+        super().__init__(**kwargs)
+        self.logger = setup_logger("import_graph")
+        if config:
+            self._enabled = config.get('tools.import_graph.enabled', True)
+
+    def _run(self, input_str: str) -> str:
         """Analyze import dependencies.
 
         Args:
-            input: JSON string with analysis parameters
+            input_str: JSON string with analysis parameters
 
         Returns:
             JSON string with analysis results
         """
-        if not GRIMP_AVAILABLE:
+        # Check if tool is enabled
+        if not self._enabled:
             return json.dumps({
                 'success': False,
-                'error': 'grimp library not installed. Run: pip install grimp'
+                'error': 'import_graph tool is disabled'
+            })
+
+        if not GRIMP_AVAILABLE:
+            error_msg = 'grimp library not installed. Run: pip install grimp'
+            if self.logger:
+                self.logger.error(error_msg)
+            return json.dumps({
+                'success': False,
+                'error': error_msg
             })
 
         if not NETWORKX_AVAILABLE:
+            error_msg = 'networkx library not installed. Run: pip install networkx'
+            if self.logger:
+                self.logger.error(error_msg)
             return json.dumps({
                 'success': False,
-                'error': 'networkx library not installed. Run: pip install networkx'
+                'error': error_msg
             })
 
         try:
-            # Parse input
-            params = json.loads(input)
-            path = params.get('path')
-
-            if not path:
+            # Parse input using base class helper
+            success, data = self._parse_json_input(input_str, required_fields=['path'])
+            if not success:
                 return json.dumps({
                     'success': False,
-                    'error': 'Missing required parameter: path'
+                    'error': data  # data is error message
                 })
 
-            include_external = params.get('include_external', False)
-            output_format = params.get('output_format', 'mermaid')
-            max_nodes = params.get('max_nodes', 50)
+            path = data['path']
+            include_external = data.get('include_external', False)
+            output_format = data.get('output_format', 'mermaid')
+            max_nodes = data.get('max_nodes', 50)
+
+            if self.logger:
+                self.logger.info(f"Analyzing imports for: {path}")
 
             # Analyze imports
             result = analyze_imports(
@@ -107,20 +133,18 @@ class ImportGraphTool(BaseTool):
 
             return json.dumps(result, indent=2)
 
-        except json.JSONDecodeError as e:
-            return json.dumps({
-                'success': False,
-                'error': f'Invalid JSON input: {str(e)}'
-            })
         except Exception as e:
+            error_msg = f'Analysis failed: {str(e)}'
+            if self.logger:
+                self.logger.error(error_msg)
             return json.dumps({
                 'success': False,
-                'error': f'Analysis failed: {str(e)}'
+                'error': error_msg
             })
 
-    async def _arun(self, input: str) -> str:
-        """Async version (not implemented)."""
-        return self._run(input)
+    async def _arun(self, input_str: str) -> str:
+        """Async version (delegates to sync implementation)."""
+        return self._run(input_str)
 
 
 def analyze_imports(

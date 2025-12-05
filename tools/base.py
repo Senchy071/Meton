@@ -12,8 +12,9 @@ Example:
     ...         return "Result"
 """
 
+import json
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple, Union
 from langchain.tools import BaseTool as LangChainBaseTool
 from pydantic import BaseModel, Field
 import logging
@@ -115,6 +116,45 @@ class MetonBaseTool(LangChainBaseTool, ABC):
             self.logger.error(error_msg)
 
         return error_msg
+
+    def _parse_json_input(
+        self,
+        input_str: str,
+        required_fields: Optional[List[str]] = None
+    ) -> Tuple[bool, Union[Dict[str, Any], str]]:
+        """Parse JSON input and validate required fields.
+
+        Provides consistent JSON parsing across all tools.
+
+        Args:
+            input_str: JSON string to parse
+            required_fields: Optional list of required field names
+
+        Returns:
+            Tuple of (success: bool, result: dict or error_message: str)
+            - On success: (True, parsed_dict)
+            - On failure: (False, error_message)
+
+        Example:
+            >>> success, data = self._parse_json_input(input_str, ["query"])
+            >>> if not success:
+            ...     return data  # data is error message
+            >>> query = data["query"]  # data is parsed dict
+        """
+        try:
+            data = json.loads(input_str)
+        except json.JSONDecodeError as e:
+            return False, f"✗ Invalid JSON input: {str(e)}"
+
+        if not isinstance(data, dict):
+            return False, "✗ Input must be a JSON object"
+
+        if required_fields:
+            missing = [f for f in required_fields if f not in data]
+            if missing:
+                return False, f"✗ Missing required field(s): {', '.join(missing)}"
+
+        return True, data
 
     def _log_execution(self, action: str, details: str = "") -> None:
         """Log tool execution for debugging.

@@ -8,6 +8,7 @@ Example usage:
     >>> config.reload()  # Reload from file
 """
 
+import warnings
 import yaml
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -173,7 +174,7 @@ class FileOpsToolConfig(BaseModel):
         for path_str in self.allowed_paths:
             path = Path(path_str)
             if not path.exists():
-                print(f"Warning: Allowed path does not exist: {path_str}")
+                warnings.warn(f"Allowed path does not exist: {path_str}", UserWarning)
             elif not path.is_dir():
                 raise ValueError(f"Allowed path is not a directory: {path_str}")
         return self

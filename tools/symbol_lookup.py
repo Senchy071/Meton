@@ -21,7 +21,6 @@ import os
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from pydantic import Field
-import logging
 
 from tools.base import MetonBaseTool, ToolConfig, ToolError
 from utils.logger import setup_logger

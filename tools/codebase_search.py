@@ -300,9 +300,9 @@ Note: This tool is DISABLED BY DEFAULT. You must:
             formatted_results = []
             for metadata, distance in raw_results:
                 # Convert distance to similarity score (lower distance = higher similarity)
-                # Using exponential decay: similarity = e^(-distance)
-                import math
-                similarity = math.exp(-distance)
+                # Using inverse formula: similarity = 1 / (1 + distance)
+                # This provides a more gradual decay than exponential
+                similarity = 1.0 / (1.0 + distance)
 
                 # Filter by similarity threshold
                 if similarity < self._similarity_threshold:

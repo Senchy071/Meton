@@ -612,8 +612,9 @@ Returns: Operation result or error message."""
                     with open(path, 'r', encoding='utf-8') as f:
                         line_count = sum(1 for _ in f)
                     info_lines.append(f"  Lines: {line_count}")
-                except:
-                    pass  # Binary file or read error
+                except (UnicodeDecodeError, IOError):
+                    # Binary file or read error - skip line count
+                    pass
 
             if self.logger:
                 self.logger.info(f"Got info for {path}")
@@ -624,52 +625,3 @@ Returns: Operation result or error message."""
             return str(e)
         except Exception as e:
             return self._handle_error(e, f"getting info for {path}")
-
-
-# Keep the separate tools for backward compatibility
-class ReadFileTool(MetonBaseTool):
-    """Tool for reading file contents (simple single-file version)."""
-
-    name: str = "read_file"
-    description: str = (
-        "Read the contents of a file. "
-        "Input should be the absolute file path as a string. "
-        "Returns the file contents or an error message."
-    )
-
-    def _run(self, file_path: str) -> str:
-        """Read file contents."""
-        # Redirect to FileOperationsTool
-        return "Use FileOperationsTool with action='read' instead"
-
-
-class WriteFileTool(MetonBaseTool):
-    """Tool for writing file contents (simple single-file version)."""
-
-    name: str = "write_file"
-    description: str = (
-        "Write content to a file. "
-        "Input should be a dictionary with 'file_path' and 'content' keys. "
-        "Returns success message or error."
-    )
-
-    def _run(self, file_path: str, content: str) -> str:
-        """Write content to file."""
-        # Redirect to FileOperationsTool
-        return "Use FileOperationsTool with action='write' instead"
-
-
-class ListDirectoryTool(MetonBaseTool):
-    """Tool for listing directory contents (simple single-directory version)."""
-
-    name: str = "list_directory"
-    description: str = (
-        "List contents of a directory. "
-        "Input should be the directory path as a string. "
-        "Returns list of files and directories or error message."
-    )
-
-    def _run(self, dir_path: str) -> str:
-        """List directory contents."""
-        # Redirect to FileOperationsTool
-        return "Use FileOperationsTool with action='list' instead"

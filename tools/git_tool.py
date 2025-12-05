@@ -13,6 +13,7 @@ Provides git repository operations:
 
 import os
 import re
+import warnings
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional, Any
@@ -57,7 +58,7 @@ class GitTool:
         except InvalidGitRepositoryError:
             return None
         except Exception as e:
-            print(f"Warning: Failed to initialize git repository: {e}")
+            warnings.warn(f"Failed to initialize git repository: {e}", UserWarning)
             return None
 
     def is_git_repo(self) -> bool:

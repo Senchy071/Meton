@@ -1153,7 +1153,8 @@ class MetonCLI:
                                 self.console.print()
                                 self.console.print(syntax)
                                 self.console.print()
-                            except:
+                            except Exception:
+                                # Fallback to plain text if syntax highlighting fails
                                 self.console.print(f"\n{code}\n")
         else:
             self.console.print(response)
@@ -1423,7 +1424,8 @@ class MetonCLI:
                 try:
                     syntax = Syntax(snippet_preview, "python", theme="monokai", line_numbers=False)
                     self.console.print(syntax)
-                except:
+                except Exception:
+                    # Fallback to plain text if syntax highlighting fails
                     self.console.print(f"   {snippet_preview}")
 
                 self.console.print()
@@ -1506,7 +1508,8 @@ class MetonCLI:
                 try:
                     syntax = Syntax(snippet, "python", theme="monokai", line_numbers=True, start_line=first['line'])
                     self.console.print(syntax)
-                except:
+                except Exception:
+                    # Fallback to plain text if syntax highlighting fails
                     self.console.print(snippet)
 
                 self.console.print()

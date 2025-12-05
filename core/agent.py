@@ -18,7 +18,7 @@ Example:
     >>> result = agent.run("Read the README.md file")
 """
 
-from typing import TypedDict, Annotated, List, Dict, Any, Optional
+from typing import TypedDict, List, Dict, Any, Optional
 import re
 from langchain.tools import BaseTool
 from langgraph.graph import StateGraph, END
@@ -1572,11 +1572,12 @@ Provide a concise answer:"""
                         if tc["tool_name"] == "file_operations" and tc["output"] and tc["output"].startswith("✓ Read"):
                             # Extract path from successful read operations
                             try:
-                                input_data = __import__('json').loads(tc["input"])
+                                input_data = json.loads(tc["input"])
                                 if input_data.get("action") == "read":
                                     path = input_data.get("path", "")
                                     read_files.add(path)
-                            except:
+                            except (json.JSONDecodeError, KeyError, TypeError):
+                                # Skip malformed tool call entries
                                 pass
 
                     # Find unread but mentioned files

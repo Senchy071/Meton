@@ -24,6 +24,9 @@ from cli import MetonCLI
 from core.agent import MetonAgent
 from core.config import ConfigLoader
 from rag.indexer import CodebaseIndexer
+from rag.embeddings import EmbeddingModel
+from rag.vector_store import VectorStore
+from rag.metadata_store import MetadataStore
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -83,11 +86,19 @@ async def startup_event():
         agent = MetonAgent(config)
         logger.info("Meton agent initialized")
 
-        # Initialize indexer
+        # Initialize indexer components
+        embedder = EmbeddingModel(model_name=config.rag.embedding_model)
+        vector_store = VectorStore(
+            dimension=config.rag.dimensions,
+            index_path=config.rag.index_path
+        )
+        metadata_store = MetadataStore(filepath=config.rag.metadata_path)
+
         indexer = CodebaseIndexer(
-            embedding_model_name=config.rag.embedding_model,
-            index_path=config.rag.index_path,
-            metadata_path=config.rag.metadata_path
+            embedder=embedder,
+            vector_store=vector_store,
+            metadata_store=metadata_store,
+            verbose=False
         )
         logger.info("Codebase indexer initialized")
 

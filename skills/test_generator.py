@@ -14,7 +14,7 @@ Automatically generates unit tests for Python code with support for:
 import ast
 import re
 from typing import Dict, List, Any, Optional, Tuple
-from skills.base import BaseSkill, SkillError, SkillValidationError, SkillExecutionError
+from skills.base import BaseSkill, SkillValidationError, SkillExecutionError
 
 
 class TestGeneratorSkill(BaseSkill):
@@ -41,12 +41,15 @@ class TestGeneratorSkill(BaseSkill):
         self._imports_needed: set = set()
         self._test_code_lines: List[str] = []
 
-    def validate_input(self, input_data: Dict[str, Any]) -> None:
+    def validate_input(self, input_data: Dict[str, Any]) -> bool:
         """
         Validate input data for test generation.
 
         Args:
             input_data: Dictionary containing code and optional parameters
+
+        Returns:
+            True if validation passes
 
         Raises:
             SkillValidationError: If input is invalid
@@ -74,6 +77,8 @@ class TestGeneratorSkill(BaseSkill):
                 raise SkillValidationError(
                     "Field 'coverage_level' must be 'basic', 'standard', or 'comprehensive'"
                 )
+
+        return True
 
     def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """

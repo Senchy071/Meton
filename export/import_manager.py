@@ -527,7 +527,8 @@ class ImportManager:
                 if import_major == compat_major:
                     return True
             return False
-        except:
+        except (ValueError, IndexError, AttributeError):
+            # Version parsing failed
             return False
 
     def _import_configuration_data(self, config: Dict):
