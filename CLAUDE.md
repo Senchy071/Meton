@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Meton is a fully local AI coding assistant powered by LangChain, LangGraph, and Ollama. Everything runs on local hardware - no external API calls, no data leaving the machine. The name comes from Metis (wisdom) + Ergon (action).
 
 Core Architecture:
+
 - Agent System LangGraph-based ReAct agent with multi-step reasoning (Think -> Act -> Observe loop)
 - Tools File operations, code execution, web search, semantic code search (RAG)
 - Skills High-level capabilities (code explainer, debugger, refactoring engine)
@@ -16,6 +17,7 @@ Core Architecture:
 ## Development Commands
 
 ### Running Meton
+
 ```bash
 # Activate virtual environment
 source venv/bin/activate
@@ -27,6 +29,7 @@ python meton.py
 ```
 
 ### Testing
+
 ```bash
 # Run specific test suites
 python test_infrastructure.py # Core config, logger, formatting
@@ -58,6 +61,7 @@ python test_refactoring_engine.py # Refactoring engine skill
 ```
 
 ### Building/Installing
+
 ```bash
 # Initial setup
 chmod +x setup.sh
@@ -75,6 +79,7 @@ source venv/bin/activate
 ### Core Components
 
 1. Agent System (`core/agent.py`)
+
 - LangGraph StateGraph with ReAct pattern implementation
 - Three-node architecture: Reasoning -> Tool Execution -> Loop Detection
 - Critical Loop detection system prevents infinite tool calls by tracking (tool_name, input) pairs
@@ -82,26 +87,31 @@ source venv/bin/activate
 - Max iterations: 10 (configurable in `config.yaml`)
 
 2. Configuration (`core/config.py`)
+
 - Pydantic-based type-safe configuration with YAML persistence
 - Important ConfigLoader has `save()` method at core/config.py:164-173 for persisting runtime changes
 - When CLI commands change settings (like `/web on`), must update three locations:
+
  1. Tool runtime state (`tool._enabled`)
  2. In-memory config (`config.config.tools.<tool>.enabled`)
  3. Disk persistence via `config.save()`
 
 3. Model Manager (`core/models.py`)
+
 - Ollama integration with LangChain compatibility
 - LLM instance caching per model for performance
 - Alias resolution: `primary`/`fallback`/`quick` -> actual model names
 - Supports model switching without restart via `/model` command
 
 4. Conversation Manager (`core/conversation.py`)
+
 - Thread-safe with `threading.Lock` for all operations
 - JSON-based persistence in `conversations/` directory
 - Auto-trimming based on `max_history` (preserves system messages)
 - UUID session IDs with ISO 8601 timestamps
 
 5. RAG System (`rag/` directory)
+
 - CodeParser AST-based Python parsing extracting functions, classes, imports with full metadata
 - CodeChunker Semantic chunking (1 chunk per function/class, preserves code structure)
 - EmbeddingModel sentence-transformers/all-mpnet-base-v2 (768-dim vectors)
@@ -110,6 +120,7 @@ source venv/bin/activate
 - CodebaseIndexer Orchestrates parsing -> chunking -> embedding -> storage
 
 6. Skills System (`skills/` directory)
+
 - High-level intelligent capabilities built on top of tools
 - `BaseSkill` abstract class requiring `execute()` implementation
 - Current skills: Code Explainer, Debugger Assistant, Refactoring Engine
@@ -120,28 +131,33 @@ source venv/bin/activate
 All tools inherit from `MetonBaseTool` (extends LangChain's `BaseTool`).
 
 FileOperationsTool
+
 - Actions: read, write, list, create_dir, exists, get_info
 - Security: Path resolution, blocked paths (/etc, /sys, /proc), allowed paths validation
 - JSON input: `{"action": "read", "path": "/path/to/file"}`
 
 CodeExecutorTool
+
 - Subprocess isolation with 5-second timeout
 - AST-based import validation (27 allowed, 36 blocked standard libraries)
 - Captures stdout + stderr with execution time tracking
 
 WebSearchTool
+
 - DuckDuckGo integration via `ddgs` library (no API key needed)
 - Note Library migrated from `duckduckgo_search` -> `ddgs` (October 2025)
 - Disabled by default, runtime toggle via `/web on/off`
 - Config persistence required (see Configuration section)
 
 CodebaseSearchTool
+
 - Semantic code search using RAG system
 - Natural language queries -> vector similarity search
 - Returns ranked results with file paths, line numbers, similarity scores
 - Lazy-loads indexer for performance
 
 SymbolLookupTool
+
 - Fast exact symbol definition lookup (functions, classes, methods, variables)
 - AST-based parsing using CodeParser (imported via importlib to avoid dependency issues)
 - In-memory indexing with 60-second cache TTL
@@ -152,6 +168,7 @@ SymbolLookupTool
 - Example: `/find MetonAgent` or `/find _run type:method`
 
 ImportGraphTool
+
 - Analyzes import dependencies in Python codebases using grimp library
 - Detects circular dependencies (cycles) between modules
 - Calculates coupling metrics (density, fan-in, fan-out)
@@ -165,6 +182,7 @@ ImportGraphTool
 ### Data Flow Patterns
 
 Query Execution Flow:
+
 ```
 User input -> CLI.process_query() -> Agent.run(query) -> LangGraph.invoke()
  -> Reasoning Node (builds prompt, calls LLM, parses THOUGHT/ACTION/INPUT/ANSWER)
@@ -175,6 +193,7 @@ User input -> CLI.process_query() -> Agent.run(query) -> LangGraph.invoke()
 ```
 
 RAG Indexing Flow:
+
 ```
 /index [path] -> CodebaseIndexer.index_directory()
  -> Walk tree (exclude __pycache__, .git, venv, etc.)
@@ -185,6 +204,7 @@ RAG Indexing Flow:
 ```
 
 RAG Query Flow:
+
 ```
 Natural language query -> EmbeddingModel.encode(query)
  -> FAISS.search(query_vector, k=5)
@@ -196,7 +216,9 @@ Natural language query -> EmbeddingModel.encode(query)
 ## Key Implementation Details
 
 ### Agent System Prompt Structure
+
 The agent's effectiveness depends heavily on the system prompt (core/agent.py). Structure:
+
 1. **Path context** Current working directory and allowed paths
 2. **Available tools** Each tool's name, description, input format
 3. **Examples** Complete Think -> Act -> Observe -> Answer flows
@@ -205,17 +227,22 @@ The agent's effectiveness depends heavily on the system prompt (core/agent.py). 
 6. **Answer validation** Self-check checklist ensuring completeness before responding
 
 ### Loop Detection Algorithm
+
 Located in agent.py reasoning node:
+
 ```python
 if (current_action == last_action and current_input == last_input):
  # Force completion with existing result
  state["finished"] = True
  state["final_answer"] = last_result
 ```
+
 This prevents infinite loops when agent repeats same tool call.
 
 ### RAG Integration with Agent
+
 The agent automatically uses `codebase_search` when:
+
 - User asks "how does X work?"
 - User asks "where is X?"
 - Questions about THIS project's code
@@ -223,6 +250,7 @@ The agent automatically uses `codebase_search` when:
 Tool selection is driven by examples in system prompt showing when to use each tool.
 
 ### Security Model
+
 - File Operations Path resolution prevents traversal attacks, blocked/allowed path lists
 - Code Execution Subprocess isolation, AST import validation, timeout protection
 - LLM Fully local (no external API calls), no eval()/exec() usage
@@ -231,6 +259,7 @@ Tool selection is driven by examples in system prompt showing when to use each t
 ## Common Development Tasks
 
 ### Adding a New Tool
+
 1. Create `tools/your_tool.py` inheriting from `MetonBaseTool`
 2. Implement `_run(self, input: str) -> str` method
 3. Register in `cli.py:initialize()` tools list
@@ -238,6 +267,7 @@ Tool selection is driven by examples in system prompt showing when to use each t
 5. Update agent system prompt with tool examples (optional but recommended)
 
 ### Adding a New Skill
+
 1. Create `skills/your_skill.py` inheriting from `BaseSkill`
 2. Set `name`, `description`, `version` class attributes
 3. Implement `execute(self, input_data: Dict) -> Dict` method
@@ -245,12 +275,14 @@ Tool selection is driven by examples in system prompt showing when to use each t
 5. Follow pattern from existing skills (code_explainer.py, debugger.py, refactoring_engine.py)
 
 ### Adding a New CLI Command
+
 1. Add to help display in `cli.py:display_help()`
 2. Add handler in `cli.py:handle_command()` elif chain
 3. Implement handler method following naming pattern `handle_<command>()`
 4. Use Rich console for formatted output (`self.console.print()`)
 
 ### Modifying Configuration Schema
+
 1. Update Pydantic models in `core/config.py`
 2. Add corresponding fields to `config.yaml`
 3. Update default values if adding new optional fields
@@ -265,23 +297,27 @@ When debugging or fixing issues in Meton:
 **Rule**: After **two unsuccessful attempts** to solve an issue, search the web for solutions.
 
 **Why**:
+
 - Prevents spending excessive time on approaches that aren't working
 - Leverages existing solutions and best practices from the community
 - Helps identify if the problem is a known issue with dependencies (LangChain, LangGraph, etc.)
 
 **What to search for**:
+
 - Error messages (exact error text + library name)
 - Best practices for the specific pattern or architecture (e.g., "ReAct agent loop detection")
 - Known issues or workarounds for the libraries being used
 - Recent discussions (include year: "2024" or "2025" for current solutions)
 
 **Example workflow**:
+
 1. Attempt 1: Try initial fix based on code analysis
 2. Attempt 2: Try alternative approach or refinement
 3. **Attempt 3**: Search web for solutions before trying a third code approach
 4. Apply researched solution with understanding of why it works
 
 This guideline prevents:
+
 - Infinite debugging loops
 - Over-engineering solutions
 - Missing simple, well-known fixes
@@ -290,6 +326,7 @@ This guideline prevents:
 ## Testing Patterns
 
 Tests are standalone Python scripts (not pytest-based). Pattern:
+
 ```python
 #!/usr/bin/env python3
 import sys
@@ -328,7 +365,9 @@ Run directly: `python test_component.py`
 ## Known Limitations & Gotchas
 
 ### Configuration Persistence
+
 Critical When CLI commands modify settings, must update three locations:
+
 1. Tool runtime state (`tool._enabled`)
 2. In-memory config object
 3. Call `config.save()` to persist to disk
@@ -336,15 +375,19 @@ Critical When CLI commands modify settings, must update three locations:
 Example from cli.py:288-312 for `/web on` command.
 
 ### Large File Handling
+
 Multi-step queries with files >30KB may timeout because ReAct pattern passes full content through each iteration. Workaround: Ask specific questions or use RAG indexing for semantic search.
 
 ### Library Migration
+
 The web search tool uses `ddgs` library (not `duckduckgo_search` which was deprecated). Import: `from ddgs import DDGS`. API: `ddgs.text(query, max_results=N)`.
 
 ### Test Execution
+
 Tests are NOT using pytest. They are standalone executable Python scripts. Run directly: `python test_<component>.py`.
 
 ### Virtual Environment
+
 Always activate venv before running: `source venv/bin/activate`. The project uses Python 3.11+ with specific versions of LangChain, LangGraph, sentence-transformers, FAISS.
 
 ## File Structure Quick Reference
@@ -387,6 +430,7 @@ meton/
 ## LangGraph Agent State Management
 
 The agent uses a `StateGraph` with `AgentState` TypedDict:
+
 - `messages`: Conversation history
 - `thoughts`: Agent's reasoning steps
 - `tool_calls`: List of (tool_name, input, output) tuples
@@ -397,6 +441,7 @@ The agent uses a `StateGraph` with `AgentState` TypedDict:
 State flows through nodes: `START` -> `reasoning_node` -> `tool_execution_node` -> (loop or `END`)
 
 Conditional edges based on:
+
 - `state["finished"]` - Has agent provided ANSWER?
 - `state["iteration"] >= max_iterations` - Hit limit?
 - Tool call required? - Parse ACTION from LLM output
@@ -404,6 +449,7 @@ Conditional edges based on:
 ## RAG System Details
 
 ### Indexing Strategy
+
 - AST Parsing Uses Python's `ast` module to extract functions, classes, imports
 - Semantic Chunks One chunk per function/class (not arbitrary text splitting)
 - Metadata File path, start/end line numbers, docstrings, decorators, arguments
@@ -411,6 +457,7 @@ Conditional edges based on:
 - Storage FAISS IndexFlatL2 (exact L2 distance) + JSON metadata
 
 ### Search Process
+
 1. Encode natural language query to 768-dim vector
 2. FAISS finds k-nearest vectors (default k=5)
 3. Retrieve metadata for matching chunks
@@ -418,6 +465,7 @@ Conditional edges based on:
 5. Return ranked results with file:line references
 
 ### CLI Integration
+
 - `/index [path]` - Index Python codebase
 - `/index status` - Show stats (files, chunks, last indexed)
 - `/index clear` - Delete index
@@ -429,6 +477,7 @@ After successful indexing, both `rag.enabled` and `tools.codebase_search.enabled
 ## Model Configuration
 
 Default models (configurable in config.yaml):
+
 - Primary qwen2.5:32b-instruct-q5_K_M (main reasoning)
 - Fallback llama3.1:8b (backup)
 - Quick mistral:latest (fast responses)
@@ -438,27 +487,32 @@ Default models (configurable in config.yaml):
 Meton provides comprehensive control over LLM sampling and output quality through 14 configurable parameters:
 
 **Core Parameters:**
+
 - Temperature: 0.0-2.0 (default: 0.0 for deterministic output)
 - Max tokens: 2048 (maximum generation length)
 - Top-p: 0.9 (nucleus sampling)
 - Context window: 32768 tokens (increased for large files)
 
 **Advanced Sampling:**
+
 - Top-k: 40 (sampling diversity, 0 = disabled)
 - Min-p: 0.1 (adaptive filtering, recommended over top-k)
 
 **Repetition Control:**
+
 - Repeat penalty: 1.1 (penalize repetition, 1.0 = disabled)
 - Repeat last n: 64 (window for repetition analysis)
 - Presence penalty: 0.0 (penalize already-used tokens)
 - Frequency penalty: 0.0 (penalize frequently-used tokens)
 
 **Mirostat Sampling (alternative to top-k/top-p):**
+
 - Mirostat: 0 (0 = disabled, 1 = v1, 2 = v2)
 - Mirostat tau: 5.0 (target entropy)
 - Mirostat eta: 0.1 (learning rate)
 
 **Reproducibility:**
+
 - Seed: -1 (random seed, -1 = random, set for deterministic output)
 
 All parameters are defined in `core/config.py` (ModelSettings), configured in `config.yaml`, and automatically passed to Ollama. Edit `config.yaml` and run `/reload` to apply changes.
@@ -470,6 +524,7 @@ Switch models at runtime: `/model <name>` or `/model primary|fallback|quick`
 Meton supports dynamic parameter adjustment without restart through CLI commands:
 
 **Commands:**
+
 - `/param show` - Display all current parameters in organized table
 - `/param <name> <value>` - Set individual parameter at runtime
 - `/param reset` - Reset all parameters to config.yaml defaults
@@ -481,31 +536,37 @@ Meton supports dynamic parameter adjustment without restart through CLI commands
 Five predefined presets for common use cases:
 
 1. **precise** - Deterministic output for precise coding tasks
+
    ```
    temperature: 0.0, top_k: 40, repeat_penalty: 1.1
    ```
 
 2. **creative** - More exploratory and creative coding
+
    ```
    temperature: 0.7, top_p: 0.95, repeat_penalty: 1.2
    ```
 
 3. **balanced** - Balanced between creativity and precision
+
    ```
    temperature: 0.3, top_k: 40, repeat_penalty: 1.15
    ```
 
 4. **debugging** - Consistent methodical debugging approach
+
    ```
    temperature: 0.2, mirostat: 2, top_k: 20
    ```
 
 5. **explanation** - Clear explanations with reduced repetition
+
    ```
    temperature: 0.5, repeat_penalty: 1.25, presence_penalty: 0.1
    ```
 
 **Example Workflow:**
+
 ```bash
 # View current parameters
 /param show
@@ -521,6 +582,7 @@ Five predefined presets for common use cases:
 ```
 
 **Implementation Details:**
+
 - Changes are applied immediately to in-memory config
 - LLM cache is cleared to ensure new parameters take effect on next query
 - Use `/param reset` to reload from config.yaml
@@ -595,6 +657,7 @@ Five pre-configured templates for common use cases:
 - `explainer.Modelfile` - Code explanation and teaching
 
 Each template includes:
+
 - Optimized system prompts
 - Task-appropriate parameters
 - Proper chat format templates
@@ -606,6 +669,7 @@ See `docs/FINE_TUNING.md` for complete workflow documentation and best practices
 Phase 4 introduces user-customizable parameter profiles for persistent parameter configurations.
 
 **Key Difference from Presets:**
+
 - **Presets** (Phase 2): Hardcoded in Python, cannot be modified at runtime
 - **Profiles** (Phase 4): Stored in `config.yaml`, fully customizable by users
 
@@ -641,6 +705,7 @@ Phase 4 introduces user-customizable parameter profiles for persistent parameter
 **Default Profiles:**
 
 Four profiles included in `config.yaml`:
+
 - `creative_coding` - High temperature (0.7) for exploratory coding
 - `precise_coding` - Deterministic (0.0) with mirostat for precision
 - `debugging` - Low temperature (0.2) for methodical analysis
@@ -649,6 +714,7 @@ Four profiles included in `config.yaml`:
 **Implementation Details:**
 
 Configuration Model (`core/config.py`):
+
 ```python
 class ParameterProfile(BaseModel):
     name: str
@@ -657,6 +723,7 @@ class ParameterProfile(BaseModel):
 ```
 
 Model Manager Methods (`core/models.py`):
+
 - `list_profiles()` - Dict of all profiles
 - `get_profile(name)` - Get specific profile
 - `apply_profile(name)` - Apply settings and clear cache
@@ -666,6 +733,7 @@ Model Manager Methods (`core/models.py`):
 - `import_profile(path)` - Import from JSON
 
 Storage (`config.yaml`):
+
 ```yaml
 parameter_profiles:
   my_custom_profile:
@@ -678,6 +746,7 @@ parameter_profiles:
 ```
 
 **Use Cases:**
+
 - Project-specific parameter tuning
 - Task-based configurations (debugging vs feature dev)
 - Team standardization (share profiles)
@@ -714,6 +783,7 @@ top_p [0.9]: 0.95
 - Context window Preserves system messages during trimming
 
 CLI commands:
+
 - `/save` - Manual save
 - `/history` - Show conversation
 - `/search <keyword>` - Search history

@@ -240,6 +240,16 @@ class MetonCLI:
         table.add_row("/optimize benchmark", "Run benchmarks")
         table.add_row("/optimize resources", "Resource usage")
 
+        # Add skills commands section
+        table.add_section()
+        table.add_row("[bold cyan]Skills:[/]", "")
+        table.add_row("/skill list", "List all available skills")
+        table.add_row("/skill load <name>", "Load a specific skill")
+        table.add_row("/skill unload <name>", "Unload a specific skill")
+        table.add_row("/skill reload <name>", "Reload a skill")
+        table.add_row("/skill info <name>", "Show skill information")
+        table.add_row("/skill discover", "Rediscover available skills")
+
         table.add_section()
         table.add_row("/exit, /quit, /q", "Exit Meton")
 
@@ -452,6 +462,12 @@ class MetonCLI:
                 self.handle_optimize_command(' '.join(args))
             else:
                 self.console.print("[yellow]Usage: /optimize [profile|cache|report|benchmark|resources][/yellow]")
+        elif cmd == '/skill':
+            # Skill management command
+            if args:
+                self.handle_skill_command(' '.join(args))
+            else:
+                self.list_skills()
         elif cmd in ['/exit', '/quit', '/q']:
             self.exit_cli()
         else:
@@ -2701,6 +2717,196 @@ class MetonCLI:
             self.console.print(f"[red]❌ Failed to get resource usage: {str(e)}[/red]\n")
 
     # ========== End Optimization Commands ==========
+
+    # ========== Skill Commands ==========
+
+    def list_skills(self):
+        """List all available skills."""
+        try:
+            from skills.skill_manager import SkillManager
+            manager = SkillManager()
+
+            table = Table(title="Available Skills", show_header=True, header_style="bold cyan")
+            table.add_column("Name", style="yellow", width=25)
+            table.add_column("Type", style="white", width=10)
+            table.add_column("Status", style="white", width=10)
+            table.add_column("Description", style="white")
+
+            # Get all available skills
+            all_skills = manager.list_available_skills()
+
+            for skill_name in sorted(all_skills):
+                skill_type = manager.get_skill_type(skill_name) or "unknown"
+                loaded = manager.is_loaded(skill_name)
+                status = "[green]loaded[/green]" if loaded else "[dim]available[/dim]"
+
+                # Get description if loaded
+                if loaded:
+                    info = manager.get_skill_info(skill_name)
+                    desc = info.get("description", "No description") if info else "No description"
+                else:
+                    # Try to load briefly to get description
+                    manager.load_skill(skill_name)
+                    info = manager.get_skill_info(skill_name)
+                    desc = info.get("description", "No description") if info else "No description"
+                    manager.unload_skill(skill_name)
+
+                # Truncate description
+                if len(desc) > 50:
+                    desc = desc[:47] + "..."
+
+                table.add_row(skill_name, skill_type, status, desc)
+
+            # Summary
+            md_count = len(manager.get_skills_by_type("markdown"))
+            py_count = len(manager.get_skills_by_type("python"))
+
+            self.console.print()
+            self.console.print(table)
+            self.console.print(f"\n[dim]Total: {len(all_skills)} skills ({md_count} markdown, {py_count} python)[/dim]")
+            self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to list skills: {str(e)}[/red]\n")
+
+    def handle_skill_command(self, command_str: str):
+        """Handle skill subcommands."""
+        parts = command_str.split()
+        if not parts:
+            self.list_skills()
+            return
+
+        subcommand = parts[0].lower()
+        args = parts[1:]
+
+        try:
+            from skills.skill_manager import SkillManager
+            manager = SkillManager()
+
+            if subcommand == 'list':
+                self.list_skills()
+
+            elif subcommand == 'load':
+                if not args:
+                    self.console.print("[yellow]Usage: /skill load <name>[/yellow]")
+                    return
+                skill_name = args[0]
+                if manager.load_skill(skill_name):
+                    info = manager.get_skill_info(skill_name)
+                    skill_type = info.get("type", "unknown") if info else "unknown"
+                    self.console.print(f"[green]✓ Loaded skill: {skill_name} ({skill_type})[/green]")
+                else:
+                    self.console.print(f"[red]❌ Failed to load skill: {skill_name}[/red]")
+
+            elif subcommand == 'unload':
+                if not args:
+                    self.console.print("[yellow]Usage: /skill unload <name>[/yellow]")
+                    return
+                skill_name = args[0]
+                if manager.unload_skill(skill_name):
+                    self.console.print(f"[green]✓ Unloaded skill: {skill_name}[/green]")
+                else:
+                    self.console.print(f"[yellow]⚠ Skill not loaded: {skill_name}[/yellow]")
+
+            elif subcommand == 'reload':
+                if not args:
+                    self.console.print("[yellow]Usage: /skill reload <name>[/yellow]")
+                    return
+                skill_name = args[0]
+                if manager.reload_skill(skill_name):
+                    self.console.print(f"[green]✓ Reloaded skill: {skill_name}[/green]")
+                else:
+                    self.console.print(f"[red]❌ Failed to reload skill: {skill_name}[/red]")
+
+            elif subcommand == 'info':
+                if not args:
+                    self.console.print("[yellow]Usage: /skill info <name>[/yellow]")
+                    return
+                skill_name = args[0]
+                self.show_skill_info(skill_name)
+
+            elif subcommand == 'discover':
+                old_count = manager.get_available_count()
+                new_count = manager.rediscover_skills()
+                total = manager.get_available_count()
+                self.console.print(f"[green]✓ Discovered {new_count} new skills ({total} total)[/green]")
+
+            else:
+                self.console.print(f"[red]❌ Unknown skill subcommand: {subcommand}[/red]")
+                self.console.print("[dim]Available: list, load, unload, reload, info, discover[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Skill command failed: {str(e)}[/red]")
+
+    def show_skill_info(self, skill_name: str):
+        """Show detailed information about a skill."""
+        try:
+            from skills.skill_manager import SkillManager
+            from skills.markdown_skill import MarkdownSkill
+
+            manager = SkillManager()
+
+            # Load the skill if not already loaded
+            if not manager.is_loaded(skill_name):
+                if not manager.load_skill(skill_name):
+                    self.console.print(f"[red]❌ Skill not found: {skill_name}[/red]")
+                    return
+
+            skill = manager.get_skill(skill_name)
+            info = manager.get_skill_info(skill_name)
+
+            if not info:
+                self.console.print(f"[red]❌ Could not get info for skill: {skill_name}[/red]")
+                return
+
+            # Build info panel
+            skill_type = info.get("type", "unknown")
+            lines = [
+                f"[cyan]Name:[/cyan]        {info.get('name', 'Unknown')}",
+                f"[cyan]Type:[/cyan]        {skill_type}",
+                f"[cyan]Version:[/cyan]     {info.get('version', 'Unknown')}",
+                f"[cyan]Enabled:[/cyan]     {'Yes' if info.get('enabled', False) else 'No'}",
+                f"[cyan]Description:[/cyan] {info.get('description', 'No description')}",
+            ]
+
+            # Add markdown-specific info
+            if isinstance(skill, MarkdownSkill):
+                if skill.allowed_tools:
+                    lines.append(f"[cyan]Allowed Tools:[/cyan] {', '.join(skill.allowed_tools)}")
+                if skill.model:
+                    lines.append(f"[cyan]Model:[/cyan]       {skill.model}")
+                if skill.source_path:
+                    lines.append(f"[cyan]Source:[/cyan]      {skill.source_path}")
+                if skill.additional_files:
+                    files_str = ", ".join(f.name for f in skill.additional_files[:5])
+                    if len(skill.additional_files) > 5:
+                        files_str += f" (+{len(skill.additional_files) - 5} more)"
+                    lines.append(f"[cyan]Extra Files:[/cyan] {files_str}")
+
+            panel = Panel(
+                "\n".join(lines),
+                title=f"Skill: {skill_name}",
+                border_style="cyan",
+                padding=(1, 2)
+            )
+
+            self.console.print()
+            self.console.print(panel)
+
+            # Show instructions preview for markdown skills
+            if isinstance(skill, MarkdownSkill) and skill.instructions:
+                preview = skill.instructions[:500]
+                if len(skill.instructions) > 500:
+                    preview += "\n..."
+                self.console.print("\n[bold cyan]Instructions Preview:[/bold cyan]")
+                self.console.print(Panel(preview, border_style="dim"))
+
+            self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to get skill info: {str(e)}[/red]\n")
+
+    # ========== End Skill Commands ==========
 
     def exit_cli(self):
         """Exit the CLI."""
