@@ -872,6 +872,110 @@ EOF
 
 ---
 
+## Hooks
+
+Hooks are event-driven automation that run before or after specific actions. They allow you to log, monitor, modify, or intercept tool executions, skill invocations, agent runs, and queries.
+
+**Hook Types:**
+
+| Type | Trigger | Use Cases |
+|------|---------|-----------|
+| `pre_query` | Before processing user query | Input validation, logging |
+| `post_query` | After generating response | Analytics, notifications |
+| `pre_tool` | Before tool execution | Input transformation, access control |
+| `post_tool` | After tool execution | Logging, error notifications |
+| `pre_skill` | Before skill invocation | Setup, validation |
+| `post_skill` | After skill invocation | Cleanup, reporting |
+| `pre_agent` | Before sub-agent execution | Context preparation |
+| `post_agent` | After sub-agent execution | Result processing |
+
+**Built-in Hooks:**
+
+| Hook | Type | Description |
+|------|------|-------------|
+| `log-tool-usage` | post_tool | Logs all tool executions to file (disabled by default) |
+| `notify-on-error` | post_tool | Desktop notification on tool failure (disabled by default) |
+
+**Hook Definition Format:**
+
+```markdown
+---
+name: my-hook
+hook_type: post_tool
+command: echo "Tool {name} completed: {success}"
+condition: "{success} == true"
+timeout: 5
+enabled: true
+---
+
+# My Hook
+
+Description of what the hook does...
+```
+
+**Hook Discovery Locations (in precedence order):**
+
+1. **Project**: `.meton/hooks/` - Project-specific hooks
+2. **User**: `~/.meton/hooks/` - User-wide hooks
+3. **Built-in**: `hooks/builtin/` - Built-in hooks
+
+**CLI Commands:**
+
+```
+/hook list              # List all registered hooks
+/hook info <name>       # Show hook details
+/hook enable <name>     # Enable a hook
+/hook disable <name>    # Disable a hook
+/hook discover          # Refresh hook discovery
+/hook history           # Show recent executions
+/hook stats             # Show statistics
+/hook on                # Enable all hooks globally
+/hook off               # Disable all hooks globally
+/hook create <name>     # Create new hook interactively
+```
+
+**Template Variables:**
+
+Hooks can use template variables in commands and conditions:
+
+| Variable | Description |
+|----------|-------------|
+| `{name}` | Name of tool/skill/agent |
+| `{success}` | Whether action succeeded (true/false) |
+| `{error}` | Error message if failed |
+| `{duration}` | Execution duration in seconds |
+| `{input}` | Input to the action |
+| `{output}` | Output from the action |
+
+**Creating Custom Hooks:**
+
+1. Create a directory in `.meton/hooks/<hook-name>/`
+2. Add a `HOOK.md` file with YAML frontmatter
+3. Run `/hook discover` to load the hook
+
+Example:
+```bash
+mkdir -p .meton/hooks/log-queries
+cat > .meton/hooks/log-queries/HOOK.md << 'EOF'
+---
+name: log-queries
+hook_type: post_query
+command: echo "[$(date)] Query: {input}" >> ~/.meton/query.log
+description: Logs all queries to a file
+enabled: true
+blocking: false
+---
+
+# Log Queries
+
+Logs all user queries to ~/.meton/query.log for later analysis.
+EOF
+```
+
+Then run `/hook discover` to load it.
+
+---
+
 ## Tools
 
 ### File Operations

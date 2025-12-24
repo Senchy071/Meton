@@ -892,6 +892,138 @@ class SubAgent:
 
 ---
 
+## Hooks System (`hooks/`)
+
+Purpose: Event-driven automation for pre/post execution hooks
+
+Architecture:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     HookManager                              │
+│        (Registration, execution, history tracking)           │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+        ┌─────────────┼─────────────┐
+        │             │             │
+┌───────▼───────┐ ┌───▼───────┐ ┌───▼───────────┐
+│  HookLoader   │ │  Execute  │ │ History Store │
+│  (Discovery)  │ │  Hooks    │ │ (Tracking)    │
+└───────────────┘ └─────┬─────┘ └───────────────┘
+                        │
+              ┌─────────▼─────────┐
+              │       Hook        │
+              │  - command/func   │
+              │  - condition      │
+              │  - timeout        │
+              └───────────────────┘
+```
+
+### Hook Types
+
+| Type | Trigger Point | Use Cases |
+|------|--------------|-----------|
+| `pre_query` | Before user query processing | Input validation, logging |
+| `post_query` | After response generation | Analytics, notifications |
+| `pre_tool` | Before tool execution | Input transformation, access control |
+| `post_tool` | After tool execution | Logging, error notifications |
+| `pre_skill` | Before skill invocation | Setup, validation |
+| `post_skill` | After skill invocation | Cleanup, reporting |
+| `pre_agent` | Before sub-agent execution | Context preparation |
+| `post_agent` | After sub-agent execution | Result processing |
+
+### Hook Definition (`hooks/builtin/*/HOOK.md`)
+
+Markdown files with YAML frontmatter defining hook behavior.
+
+Example Hook Definition:
+```yaml
+---
+name: log-tool-usage
+hook_type: post_tool
+command: echo "[$(date)] Tool: {name} | Success: {success}" >> ~/.meton/tool.log
+condition: "{success} == true"
+timeout: 5
+enabled: false
+blocking: false
+---
+
+# Log Tool Usage
+
+Logs all tool executions to a file for analysis.
+```
+
+### Key Classes
+
+**`Hook`** (`hooks/base.py`):
+```python
+@dataclass
+class Hook:
+    name: str
+    hook_type: HookType
+    command: Optional[str] = None      # Shell command
+    func: Optional[Callable] = None    # Python function
+    condition: Optional[str] = None    # Conditional execution
+    timeout: float = 30.0
+    enabled: bool = True
+    blocking: bool = True
+    target_names: List[str] = []       # Filter by tool/skill/agent
+```
+
+**`HookContext`** (`hooks/base.py`):
+- Execution context passed to hooks
+- Template variable support (`{name}`, `{success}`, etc.)
+
+**`HookManager`** (`hooks/hook_manager.py`):
+- Thread-safe hook registration/unregistration
+- Execute matching hooks with condition evaluation
+- Execution history tracking
+- Global and individual enable/disable
+
+**`HookLoader`** (`hooks/hook_loader.py`):
+- Multi-directory discovery
+- YAML frontmatter parsing
+- Config-based hook loading
+
+### Built-in Hooks
+
+| Hook | Type | Description |
+|------|------|-------------|
+| `log-tool-usage` | post_tool | Logs executions to file (disabled) |
+| `notify-on-error` | post_tool | Desktop notification on failure (disabled) |
+
+### Discovery Precedence
+
+1. Project: `.meton/hooks/` - Project-specific hooks
+2. User: `~/.meton/hooks/` - User-wide hooks
+3. Built-in: `hooks/builtin/` - Default hooks
+
+### Integration Points
+
+**MetonBaseTool** (`tools/base.py`):
+```python
+def run(self, tool_input: str) -> str:
+    # Execute pre-tool hooks
+    if self.hook_manager:
+        pre_results = self.hook_manager.execute(pre_context)
+        # Check for skip or input modification
+
+    # Execute tool
+    output = self._run(tool_input)
+
+    # Execute post-tool hooks
+    if self.hook_manager:
+        self.hook_manager.execute(post_context)
+
+    return output
+```
+
+**MetonAgent** (`core/agent.py`):
+- Pre/post query hooks in `run()` method
+- Hooks receive query input, output, duration, success
+
+---
+
 ## RAG System (`rag/`)
 
 Purpose: Semantic code understanding via vector embeddings and retrieval

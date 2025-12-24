@@ -67,6 +67,16 @@ python launch_web.py --share --port 8080 # With options
 | `/agent info <name>` | Show sub-agent details |
 | `/agent discover` | Refresh agent discovery |
 | `/agent history` | Show recent agent runs |
+| `/hook list` | List all registered hooks |
+| `/hook info <name>` | Show hook details |
+| `/hook enable <name>` | Enable a hook |
+| `/hook disable <name>` | Disable a hook |
+| `/hook discover` | Refresh hook discovery |
+| `/hook history` | Show recent hook executions |
+| `/hook stats` | Show hook statistics |
+| `/hook on` | Enable all hooks globally |
+| `/hook off` | Disable all hooks globally |
+| `/hook create <name>` | Create new hook interactively |
 | `/learn analyze` | Analyze sessions for patterns |
 | `/learn insights` | Show generated insights |
 | `/learn patterns` | Show detected patterns |
@@ -336,6 +346,30 @@ Read config.yaml and explain the settings
 - `code-reviewer` - Expert code review
 - `debugger` - Debugging specialist
 
+### Hooks (event-driven automation)
+
+```
+# Hooks (pre/post execution events)
+1. /hook list                       # List all hooks
+2. /hook info log-tool-usage        # View hook details
+3. /hook enable log-tool-usage      # Enable a hook
+4. /hook disable log-tool-usage     # Disable a hook
+5. /hook discover                   # Refresh discovery
+6. /hook history                    # View recent executions
+7. /hook stats                      # View statistics
+8. /hook create my-hook             # Create new hook
+```
+
+**Built-in Hooks:**
+- `log-tool-usage` - Logs all tool executions to file (disabled by default)
+- `notify-on-error` - Desktop notification on tool failure (disabled by default)
+
+**Hook Types:**
+- `pre_query`/`post_query` - Before/after query processing
+- `pre_tool`/`post_tool` - Before/after tool execution
+- `pre_skill`/`post_skill` - Before/after skill invocation
+- `pre_agent`/`post_agent` - Before/after sub-agent execution
+
 ### Memory & Learning
 
 ```
@@ -494,7 +528,13 @@ meton/
 │   │   ├── code-reviewer.md    # Code review agent
 │   │   └── debugger.md         # Debugging agent
 │   └── *.py                    # Agent modules
+├── hooks/                      # Hooks directory
+│   ├── builtin/                # Built-in hooks
+│   │   ├── log-tool-usage/     # Tool execution logging
+│   │   └── notify-on-error/    # Error notifications
+│   └── *.py                    # Hook modules
 ├── .meton/skills/              # Project-specific skills
+├── .meton/hooks/               # Project-specific hooks
 ├── utils/                      # Utilities
 │   └── prepare_training_data.py # Training data extraction
 ├── templates/modelfiles/       # Modelfile templates
