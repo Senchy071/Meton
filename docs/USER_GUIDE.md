@@ -470,7 +470,13 @@ Documentation Types:
 
 ## Skills
 
-Meton has 7 built-in skills for high-level tasks.
+Meton has two types of skills:
+- **Python Skills**: 7 built-in skills implemented in Python
+- **Markdown Skills**: Claude Code-style skills defined in markdown files with YAML frontmatter
+
+### Python Skills
+
+The following 7 Python-based skills provide high-level coding capabilities:
 
 ### 1. Code Explainer
 
@@ -707,6 +713,162 @@ Output:
 - Suggested order
 - Potential issues
 - Testing strategy
+
+### Markdown Skills
+
+Markdown skills are Claude Code-style skills defined in markdown files with YAML frontmatter. They provide a more declarative way to define skills.
+
+**Built-in Markdown Skills:**
+
+| Skill | Description |
+|-------|-------------|
+| `code-reviewer` | Review code for quality, security, and best practices |
+| `code-explainer` | Explain code functionality and structure |
+| `debugger` | Debug error analysis and fix suggestions |
+
+**Skill Definition Format:**
+
+```markdown
+---
+name: my-skill
+description: Description for LLM discovery
+allowed-tools: Read, Grep, Glob
+model: primary
+version: 1.0.0
+---
+
+# My Skill Instructions
+
+Detailed instructions for the skill...
+```
+
+**Skill Discovery Locations (in precedence order):**
+
+1. **Project**: `.meton/skills/` - Project-specific skills
+2. **User**: `~/.meton/skills/` - User-wide skills
+3. **Built-in**: `skills/md_skills/` - Built-in markdown skills
+
+**CLI Commands:**
+
+```
+/skill list              # List all available skills
+/skill info <name>       # Show skill details
+/skill load <name>       # Load/enable a skill
+/skill unload <name>     # Unload/disable a skill
+/skill reload <name>     # Reload a skill
+/skill discover          # Refresh skill discovery
+```
+
+**Creating Custom Skills:**
+
+1. Create a directory in `.meton/skills/<skill-name>/`
+2. Add a `SKILL.md` file with YAML frontmatter
+3. Run `/skill discover` to load the skill
+
+Example:
+```bash
+mkdir -p .meton/skills/my-analyzer
+cat > .meton/skills/my-analyzer/SKILL.md << 'EOF'
+---
+name: my-analyzer
+description: Custom code analyzer for project-specific patterns
+allowed-tools: Read, Grep, Glob
+model: primary
+---
+
+# My Custom Analyzer
+
+Analyze code for project-specific patterns...
+EOF
+```
+
+---
+
+## Sub-Agents
+
+Sub-agents are autonomous specialized agents that can execute tasks with isolated context. They run with their own conversation history and can be restricted to specific tools.
+
+**Built-in Sub-Agents:**
+
+| Agent | Description | Model |
+|-------|-------------|-------|
+| `explorer` | Fast codebase exploration (read-only) | quick |
+| `planner` | Software architect for implementation planning | primary |
+| `code-reviewer` | Expert code review for quality/security | primary |
+| `debugger` | Debugging specialist for error analysis | primary |
+
+**Agent Definition Format:**
+
+```markdown
+---
+name: my-agent
+description: Description for agent selection
+tools: file_operations, codebase_search
+model: primary
+---
+
+# Agent Instructions
+
+System prompt and behavior instructions...
+```
+
+**Agent Discovery Locations (in precedence order):**
+
+1. **Project**: `.meton/agents/` - Project-specific agents
+2. **User**: `~/.meton/agents/` - User-wide agents
+3. **Built-in**: `agents/builtin/` - Built-in agents
+
+**CLI Commands:**
+
+```
+/agent list              # List all available agents
+/agent info <name>       # Show agent details
+/agent run <name> <task> # Run agent with task
+/agent discover          # Refresh agent discovery
+/agent history           # Show recent agent runs
+```
+
+**Example Usage:**
+
+```
+# Fast codebase exploration
+> /agent run explorer "Find all authentication-related code"
+
+# Planning a feature
+> /agent run planner "Design implementation for user notifications"
+
+# Code review
+> /agent run code-reviewer "Review the changes in core/agent.py"
+
+# Debugging
+> /agent run debugger "Analyze this error: KeyError in process_data"
+```
+
+**Creating Custom Agents:**
+
+1. Create a markdown file in `.meton/agents/<agent-name>.md`
+2. Add YAML frontmatter with name, description, tools, and model
+3. Run `/agent discover` to load the agent
+
+Example:
+```bash
+cat > .meton/agents/security-auditor.md << 'EOF'
+---
+name: security-auditor
+description: Security specialist for vulnerability analysis
+tools: file_operations, codebase_search, symbol_lookup
+model: primary
+---
+
+# Security Auditor
+
+You are a security specialist. Analyze code for:
+- Injection vulnerabilities
+- Authentication issues
+- Data exposure risks
+...
+EOF
+```
 
 ---
 

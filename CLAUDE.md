@@ -122,9 +122,21 @@ source venv/bin/activate
 6. Skills System (`skills/` directory)
 
 - High-level intelligent capabilities built on top of tools
-- `BaseSkill` abstract class requiring `execute()` implementation
-- Current skills: Code Explainer, Debugger Assistant, Refactoring Engine
+- Two types: Python skills (BaseSkill) and Markdown skills (MarkdownSkill)
+- Python skills: Code Explainer, Debugger Assistant, Refactoring Engine, Test Generator, Documentation Generator, Code Reviewer, Task Planner
+- Markdown skills: Claude Code-style with YAML frontmatter (code-reviewer, code-explainer, debugger)
 - Auto-loaded from `skills/` directory when `skills.enabled: true`
+- Markdown skills discovered from: `.meton/skills/` (project) > `~/.meton/skills/` (user) > `skills/md_skills/` (builtin)
+
+7. Sub-Agents System (`agents/` directory)
+
+- Autonomous specialized agents with isolated execution context
+- `SubAgent` dataclass for agent definition
+- `SubAgentLoader` discovers agents from markdown files with YAML frontmatter
+- `SubAgentSpawner` creates isolated agent instances with separate conversation context
+- `SubAgentManager` high-level management and execution history
+- Built-in agents: explorer (quick model), planner, code-reviewer, debugger
+- Discovery order: `.meton/agents/` (project) > `~/.meton/agents/` (user) > `agents/builtin/` (builtin)
 
 ### Tools (`tools/` directory)
 
@@ -266,13 +278,52 @@ Tool selection is driven by examples in system prompt showing when to use each t
 4. Add configuration section to `config.yaml` if needed
 5. Update agent system prompt with tool examples (optional but recommended)
 
-### Adding a New Skill
+### Adding a New Skill (Python)
 
 1. Create `skills/your_skill.py` inheriting from `BaseSkill`
 2. Set `name`, `description`, `version` class attributes
 3. Implement `execute(self, input_data: Dict) -> Dict` method
 4. Skills are auto-loaded if `skills.enabled: true` and in `skills/` directory
 5. Follow pattern from existing skills (code_explainer.py, debugger.py, refactoring_engine.py)
+
+### Adding a New Skill (Markdown)
+
+1. Create directory `.meton/skills/<skill-name>/` (project-specific) or `skills/md_skills/<skill-name>/` (builtin)
+2. Create `SKILL.md` file with YAML frontmatter:
+   ```yaml
+   ---
+   name: my-skill
+   description: Description for LLM discovery
+   allowed-tools: Read, Grep, Glob
+   model: primary
+   version: 1.0.0
+   ---
+
+   # Skill Instructions
+
+   Detailed instructions...
+   ```
+3. Run `/skill discover` to load the skill
+4. Use `/skill info <name>` to verify
+
+### Adding a New Sub-Agent
+
+1. Create `<agent-name>.md` in `.meton/agents/` (project) or `agents/builtin/` (builtin)
+2. Add YAML frontmatter:
+   ```yaml
+   ---
+   name: my-agent
+   description: Description for agent selection
+   tools: file_operations, codebase_search
+   model: primary
+   ---
+
+   # Agent System Prompt
+
+   You are a specialist in...
+   ```
+3. Run `/agent discover` to load the agent
+4. Execute with `/agent run <name> "task description"`
 
 ### Adding a New CLI Command
 
@@ -407,9 +458,25 @@ meton/
 │ └── codebase_search.py # RAG semantic search
 ├── skills/ # High-level skills
 │ ├── base.py # BaseSkill abstract class
-│ ├── code_explainer.py # Code explanation
-│ ├── debugger.py # Debug assistance
-│ └── refactoring_engine.py # Code refactoring
+│ ├── skill_manager.py # Manages Python + Markdown skills
+│ ├── markdown_skill.py # MarkdownSkill + MarkdownSkillLoader
+│ ├── code_explainer.py # Code explanation (Python)
+│ ├── debugger.py # Debug assistance (Python)
+│ ├── refactoring_engine.py # Code refactoring (Python)
+│ └── md_skills/ # Markdown skills
+│   ├── code-reviewer/ # Code review skill
+│   ├── code-explainer/ # Code explanation skill
+│   └── debugger/ # Debugging skill
+├── agents/ # Sub-agents system
+│ ├── __init__.py # Package init
+│ ├── subagent.py # SubAgent dataclass + loader
+│ ├── subagent_loader.py # SubAgentLoader for discovery
+│ ├── subagent_spawner.py # SubAgentSpawner + SubAgentManager
+│ └── builtin/ # Built-in agents
+│   ├── explorer.md # Fast exploration agent
+│   ├── planner.md # Implementation planning
+│   ├── code-reviewer.md # Code review agent
+│   └── debugger.md # Debugging agent
 ├── rag/ # RAG system
 │ ├── code_parser.py # AST-based parsing
 │ ├── chunker.py # Semantic chunking

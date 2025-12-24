@@ -669,6 +669,229 @@ Implementation Details:
 
 ---
 
+## Skills System (`skills/`)
+
+Purpose: High-level coding capabilities with both Python and Markdown implementations
+
+Architecture:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      SkillManager                           │
+│   (Orchestrates Python and Markdown skill discovery)        │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+        ┌─────────────┴─────────────┐
+        │                           │
+┌───────▼───────┐         ┌─────────▼─────────┐
+│ Python Skills │         │  Markdown Skills  │
+│ (BaseSkill)   │         │ (MarkdownSkill)   │
+└───────────────┘         └───────────────────┘
+        │                           │
+        │                 ┌─────────▼─────────┐
+        │                 │MarkdownSkillLoader│
+        │                 │  (YAML parsing)   │
+        │                 └───────────────────┘
+        │                           │
+        └───────────┬───────────────┘
+                    │
+        ┌───────────▼───────────────┐
+        │    Skill Execution        │
+        │  (via Agent + Tools)      │
+        └───────────────────────────┘
+```
+
+### Python Skills (`skills/*.py`)
+
+Traditional skill implementation using Python classes.
+
+Key Classes:
+- `BaseSkill`: Abstract base class with `execute()` method
+- `SkillManager`: Loads and manages all skills
+
+Example Skills:
+- `CodeExplainerSkill`: Complexity analysis and explanation
+- `DebuggerSkill`: Error analysis and fix suggestions
+- `RefactoringEngineSkill`: Code smell detection and refactoring
+
+### Markdown Skills (`skills/md_skills/`)
+
+Claude Code-style skills defined in markdown with YAML frontmatter.
+
+File Structure:
+```
+skills/md_skills/
+├── code-reviewer/
+│   └── SKILL.md
+├── code-explainer/
+│   └── SKILL.md
+└── debugger/
+    └── SKILL.md
+```
+
+Skill Definition Format:
+```yaml
+---
+name: code-reviewer
+description: Review code for quality, security, and best practices
+allowed-tools: Read, Grep, Glob
+model: primary
+version: 1.0.0
+---
+
+# Skill Instructions
+
+Detailed instructions for the skill behavior...
+```
+
+Key Classes (`skills/markdown_skill.py`):
+- `MarkdownSkill`: Dataclass holding parsed skill data
+- `MarkdownSkillLoader`: Discovers and loads markdown skills
+
+Discovery Precedence:
+1. Project: `.meton/skills/` - Project-specific skills
+2. User: `~/.meton/skills/` - User-wide skills
+3. Built-in: `skills/md_skills/` - Default skills
+
+Features:
+- YAML frontmatter for metadata (name, description, tools, model)
+- Tool restrictions per skill
+- Model selection (primary, fallback, quick)
+- Hot-reload via `/skill reload <name>`
+
+---
+
+## Sub-Agents System (`agents/`)
+
+Purpose: Autonomous specialized agents with isolated execution context
+
+Architecture:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SubAgentManager                          │
+│        (High-level agent management and execution)          │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+        ┌─────────────┼─────────────┐
+        │             │             │
+┌───────▼───────┐ ┌───▼───┐ ┌───────▼───────┐
+│SubAgentLoader │ │Spawner│ │ Result Store  │
+│(Discovery)    │ │       │ │ (History)     │
+└───────────────┘ └───┬───┘ └───────────────┘
+                      │
+              ┌───────▼───────┐
+              │ SubAgent      │
+              │ (Isolated)    │
+              │ - Own context │
+              │ - Tool subset │
+              │ - Own model   │
+              └───────────────┘
+```
+
+### SubAgent Definition (`agents/builtin/*.md`)
+
+Markdown files with YAML frontmatter defining agent behavior.
+
+Example Agent Definition:
+```yaml
+---
+name: explorer
+description: Fast codebase exploration agent
+tools: file_operations, codebase_search, symbol_lookup
+model: quick
+---
+
+# Explorer Agent
+
+You are a fast codebase exploration specialist...
+```
+
+### Key Classes
+
+**`SubAgent`** (`agents/subagent.py`):
+```python
+@dataclass
+class SubAgent:
+    name: str
+    description: str
+    system_prompt: str
+    tools: Optional[List[str]] = None
+    model: str = "inherit"
+    enabled: bool = True
+    source_path: Optional[Path] = None
+```
+
+**`SubAgentLoader`** (`agents/subagent_loader.py`):
+- Discovers agents from multiple directories
+- Parses YAML frontmatter
+- Validates agent definitions
+
+**`SubAgentSpawner`** (`agents/subagent_spawner.py`):
+- Creates isolated agent instances
+- Manages separate conversation context
+- Handles tool restrictions
+- Captures execution results
+
+**`SubAgentManager`** (`agents/subagent_spawner.py`):
+- High-level API for agent management
+- Execution history tracking
+- Discovery refresh
+
+### Built-in Agents
+
+| Agent | Model | Tools | Purpose |
+|-------|-------|-------|---------|
+| `explorer` | quick | file_ops, search, symbol | Fast read-only exploration |
+| `planner` | primary | file_ops, search, symbol, import | Implementation planning |
+| `code-reviewer` | primary | file_ops, search, symbol | Code review |
+| `debugger` | primary | file_ops, search, symbol, executor | Error analysis |
+
+### Discovery Precedence
+
+1. Project: `.meton/agents/` - Project-specific agents
+2. User: `~/.meton/agents/` - User-wide agents
+3. Built-in: `agents/builtin/` - Default agents
+
+### Execution Flow
+
+```
+/agent run <name> <task>
+        │
+        ▼
+┌───────────────────┐
+│ SubAgentManager   │
+│ .run_agent()      │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ SubAgentSpawner   │
+│ .spawn()          │
+│ - Create context  │
+│ - Filter tools    │
+│ - Select model    │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ MetonAgent        │
+│ (Isolated)        │
+│ .run(task)        │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ SubAgentResult    │
+│ - success         │
+│ - result          │
+│ - execution_time  │
+│ - iterations      │
+└───────────────────┘
+```
+
+---
+
 ## RAG System (`rag/`)
 
 Purpose: Semantic code understanding via vector embeddings and retrieval

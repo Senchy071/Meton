@@ -56,6 +56,17 @@ python launch_web.py --share --port 8080 # With options
 | `/memory search <query>` | Search memories semantically |
 | `/memory add <content>` | Manually add memory |
 | `/memory export [json\|csv]` | Export memories to file |
+| `/skill list` | List all available skills |
+| `/skill load <name>` | Load/enable a skill |
+| `/skill unload <name>` | Unload/disable a skill |
+| `/skill reload <name>` | Reload a skill |
+| `/skill info <name>` | Show skill details |
+| `/skill discover` | Refresh skill discovery |
+| `/agent list` | List all available sub-agents |
+| `/agent run <name> <task>` | Run sub-agent with task |
+| `/agent info <name>` | Show sub-agent details |
+| `/agent discover` | Refresh agent discovery |
+| `/agent history` | Show recent agent runs |
 | `/learn analyze` | Analyze sessions for patterns |
 | `/learn insights` | Show generated insights |
 | `/learn patterns` | Show detected patterns |
@@ -297,6 +308,34 @@ Read config.yaml and explain the settings
 - `debugging` - Low temp (0.2) for analysis
 - `explanation` - Moderate temp (0.5) for clarity
 
+### Skills & Sub-Agents
+
+```
+# Skills (markdown-based capabilities)
+1. /skill list                      # List available skills
+2. /skill info code-reviewer        # View skill details
+3. /skill load code-reviewer        # Enable a skill
+4. /skill unload code-reviewer      # Disable a skill
+5. /skill discover                  # Refresh discovery
+
+# Sub-Agents (autonomous task execution)
+1. /agent list                      # List available agents
+2. /agent info explorer             # View agent details
+3. /agent run explorer "Find authentication code"  # Run agent
+4. /agent history                   # View recent runs
+```
+
+**Built-in Skills:**
+- `code-reviewer` - Code review for quality/security
+- `code-explainer` - Explain code functionality
+- `debugger` - Debug error analysis
+
+**Built-in Agents:**
+- `explorer` - Fast codebase exploration (read-only)
+- `planner` - Implementation planning
+- `code-reviewer` - Expert code review
+- `debugger` - Debugging specialist
+
 ### Memory & Learning
 
 ```
@@ -442,6 +481,20 @@ meton/
 ├── memory/                     # Long-term memory storage
 ├── analytics_data/             # Performance analytics
 ├── web_sessions/               # Web UI session data
+├── skills/                     # Skills directory
+│   ├── md_skills/              # Markdown-based skills
+│   │   ├── code-reviewer/      # Code review skill
+│   │   ├── code-explainer/     # Code explanation skill
+│   │   └── debugger/           # Debugging skill
+│   └── *.py                    # Python-based skills
+├── agents/                     # Sub-agents directory
+│   ├── builtin/                # Built-in agents
+│   │   ├── explorer.md         # Fast exploration agent
+│   │   ├── planner.md          # Planning agent
+│   │   ├── code-reviewer.md    # Code review agent
+│   │   └── debugger.md         # Debugging agent
+│   └── *.py                    # Agent modules
+├── .meton/skills/              # Project-specific skills
 ├── utils/                      # Utilities
 │   └── prepare_training_data.py # Training data extraction
 ├── templates/modelfiles/       # Modelfile templates
