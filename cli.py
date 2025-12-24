@@ -250,6 +250,15 @@ class MetonCLI:
         table.add_row("/skill info <name>", "Show skill information")
         table.add_row("/skill discover", "Rediscover available skills")
 
+        # Add sub-agents commands section
+        table.add_section()
+        table.add_row("[bold cyan]Sub-Agents:[/]", "")
+        table.add_row("/agent list", "List all available sub-agents")
+        table.add_row("/agent run <name> <task>", "Run a sub-agent with a task")
+        table.add_row("/agent info <name>", "Show sub-agent information")
+        table.add_row("/agent discover", "Rediscover available sub-agents")
+        table.add_row("/agent history", "Show recent sub-agent executions")
+
         table.add_section()
         table.add_row("/exit, /quit, /q", "Exit Meton")
 
@@ -468,6 +477,12 @@ class MetonCLI:
                 self.handle_skill_command(' '.join(args))
             else:
                 self.list_skills()
+        elif cmd == '/agent':
+            # Sub-agent management command
+            if args:
+                self.handle_agent_command(' '.join(args))
+            else:
+                self.list_agents()
         elif cmd in ['/exit', '/quit', '/q']:
             self.exit_cli()
         else:
@@ -2907,6 +2922,198 @@ class MetonCLI:
             self.console.print(f"[red]❌ Failed to get skill info: {str(e)}[/red]\n")
 
     # ========== End Skill Commands ==========
+
+    # ========== Sub-Agent Commands ==========
+
+    def list_agents(self):
+        """List all available sub-agents."""
+        try:
+            from agents.subagent import SubAgentLoader
+
+            loader = SubAgentLoader()
+            loader.discover()
+            loader.load_all()
+
+            table = Table(title="Available Sub-Agents", show_header=True, header_style="bold cyan")
+            table.add_column("Name", style="yellow", width=20)
+            table.add_column("Model", style="white", width=10)
+            table.add_column("Tools", style="white", width=20)
+            table.add_column("Description", style="white")
+
+            for name, agent in sorted(loader.loaded.items()):
+                tools_str = ", ".join(agent.tools[:3]) if agent.tools else "all"
+                if agent.tools and len(agent.tools) > 3:
+                    tools_str += f" (+{len(agent.tools) - 3})"
+
+                desc = agent.description
+                if len(desc) > 50:
+                    desc = desc[:47] + "..."
+
+                table.add_row(name, agent.model, tools_str, desc)
+
+            self.console.print()
+            self.console.print(table)
+            self.console.print(f"\n[dim]Total: {len(loader.loaded)} sub-agents[/dim]")
+            self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to list agents: {str(e)}[/red]\n")
+
+    def handle_agent_command(self, command_str: str):
+        """Handle sub-agent subcommands."""
+        parts = command_str.split(maxsplit=2)
+        if not parts:
+            self.list_agents()
+            return
+
+        subcommand = parts[0].lower()
+        args = parts[1:]
+
+        try:
+            if subcommand == 'list':
+                self.list_agents()
+
+            elif subcommand == 'run':
+                if len(args) < 2:
+                    self.console.print("[yellow]Usage: /agent run <name> <task>[/yellow]")
+                    return
+                agent_name = args[0]
+                task = args[1] if len(args) > 1 else ""
+                self.run_agent(agent_name, task)
+
+            elif subcommand == 'info':
+                if not args:
+                    self.console.print("[yellow]Usage: /agent info <name>[/yellow]")
+                    return
+                self.show_agent_info(args[0])
+
+            elif subcommand == 'discover':
+                from agents.subagent import SubAgentLoader
+                loader = SubAgentLoader()
+                count = len(loader.discover())
+                self.console.print(f"[green]✓ Discovered {count} sub-agents[/green]")
+
+            elif subcommand == 'history':
+                self.show_agent_history()
+
+            else:
+                self.console.print(f"[red]❌ Unknown agent subcommand: {subcommand}[/red]")
+                self.console.print("[dim]Available: list, run, info, discover, history[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Agent command failed: {str(e)}[/red]")
+
+    def run_agent(self, agent_name: str, task: str):
+        """Run a sub-agent with a task."""
+        try:
+            from agents.subagent_spawner import SubAgentSpawner
+
+            self.console.print(f"\n[cyan]🤖 Spawning sub-agent: {agent_name}[/cyan]")
+            self.console.print(f"[dim]Task: {task}[/dim]\n")
+
+            # Create spawner
+            spawner = SubAgentSpawner(
+                config=self.config,
+                model_manager=self.model_manager,
+                tools=self.agent.tools if self.agent else [],
+                verbose=self.verbose
+            )
+
+            # Run the agent
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=self.console
+            ) as progress:
+                progress.add_task(description=f"Running {agent_name}...", total=None)
+                result = spawner.spawn_by_name(agent_name, task)
+
+            # Display result
+            if result.success:
+                self.console.print(f"\n[green]✓ Agent completed successfully[/green]")
+                self.console.print(f"[dim]ID: {result.agent_id} | Iterations: {result.iterations} | Duration: {result.duration_seconds:.2f}s[/dim]\n")
+
+                # Display output
+                output_panel = Panel(
+                    result.output,
+                    title=f"Output from {agent_name}",
+                    border_style="green",
+                    padding=(1, 2)
+                )
+                self.console.print(output_panel)
+            else:
+                self.console.print(f"\n[red]❌ Agent failed: {result.error}[/red]")
+
+            self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to run agent: {str(e)}[/red]\n")
+
+    def show_agent_info(self, agent_name: str):
+        """Show detailed information about a sub-agent."""
+        try:
+            from agents.subagent import SubAgentLoader
+
+            loader = SubAgentLoader()
+            loader.discover()
+            agent = loader.load_agent(agent_name)
+
+            if not agent:
+                self.console.print(f"[red]❌ Agent not found: {agent_name}[/red]")
+                return
+
+            info = agent.get_info()
+
+            lines = [
+                f"[cyan]Name:[/cyan]        {info['name']}",
+                f"[cyan]Model:[/cyan]       {info['model']}",
+                f"[cyan]Version:[/cyan]     {info['version']}",
+                f"[cyan]Enabled:[/cyan]     {'Yes' if info['enabled'] else 'No'}",
+                f"[cyan]Description:[/cyan] {info['description']}",
+            ]
+
+            if info['tools']:
+                lines.append(f"[cyan]Tools:[/cyan]       {', '.join(info['tools'])}")
+            else:
+                lines.append("[cyan]Tools:[/cyan]       All available tools")
+
+            if info['source_path']:
+                lines.append(f"[cyan]Source:[/cyan]      {info['source_path']}")
+
+            panel = Panel(
+                "\n".join(lines),
+                title=f"Sub-Agent: {agent_name}",
+                border_style="cyan",
+                padding=(1, 2)
+            )
+
+            self.console.print()
+            self.console.print(panel)
+
+            # Show system prompt preview
+            if agent.system_prompt:
+                preview = agent.system_prompt[:500]
+                if len(agent.system_prompt) > 500:
+                    preview += "\n..."
+                self.console.print("\n[bold cyan]System Prompt Preview:[/bold cyan]")
+                self.console.print(Panel(preview, border_style="dim"))
+
+            self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to get agent info: {str(e)}[/red]\n")
+
+    def show_agent_history(self):
+        """Show recent sub-agent executions."""
+        try:
+            # We'd need to store history somewhere - for now, just note it's not implemented yet
+            self.console.print("[yellow]⚠ Agent execution history is stored per session.[/yellow]")
+            self.console.print("[dim]Use /agent run to execute an agent and see results.[/dim]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to show history: {str(e)}[/red]\n")
+
+    # ========== End Sub-Agent Commands ==========
 
     def exit_cli(self):
         """Exit the CLI."""
