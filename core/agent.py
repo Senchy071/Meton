@@ -95,7 +95,9 @@ class MetonAgent:
         model_manager: ModelManager,
         conversation: ConversationManager,
         tools: List[BaseTool],
-        verbose: bool = False
+        verbose: bool = False,
+        skill_tool: Optional[Any] = None,
+        subagent_tool: Optional[Any] = None
     ):
         """Initialize Meton agent.
 
@@ -105,11 +107,17 @@ class MetonAgent:
             conversation: Conversation manager instance
             tools: List of available tools
             verbose: Whether to show agent's thought process
+            skill_tool: Optional SkillInvocationTool for skill awareness
+            subagent_tool: Optional SubAgentTool for sub-agent awareness
         """
         self.config = config
         self.model_manager = model_manager
         self.conversation = conversation
         self.tools = tools
+
+        # Store integration tools for prompt generation
+        self.skill_tool = skill_tool
+        self.subagent_tool = subagent_tool
 
         # Agent configuration
         agent_config = config.config.agent
@@ -1156,7 +1164,38 @@ CRITICAL RULES - FOLLOW EXACTLY:
      ✓ Mentioned any combinations or alternatives if relevant
 
 Remember: You are running locally. All operations happen on the user's machine.
-The examples above show the COMPLETE flow - notice how ANSWER is provided AFTER receiving tool results."""
+The examples above show the COMPLETE flow - notice how ANSWER is provided AFTER receiving tool results.
+
+{self._get_skill_prompt_section()}
+{self._get_subagent_prompt_section()}"""
+
+    def _get_skill_prompt_section(self) -> str:
+        """Generate system prompt section for available skills.
+
+        Returns:
+            Formatted string describing available skills, or empty string if none.
+        """
+        if self.skill_tool is None:
+            return ""
+
+        try:
+            return self.skill_tool.generate_prompt_section()
+        except Exception:
+            return ""
+
+    def _get_subagent_prompt_section(self) -> str:
+        """Generate system prompt section for available sub-agents.
+
+        Returns:
+            Formatted string describing available sub-agents, or empty string if none.
+        """
+        if self.subagent_tool is None:
+            return ""
+
+        try:
+            return self.subagent_tool.generate_prompt_section()
+        except Exception:
+            return ""
 
     def _parse_agent_output(self, output: str) -> Dict[str, str]:
         """Parse agent output into structured format.

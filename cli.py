@@ -30,6 +30,10 @@ from tools.web_search import WebSearchTool
 from tools.codebase_search import CodebaseSearchTool
 from tools.symbol_lookup import SymbolLookupTool
 from tools.import_graph import ImportGraphTool
+from tools.skill_tool import SkillInvocationTool
+from tools.subagent_tool import SubAgentTool
+from skills.skill_manager import SkillManager
+from agents.subagent_spawner import SubAgentManager
 from utils.logger import setup_logger
 
 
@@ -54,6 +58,12 @@ class MetonCLI:
         self.codebase_search_tool: Optional[CodebaseSearchTool] = None
         self.symbol_lookup_tool: Optional[SymbolLookupTool] = None
         self.import_graph_tool: Optional[ImportGraphTool] = None
+        self.skill_tool: Optional[SkillInvocationTool] = None
+        self.subagent_tool: Optional[SubAgentTool] = None
+
+        # Managers for skills and sub-agents
+        self.skill_manager: Optional[SkillManager] = None
+        self.subagent_manager: Optional[SubAgentManager] = None
 
         # CLI state
         self.running = True
@@ -96,14 +106,41 @@ class MetonCLI:
             self.symbol_lookup_tool = SymbolLookupTool(self.config)
             self.import_graph_tool = ImportGraphTool()
 
+            # Initialize Skill Manager and Skill Invocation Tool
+            self.console.print("  [dim]Loading skills...[/dim]")
+            self.skill_manager = SkillManager()
+            self.skill_manager.load_all_skills()
+            self.skill_tool = SkillInvocationTool(self.skill_manager)
+
+            # Base tools list (without skill/subagent tools to avoid circular spawning)
+            base_tools = [
+                self.file_tool, self.code_tool, self.web_tool,
+                self.codebase_search_tool, self.symbol_lookup_tool, self.import_graph_tool
+            ]
+
+            # Initialize Sub-Agent Manager and Tool
+            self.console.print("  [dim]Loading sub-agents...[/dim]")
+            self.subagent_manager = SubAgentManager(
+                config=self.config,
+                model_manager=self.model_manager,
+                tools=base_tools,
+                verbose=self.verbose
+            )
+            self.subagent_tool = SubAgentTool(self.subagent_manager)
+
+            # Full tools list for main agent (includes skill and subagent tools)
+            all_tools = base_tools + [self.skill_tool, self.subagent_tool]
+
             # Initialize Agent
             self.console.print("  [dim]Loading agent...[/dim]")
             self.agent = MetonAgent(
                 config=self.config,
                 model_manager=self.model_manager,
                 conversation=self.conversation,
-                tools=[self.file_tool, self.code_tool, self.web_tool, self.codebase_search_tool, self.symbol_lookup_tool, self.import_graph_tool],
-                verbose=self.verbose
+                tools=all_tools,
+                verbose=self.verbose,
+                skill_tool=self.skill_tool,
+                subagent_tool=self.subagent_tool
             )
             
             self.console.print("[green]✓ Initialization complete![/green]\n")
