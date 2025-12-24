@@ -97,7 +97,8 @@ class MetonAgent:
         tools: List[BaseTool],
         verbose: bool = False,
         skill_tool: Optional[Any] = None,
-        subagent_tool: Optional[Any] = None
+        subagent_tool: Optional[Any] = None,
+        hook_manager: Optional[Any] = None
     ):
         """Initialize Meton agent.
 
@@ -109,6 +110,7 @@ class MetonAgent:
             verbose: Whether to show agent's thought process
             skill_tool: Optional SkillInvocationTool for skill awareness
             subagent_tool: Optional SubAgentTool for sub-agent awareness
+            hook_manager: Optional HookManager for hook execution
         """
         self.config = config
         self.model_manager = model_manager
@@ -118,6 +120,7 @@ class MetonAgent:
         # Store integration tools for prompt generation
         self.skill_tool = skill_tool
         self.subagent_tool = subagent_tool
+        self.hook_manager = hook_manager
 
         # Agent configuration
         agent_config = config.config.agent
@@ -1885,6 +1888,38 @@ Provide a concise answer:"""
             >>> print(result['output'])
             >>> print(result['thoughts'])
         """
+        import time as time_module
+
+        start_time = time_module.time()
+
+        # Execute pre-query hooks
+        if self.hook_manager:
+            try:
+                from hooks.base import HookType, HookContext
+                pre_context = HookContext(
+                    hook_type=HookType.PRE_QUERY,
+                    input_data=user_input,
+                    session_id=self.conversation.session_id if hasattr(self.conversation, 'session_id') else None,
+                )
+                pre_results = self.hook_manager.execute(pre_context)
+
+                # Check if any hook wants to skip execution
+                for result in pre_results:
+                    if result.should_skip:
+                        return {
+                            "output": result.output or "Query skipped by hook",
+                            "thoughts": [],
+                            "tool_calls": [],
+                            "iterations": 0,
+                            "success": True,
+                            "skipped_by_hook": True
+                        }
+                    # Allow hooks to modify input
+                    if result.modified_input is not None:
+                        user_input = result.modified_input
+            except ImportError:
+                pass  # Hooks not available
+
         try:
             # Add user message to conversation
             self.conversation.add_user_message(user_input)
@@ -1983,13 +2018,36 @@ Provide a concise answer:"""
                 print(f"Iterations: {final_state['iteration']}")
                 print(f"{'='*60}\n")
 
-            return {
+            result = {
                 "output": output,
                 "thoughts": final_state["thoughts"],
                 "tool_calls": final_state["tool_calls"],
                 "iterations": final_state["iteration"],
                 "success": True
             }
+
+            # Execute post-query hooks (success case)
+            duration = time_module.time() - start_time
+            if self.hook_manager:
+                try:
+                    from hooks.base import HookType, HookContext
+                    post_context = HookContext(
+                        hook_type=HookType.POST_QUERY,
+                        input_data=user_input,
+                        output_data=output,
+                        success=True,
+                        duration_seconds=duration,
+                        session_id=self.conversation.session_id if hasattr(self.conversation, 'session_id') else None,
+                        metadata={
+                            "iterations": final_state["iteration"],
+                            "tool_calls_count": len(final_state["tool_calls"]),
+                        }
+                    )
+                    self.hook_manager.execute(post_context)
+                except ImportError:
+                    pass  # Hooks not available
+
+            return result
 
         except Exception as e:
             error_msg = f"Agent execution failed: {str(e)}"
@@ -2005,7 +2063,7 @@ Provide a concise answer:"""
             if self.verbose:
                 print(f"\n❌ Error: {error_msg}\n")
 
-            return {
+            result = {
                 "output": error_msg,
                 "thoughts": [],
                 "tool_calls": [],
@@ -2013,6 +2071,25 @@ Provide a concise answer:"""
                 "success": False,
                 "error": str(e)
             }
+
+            # Execute post-query hooks (error case)
+            duration = time_module.time() - start_time
+            if self.hook_manager:
+                try:
+                    from hooks.base import HookType, HookContext
+                    post_context = HookContext(
+                        hook_type=HookType.POST_QUERY,
+                        input_data=user_input,
+                        success=False,
+                        error=str(e),
+                        duration_seconds=duration,
+                        session_id=self.conversation.session_id if hasattr(self.conversation, 'session_id') else None,
+                    )
+                    self.hook_manager.execute(post_context)
+                except ImportError:
+                    pass  # Hooks not available
+
+            return result
 
     def get_tool_names(self) -> List[str]:
         """Get names of available tools.

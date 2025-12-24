@@ -138,6 +138,17 @@ source venv/bin/activate
 - Built-in agents: explorer (quick model), planner, code-reviewer, debugger
 - Discovery order: `.meton/agents/` (project) > `~/.meton/agents/` (user) > `agents/builtin/` (builtin)
 
+8. Hooks System (`hooks/` directory)
+
+- Pre/post execution hooks for tools, skills, agents, and queries
+- `Hook` dataclass with shell command or Python function support
+- `HookManager` manages registration, execution, and history tracking
+- `HookLoader` discovers hooks from markdown files with YAML frontmatter
+- Hook types: pre_query, post_query, pre_tool, post_tool, pre_skill, post_skill, pre_agent, post_agent
+- Conditional execution with template variable support (e.g., `{success} == false`)
+- Built-in hooks: log-tool-usage, notify-on-error (disabled by default)
+- Discovery order: `.meton/hooks/` (project) > `~/.meton/hooks/` (user) > `hooks/builtin/` (builtin)
+
 ### Tools (`tools/` directory)
 
 All tools inherit from `MetonBaseTool` (extends LangChain's `BaseTool`).
@@ -477,6 +488,14 @@ meton/
 │   ├── planner.md # Implementation planning
 │   ├── code-reviewer.md # Code review agent
 │   └── debugger.md # Debugging agent
+├── hooks/ # Hooks system
+│ ├── __init__.py # Package init
+│ ├── base.py # Hook, HookType, HookContext, HookResult
+│ ├── hook_manager.py # HookManager for registration/execution
+│ ├── hook_loader.py # HookLoader for discovery
+│ └── builtin/ # Built-in hooks
+│   ├── log-tool-usage/ # Logs all tool executions
+│   └── notify-on-error/ # Desktop notification on errors
 ├── rag/ # RAG system
 │ ├── code_parser.py # AST-based parsing
 │ ├── chunker.py # Semantic chunking

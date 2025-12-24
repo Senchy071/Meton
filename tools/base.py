@@ -13,11 +13,15 @@ Example:
 """
 
 import json
+import time
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List, Tuple, Union
+from typing import Dict, Any, Optional, List, Tuple, Union, TYPE_CHECKING
 from langchain.tools import BaseTool as LangChainBaseTool
 from pydantic import BaseModel, Field
 import logging
+
+if TYPE_CHECKING:
+    from hooks import HookManager
 
 
 # Custom Exceptions
@@ -51,16 +55,89 @@ class MetonBaseTool(LangChainBaseTool, ABC):
     - Enable/disable functionality
     - Tool validation
     - LangChain compatibility
+    - Hook integration (pre/post execution hooks)
 
     Subclasses must implement _run() method.
     """
 
     config: ToolConfig = Field(default_factory=ToolConfig)
     logger: Optional[logging.Logger] = Field(default=None)
+    hook_manager: Optional[Any] = Field(default=None)
 
     class Config:
         """Pydantic config."""
         arbitrary_types_allowed = True
+
+    def set_hook_manager(self, manager: "HookManager") -> None:
+        """Set the hook manager for this tool.
+
+        Args:
+            manager: HookManager instance to use for hook execution
+        """
+        self.hook_manager = manager
+
+    def run(self, tool_input: str, *args, **kwargs) -> str:
+        """Execute the tool with hook support.
+
+        Wraps the _run method with pre/post hooks execution.
+
+        Args:
+            tool_input: Input for the tool
+            *args: Additional positional arguments
+            **kwargs: Additional keyword arguments
+
+        Returns:
+            Tool output as string
+        """
+        from hooks.base import HookType, HookContext
+
+        # Execute pre-tool hooks
+        if self.hook_manager:
+            pre_context = HookContext(
+                hook_type=HookType.PRE_TOOL,
+                name=self.name,
+                input_data=tool_input,
+            )
+            pre_results = self.hook_manager.execute(pre_context, self.name)
+
+            # Check if any hook wants to skip execution
+            for result in pre_results:
+                if result.should_skip:
+                    return result.output or "Tool execution skipped by hook"
+
+                # Allow hooks to modify input
+                if result.modified_input is not None:
+                    tool_input = result.modified_input
+
+        # Execute the tool
+        start_time = time.time()
+        success = True
+        error_msg = None
+        output = None
+
+        try:
+            output = self._run(tool_input, *args, **kwargs)
+        except Exception as e:
+            success = False
+            error_msg = str(e)
+            output = self._handle_error(e)
+
+        duration = time.time() - start_time
+
+        # Execute post-tool hooks
+        if self.hook_manager:
+            post_context = HookContext(
+                hook_type=HookType.POST_TOOL,
+                name=self.name,
+                input_data=tool_input,
+                output_data=output,
+                success=success,
+                error=error_msg,
+                duration_seconds=duration,
+            )
+            self.hook_manager.execute(post_context, self.name)
+
+        return output
 
     @abstractmethod
     def _run(self, *args, **kwargs) -> str:

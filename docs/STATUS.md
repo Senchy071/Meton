@@ -168,12 +168,14 @@ Enhanced usability and production features
 
 ---
 
-### Phase 6: Claude Code-Style Extensions (2/2 tasks)
+### Phase 6: Claude Code-Style Extensions (4/4 tasks)
 
-Markdown-based skills and sub-agents inspired by Claude Code architecture.
+Markdown-based skills, sub-agents, agent integration, and hooks system inspired by Claude Code architecture.
 
 - Task 51: Markdown Skills System (Claude Code-style skills with YAML frontmatter)
 - Task 52: Sub-Agents System (autonomous specialized agents with isolated context)
+- Task 53: Agent Integration (skill and sub-agent tools for main agent)
+- Task 54: Hooks System (pre/post execution hooks for tools, skills, agents, queries)
 
 **Markdown Skills System:**
 - MarkdownSkill class with YAML frontmatter parsing
@@ -192,12 +194,30 @@ Markdown-based skills and sub-agents inspired by Claude Code architecture.
 - CLI commands: /agent list, run, info, discover, history
 - 32 comprehensive tests (100% pass rate)
 
+**Agent Integration:**
+- SkillInvocationTool for agent to invoke skills by name
+- SubAgentTool for agent to spawn sub-agents for specialized tasks
+- System prompt includes available skills and sub-agents
+- 24 comprehensive tests (100% pass rate)
+
+**Hooks System:**
+- Hook class with shell command or Python function support
+- HookManager for registration and execution with history tracking
+- HookLoader for multi-directory discovery (project > user > builtin)
+- Pre/post hooks for: queries, tools, skills, agents
+- Conditional execution with template variable support
+- Built-in hooks: log-tool-usage, notify-on-error
+- CLI commands: /hook list, info, enable, disable, discover, history, stats, create
+- 39 comprehensive tests (100% pass rate)
+
 **Key Features:**
 - YAML frontmatter for metadata (name, description, tools, model)
-- Precedence system: project (.meton/skills/) > user (~/.meton/skills/) > builtin
+- Precedence system: project (.meton/) > user (~/.meton/) > builtin
 - Tool restrictions per skill/agent
 - Model selection (primary, fallback, quick, inherit)
 - Isolated conversation context for sub-agents
+- Event-driven automation with pre/post hooks
+- Hook conditions for selective execution
 
 ---
 
@@ -219,12 +239,13 @@ Reason: Optional enhancement. Semantic search + symbol lookup cover most documen
 ## METRICS
 
 ### Code Statistics
-- Total Lines: ~40,000+ lines of Python
-- Test Coverage: 447+ tests across all modules (34 markdown skills, 32 sub-agents, 381+ previous)
+- Total Lines: ~42,000+ lines of Python
+- Test Coverage: 510+ tests across all modules (34 markdown skills, 32 sub-agents, 24 agent integration, 39 hooks, 381+ previous)
 - Success Rate: 95%+ (majority of tests passing)
 - Skills Implemented: 10 production-ready skills (7 Python + 3 Markdown)
 - Sub-Agents Available: 4 built-in agents (explorer, planner, code-reviewer, debugger)
-- Tools Available: 8 (file ops, code exec, web search, codebase search, symbol lookup, import graph, git)
+- Hooks Available: 2 built-in hooks (log-tool-usage, notify-on-error)
+- Tools Available: 10 (file ops, code exec, web search, codebase search, symbol lookup, import graph, git, invoke_skill, spawn_agent)
 - Project Templates: 5 built-in templates (FastAPI, CLI, Data Science, Flask, General)
 - Configuration Profiles: 5 built-in profiles (Development, Research, Writing, Quick, Code Review)
 

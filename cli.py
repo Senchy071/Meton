@@ -34,6 +34,7 @@ from tools.skill_tool import SkillInvocationTool
 from tools.subagent_tool import SubAgentTool
 from skills.skill_manager import SkillManager
 from agents.subagent_spawner import SubAgentManager
+from hooks import HookManager, HookLoader, Hook, HookType
 from utils.logger import setup_logger
 
 
@@ -64,6 +65,10 @@ class MetonCLI:
         # Managers for skills and sub-agents
         self.skill_manager: Optional[SkillManager] = None
         self.subagent_manager: Optional[SubAgentManager] = None
+
+        # Hook manager
+        self.hook_manager: Optional[HookManager] = None
+        self.hook_loader: Optional[HookLoader] = None
 
         # CLI state
         self.running = True
@@ -131,6 +136,19 @@ class MetonCLI:
             # Full tools list for main agent (includes skill and subagent tools)
             all_tools = base_tools + [self.skill_tool, self.subagent_tool]
 
+            # Initialize Hook Manager and load hooks
+            self.console.print("  [dim]Loading hooks...[/dim]")
+            self.hook_manager = HookManager()
+            self.hook_loader = HookLoader()
+            loaded_hooks = self.hook_loader.load_all()
+            for hook in loaded_hooks:
+                self.hook_manager.register(hook)
+
+            # Set hook manager on all tools
+            for tool in all_tools:
+                if hasattr(tool, 'set_hook_manager'):
+                    tool.set_hook_manager(self.hook_manager)
+
             # Initialize Agent
             self.console.print("  [dim]Loading agent...[/dim]")
             self.agent = MetonAgent(
@@ -140,7 +158,8 @@ class MetonCLI:
                 tools=all_tools,
                 verbose=self.verbose,
                 skill_tool=self.skill_tool,
-                subagent_tool=self.subagent_tool
+                subagent_tool=self.subagent_tool,
+                hook_manager=self.hook_manager
             )
             
             self.console.print("[green]✓ Initialization complete![/green]\n")
@@ -295,6 +314,20 @@ class MetonCLI:
         table.add_row("/agent info <name>", "Show sub-agent information")
         table.add_row("/agent discover", "Rediscover available sub-agents")
         table.add_row("/agent history", "Show recent sub-agent executions")
+
+        # Add hooks commands section
+        table.add_section()
+        table.add_row("[bold cyan]Hooks:[/]", "")
+        table.add_row("/hook list", "List all registered hooks")
+        table.add_row("/hook info <name>", "Show hook details")
+        table.add_row("/hook enable <name>", "Enable a hook")
+        table.add_row("/hook disable <name>", "Disable a hook")
+        table.add_row("/hook discover", "Rediscover and reload hooks")
+        table.add_row("/hook history", "Show recent hook executions")
+        table.add_row("/hook stats", "Show hook statistics")
+        table.add_row("/hook on", "Enable all hooks globally")
+        table.add_row("/hook off", "Disable all hooks globally")
+        table.add_row("/hook create <name>", "Create a new hook interactively")
 
         table.add_section()
         table.add_row("/exit, /quit, /q", "Exit Meton")
@@ -520,6 +553,12 @@ class MetonCLI:
                 self.handle_agent_command(' '.join(args))
             else:
                 self.list_agents()
+        elif cmd == '/hook':
+            # Hook management command
+            if args:
+                self.handle_hook_command(' '.join(args))
+            else:
+                self.list_hooks()
         elif cmd in ['/exit', '/quit', '/q']:
             self.exit_cli()
         else:
@@ -3151,6 +3190,315 @@ class MetonCLI:
             self.console.print(f"[red]❌ Failed to show history: {str(e)}[/red]\n")
 
     # ========== End Sub-Agent Commands ==========
+
+    # ========== Hook Commands ==========
+
+    def list_hooks(self):
+        """List all registered hooks."""
+        if not self.hook_manager:
+            self.console.print("[red]❌ Hook manager not initialized[/red]")
+            return
+
+        try:
+            hooks = self.hook_manager.list_hooks()
+
+            if not hooks:
+                self.console.print("[yellow]No hooks registered[/yellow]")
+                self.console.print("[dim]Create hooks in .meton/hooks/ or ~/.meton/hooks/[/dim]\n")
+                return
+
+            table = Table(title="Registered Hooks", show_header=True, header_style="bold cyan")
+            table.add_column("Name", style="yellow", width=25)
+            table.add_column("Type", style="white", width=15)
+            table.add_column("Status", style="white", width=10)
+            table.add_column("Description", style="white")
+
+            for hook in sorted(hooks, key=lambda h: h.name):
+                status = "[green]enabled[/green]" if hook.enabled else "[red]disabled[/red]"
+                desc = hook.description or "(no description)"
+                if len(desc) > 40:
+                    desc = desc[:37] + "..."
+                table.add_row(hook.name, hook.hook_type.value, status, desc)
+
+            self.console.print()
+            self.console.print(table)
+
+            stats = self.hook_manager.get_stats()
+            self.console.print(f"\n[dim]Total: {stats['total_hooks']} hooks ({stats['enabled_hooks']} enabled)[/dim]")
+            self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to list hooks: {str(e)}[/red]\n")
+
+    def handle_hook_command(self, command_str: str):
+        """Handle hook subcommands."""
+        parts = command_str.split(maxsplit=1)
+        if not parts:
+            self.list_hooks()
+            return
+
+        subcommand = parts[0].lower()
+        args = parts[1:] if len(parts) > 1 else []
+
+        try:
+            if subcommand == 'list':
+                self.list_hooks()
+
+            elif subcommand == 'info':
+                if not args:
+                    self.console.print("[yellow]Usage: /hook info <name>[/yellow]")
+                    return
+                self.show_hook_info(args[0])
+
+            elif subcommand == 'enable':
+                if not args:
+                    self.console.print("[yellow]Usage: /hook enable <name>[/yellow]")
+                    return
+                self.enable_hook(args[0])
+
+            elif subcommand == 'disable':
+                if not args:
+                    self.console.print("[yellow]Usage: /hook disable <name>[/yellow]")
+                    return
+                self.disable_hook(args[0])
+
+            elif subcommand == 'discover':
+                self.discover_hooks()
+
+            elif subcommand == 'history':
+                self.show_hook_history()
+
+            elif subcommand == 'stats':
+                self.show_hook_stats()
+
+            elif subcommand == 'on':
+                self.hook_manager.enable_all()
+                self.console.print("[green]✓ All hooks enabled[/green]")
+
+            elif subcommand == 'off':
+                self.hook_manager.disable_all()
+                self.console.print("[yellow]⚠ All hooks disabled[/yellow]")
+
+            elif subcommand == 'create':
+                if not args:
+                    self.console.print("[yellow]Usage: /hook create <name>[/yellow]")
+                    return
+                self.create_hook(args[0])
+
+            else:
+                self.console.print(f"[red]❌ Unknown hook subcommand: {subcommand}[/red]")
+                self.console.print("[dim]Available: list, info, enable, disable, discover, history, stats, on, off, create[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Hook command failed: {str(e)}[/red]")
+
+    def show_hook_info(self, hook_name: str):
+        """Show detailed information about a hook."""
+        if not self.hook_manager:
+            self.console.print("[red]❌ Hook manager not initialized[/red]")
+            return
+
+        hook = self.hook_manager.get_hook(hook_name)
+        if not hook:
+            self.console.print(f"[red]❌ Hook not found: {hook_name}[/red]")
+            return
+
+        lines = [
+            f"[cyan]Name:[/cyan]        {hook.name}",
+            f"[cyan]Type:[/cyan]        {hook.hook_type.value}",
+            f"[cyan]Enabled:[/cyan]     {'Yes' if hook.enabled else 'No'}",
+            f"[cyan]Blocking:[/cyan]    {'Yes' if hook.blocking else 'No'}",
+            f"[cyan]Timeout:[/cyan]     {hook.timeout}s",
+            f"[cyan]Source:[/cyan]      {hook.source}",
+            f"[cyan]Description:[/cyan] {hook.description or '(none)'}",
+        ]
+
+        if hook.command:
+            lines.append(f"[cyan]Command:[/cyan]     {hook.command}")
+
+        if hook.condition:
+            lines.append(f"[cyan]Condition:[/cyan]   {hook.condition}")
+
+        if hook.target_names:
+            lines.append(f"[cyan]Targets:[/cyan]     {', '.join(hook.target_names)}")
+
+        panel = Panel(
+            "\n".join(lines),
+            title=f"Hook: {hook_name}",
+            border_style="cyan",
+            padding=(1, 2)
+        )
+        self.console.print()
+        self.console.print(panel)
+        self.console.print()
+
+    def enable_hook(self, hook_name: str):
+        """Enable a hook."""
+        if not self.hook_manager:
+            self.console.print("[red]❌ Hook manager not initialized[/red]")
+            return
+
+        if self.hook_manager.enable_hook(hook_name):
+            self.console.print(f"[green]✓ Hook '{hook_name}' enabled[/green]")
+        else:
+            self.console.print(f"[red]❌ Hook not found: {hook_name}[/red]")
+
+    def disable_hook(self, hook_name: str):
+        """Disable a hook."""
+        if not self.hook_manager:
+            self.console.print("[red]❌ Hook manager not initialized[/red]")
+            return
+
+        if self.hook_manager.disable_hook(hook_name):
+            self.console.print(f"[yellow]⚠ Hook '{hook_name}' disabled[/yellow]")
+        else:
+            self.console.print(f"[red]❌ Hook not found: {hook_name}[/red]")
+
+    def discover_hooks(self):
+        """Discover and reload hooks."""
+        if not self.hook_loader:
+            self.console.print("[red]❌ Hook loader not initialized[/red]")
+            return
+
+        try:
+            discovered = self.hook_loader.discover()
+            total = sum(len(hooks) for hooks in discovered.values())
+
+            self.console.print(f"[green]✓ Discovered {total} hooks:[/green]")
+            for source, hooks in discovered.items():
+                if hooks:
+                    self.console.print(f"  [dim]{source}: {', '.join(hooks)}[/dim]")
+
+            # Reload hooks
+            self.hook_manager.clear()
+            loaded_hooks = self.hook_loader.load_all()
+            for hook in loaded_hooks:
+                self.hook_manager.register(hook)
+
+            self.console.print(f"[green]✓ Loaded {len(loaded_hooks)} hooks[/green]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to discover hooks: {str(e)}[/red]\n")
+
+    def show_hook_history(self):
+        """Show recent hook execution history."""
+        if not self.hook_manager:
+            self.console.print("[red]❌ Hook manager not initialized[/red]")
+            return
+
+        history = self.hook_manager.get_history(20)
+
+        if not history:
+            self.console.print("[yellow]No hook execution history[/yellow]\n")
+            return
+
+        table = Table(title="Recent Hook Executions", show_header=True, header_style="bold cyan")
+        table.add_column("Hook", style="yellow", width=25)
+        table.add_column("Type", style="white", width=12)
+        table.add_column("Target", style="white", width=15)
+        table.add_column("Status", style="white", width=10)
+        table.add_column("Duration", style="white", width=10)
+
+        for entry in reversed(history):
+            status = "[green]✓[/green]" if entry["success"] else "[red]✗[/red]"
+            duration = f"{entry['duration']:.3f}s"
+            target = entry.get("target_name", "-") or "-"
+            table.add_row(entry["hook_name"], entry["hook_type"], target, status, duration)
+
+        self.console.print()
+        self.console.print(table)
+        self.console.print()
+
+    def show_hook_stats(self):
+        """Show hook statistics."""
+        if not self.hook_manager:
+            self.console.print("[red]❌ Hook manager not initialized[/red]")
+            return
+
+        stats = self.hook_manager.get_stats()
+
+        lines = [
+            f"[cyan]Total Hooks:[/cyan]      {stats['total_hooks']}",
+            f"[cyan]Enabled:[/cyan]          {stats['enabled_hooks']}",
+            f"[cyan]Disabled:[/cyan]         {stats['disabled_hooks']}",
+            f"[cyan]Globally Enabled:[/cyan] {'Yes' if stats['globally_enabled'] else 'No'}",
+            "",
+            "[cyan]Hooks by Type:[/cyan]",
+        ]
+
+        for hook_type, count in stats.get("hooks_by_type", {}).items():
+            if count > 0:
+                lines.append(f"  {hook_type}: {count}")
+
+        lines.extend([
+            "",
+            "[cyan]Execution Stats:[/cyan]",
+            f"  Total: {stats['total_executions']}",
+            f"  Successful: {stats['successful_executions']}",
+            f"  Failed: {stats['failed_executions']}",
+        ])
+
+        panel = Panel(
+            "\n".join(lines),
+            title="Hook Statistics",
+            border_style="cyan",
+            padding=(1, 2)
+        )
+        self.console.print()
+        self.console.print(panel)
+        self.console.print()
+
+    def create_hook(self, hook_name: str):
+        """Create a new hook interactively."""
+        if not self.hook_loader:
+            self.console.print("[red]❌ Hook loader not initialized[/red]")
+            return
+
+        try:
+            self.console.print(f"\n[cyan]Creating new hook: {hook_name}[/cyan]\n")
+
+            # Get hook type
+            self.console.print("Available hook types:")
+            for ht in HookType:
+                self.console.print(f"  - {ht.value}")
+
+            hook_type_str = Prompt.ask(
+                "Hook type",
+                default="post_tool"
+            )
+            try:
+                hook_type = HookType(hook_type_str)
+            except ValueError:
+                self.console.print(f"[red]Invalid hook type: {hook_type_str}[/red]")
+                return
+
+            # Get command
+            command = Prompt.ask("Shell command to execute")
+            if not command:
+                self.console.print("[red]Command is required[/red]")
+                return
+
+            # Get optional fields
+            description = Prompt.ask("Description", default="")
+            condition = Prompt.ask("Condition (optional, e.g. '{success} == false')", default="")
+
+            # Create the hook
+            hook_file = self.hook_loader.create_hook_directory(
+                name=hook_name,
+                hook_type=hook_type,
+                command=command,
+                location="project",
+                description=description,
+                condition=condition if condition else None
+            )
+
+            self.console.print(f"\n[green]✓ Created hook at: {hook_file}[/green]")
+            self.console.print("[dim]Run /hook discover to load the new hook[/dim]\n")
+
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to create hook: {str(e)}[/red]\n")
+
+    # ========== End Hook Commands ==========
 
     def exit_cli(self):
         """Exit the CLI."""
