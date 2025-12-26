@@ -1,7 +1,7 @@
 ---
 name: log-tool-usage
 hook_type: post_tool
-command: echo "[$(date +%Y-%m-%d\ %H:%M:%S)] Tool: {name} | Success: {success} | Duration: {duration}s" >> ~/.meton/tool_usage.log
+command: 'echo "[$(date +%Y-%m-%d\ %H:%M:%S)] Tool: {name} | Success: {success} | Duration: {duration}s" >> ~/.meton/tool_usage.log'
 description: Logs all tool executions to a file for analysis
 enabled: false
 blocking: false

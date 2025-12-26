@@ -1,7 +1,7 @@
 ---
 name: notify-on-error
 hook_type: post_tool
-command: notify-send "Meton Tool Error" "Tool '{name}' failed: {error}"
+command: 'notify-send "Meton Tool Error" "Tool ''{name}'' failed: {error}"'
 condition: "{success} == false"
 description: Sends desktop notification when a tool fails
 enabled: false
