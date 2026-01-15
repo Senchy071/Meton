@@ -149,6 +149,55 @@ source venv/bin/activate
 - Built-in hooks: log-tool-usage, notify-on-error (disabled by default)
 - Discovery order: `.meton/hooks/` (project) > `~/.meton/hooks/` (user) > `hooks/builtin/` (builtin)
 
+9. Logging System (`utils/logger.py`)
+
+- Centralized logging configuration via `config.yaml` logging section
+- `LoggingConfig` Pydantic model in `core/config.py` for type-safe settings
+- `MetonLogger` class with Rich-enhanced console output and daily rotating file logs
+- Library log suppression for noisy dependencies (httpx, langchain, torch, etc.)
+- Automatic log file cleanup based on `max_log_files` setting
+
+**Configuration (`config.yaml`):**
+
+```yaml
+logging:
+  enabled: true
+  level: INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_dir: ./logs
+  console_output: false  # Keep CLI clean, logs go to file
+  use_rich: true
+  suppress_library_logs: true
+  max_log_files: 30  # Keep last 30 daily log files
+```
+
+**Log File Naming:** `<component>_YYYYMMDD.log` (e.g., `meton_agent_20260115.log`)
+
+**Using Logging in Components:**
+
+```python
+# In tools/skills with config access:
+from utils.logger import setup_logger
+self.logger = setup_logger(
+    name="my_component",
+    config=config.config.logging.model_dump()
+)
+
+# In modules with optional logging config:
+def __init__(self, ..., logging_config: Optional[Dict] = None):
+    self.logger = setup_logger(name="my_module", config=logging_config)
+```
+
+**Entry Point (`meton.py`):**
+- Loads config and configures logging before other imports
+- Suppresses noisy library logs based on `suppress_library_logs` setting
+- Logs startup/shutdown events
+
+**Log Locations:**
+- `logs/meton_*.log` - Main application logs
+- `logs/meton_cli_*.log` - CLI interface logs
+- `logs/meton_agent_*.log` - Agent execution logs
+- `logs/<tool>_*.log` - Individual tool logs
+
 ### Tools (`tools/` directory)
 
 All tools inherit from `MetonBaseTool` (extends LangChain's `BaseTool`).
@@ -412,11 +461,12 @@ Run directly: `python test_component.py`
 
 ## Critical Files Reference
 
-- `config.yaml` - Main configuration (models, tools, conversation, RAG settings)
+- `config.yaml` - Main configuration (models, tools, conversation, RAG, logging settings)
 - `core/agent.py` - ReAct agent implementation with LangGraph
 - `core/config.py` - Type-safe configuration with Pydantic (has save() method!)
 - `cli.py` - Main CLI interface with Rich formatting
-- `meton.py` - Entry point
+- `meton.py` - Entry point (configures logging before imports)
+- `utils/logger.py` - MetonLogger class and setup_logger() function
 - `tools/base.py` - Base tool class
 - `skills/base.py` - Base skill class
 - `rag/indexer.py` - Codebase indexing orchestration
@@ -504,10 +554,15 @@ meton/
 │ ├── metadata_store.py # JSON metadata storage
 │ └── indexer.py # Indexing orchestration
 ├── utils/ # Utilities
-│ ├── logger.py # Logging setup
+│ ├── logger.py # MetonLogger + setup_logger()
 │ └── formatting.py # CLI formatting helpers
+├── logs/ # Log files (daily rotation)
+│ ├── meton_*.log # Main application logs
+│ ├── meton_cli_*.log # CLI logs
+│ ├── meton_agent_*.log # Agent logs
+│ └── <tool>_*.log # Tool-specific logs
 ├── cli.py # Main CLI interface
-├── meton.py # Entry point
+├── meton.py # Entry point (logging setup)
 ├── config.yaml # Configuration file
 ├── requirements.txt # Python dependencies
 └── test_*.py # Test scripts
