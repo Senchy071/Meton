@@ -81,7 +81,8 @@ class MultiAgentCoordinator:
         model_manager: ModelManager,
         conversation: ConversationManager,
         tools: List[BaseTool],
-        config: Dict
+        config: Dict,
+        logging_config: Optional[Dict] = None
     ):
         """Initialize the multi-agent coordinator.
 
@@ -90,6 +91,7 @@ class MultiAgentCoordinator:
             conversation: Conversation manager instance
             tools: List of available tools
             config: Multi-agent configuration dictionary
+            logging_config: Optional logging configuration dictionary
         """
         self.model_manager = model_manager
         self.conversation = conversation
@@ -103,7 +105,7 @@ class MultiAgentCoordinator:
 
         # Initialize specialized agents
         self.agents: Dict[str, MetonAgent] = {}
-        self.logger = setup_logger(name="multi_agent_coordinator", console_output=False)
+        self.logger = setup_logger(name="multi_agent_coordinator", config=logging_config)
 
         self._initialize_agents()
 

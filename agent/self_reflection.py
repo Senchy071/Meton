@@ -125,7 +125,7 @@ Generate an improved response that:
 
 Provide ONLY the improved response, no explanations or meta-commentary."""
 
-    def __init__(self, model_manager: ModelManager, config: Dict):
+    def __init__(self, model_manager: ModelManager, config: Dict, logging_config: Optional[Dict] = None):
         """Initialize the self-reflection module.
 
         Args:
@@ -135,6 +135,7 @@ Provide ONLY the improved response, no explanations or meta-commentary."""
                 - min_quality_threshold: Score below which to improve (default 0.7)
                 - max_iterations: Maximum improvement attempts (default 2)
                 - auto_reflect_on: Conditions for automatic reflection
+            logging_config: Optional logging configuration dictionary
         """
         self.model_manager = model_manager
         self.config = config
@@ -148,7 +149,7 @@ Provide ONLY the improved response, no explanations or meta-commentary."""
         self.reflection_history: List[ReflectionRecord] = []
 
         # Logger
-        self.logger = setup_logger(name="self_reflection", console_output=False)
+        self.logger = setup_logger(name="self_reflection", config=logging_config)
 
         if self.logger:
             self.logger.info("SelfReflectionModule initialized")

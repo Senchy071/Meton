@@ -131,7 +131,8 @@ Provide ONLY the improved response, no meta-commentary."""
         self,
         model_manager: ModelManager,
         reflection_module: SelfReflectionModule,
-        config: Dict
+        config: Dict,
+        logging_config: Optional[Dict] = None
     ):
         """Initialize the iterative improvement loop.
 
@@ -144,6 +145,7 @@ Provide ONLY the improved response, no meta-commentary."""
                 - quality_threshold: Score to reach (default 0.85)
                 - convergence_threshold: Min improvement (default 0.05)
                 - convergence_window: Scores to compare (default 2)
+            logging_config: Optional logging configuration dictionary
         """
         self.model_manager = model_manager
         self.reflection_module = reflection_module
@@ -159,7 +161,7 @@ Provide ONLY the improved response, no meta-commentary."""
         self.improvement_history: List[ImprovementSession] = []
 
         # Logger
-        self.logger = setup_logger(name="iterative_improvement", console_output=False)
+        self.logger = setup_logger(name="iterative_improvement", config=logging_config)
 
         if self.logger:
             self.logger.info("IterativeImprovementLoop initialized")
