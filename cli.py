@@ -45,7 +45,10 @@ class MetonCLI:
         """Initialize CLI."""
         self.console = Console()
         self.config = Config()
-        self.logger = setup_logger(name="meton_cli", console_output=False)
+        self.logger = setup_logger(
+            name="meton_cli",
+            config=self.config.config.logging.model_dump()
+        )
         
         # Components (initialized later)
         self.model_manager: Optional[ModelManager] = None

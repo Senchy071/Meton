@@ -131,7 +131,10 @@ class MetonAgent:
         self.tool_map = {tool.name: tool for tool in tools}
 
         # Setup logger
-        self.logger = setup_logger(name="meton_agent", console_output=False)
+        self.logger = setup_logger(
+            name="meton_agent",
+            config=config.config.logging.model_dump()
+        )
 
         # Initialize long-term memory if enabled
         self.long_term_memory = None
