@@ -225,6 +225,17 @@ class CLIConfig(BaseModel):
     show_tool_output: bool = True
 
 
+class LoggingConfig(BaseModel):
+    """Logging configuration."""
+    enabled: bool = True
+    level: str = Field(default="INFO", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
+    log_dir: str = "./logs"
+    console_output: bool = False  # Keep CLI clean, logs go to file
+    use_rich: bool = True
+    suppress_library_logs: bool = True
+    max_log_files: int = Field(default=30, ge=1)  # Keep last N daily log files
+
+
 class RAGConfig(BaseModel):
     """RAG (Retrieval-Augmented Generation) configuration."""
     enabled: bool = False
@@ -454,6 +465,7 @@ class MetonConfig(BaseModel):
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
     conversation: ConversationConfig = Field(default_factory=ConversationConfig)
     cli: CLIConfig = Field(default_factory=CLIConfig)
+    logging: LoggingConfig = Field(default_factory=LoggingConfig)
     rag: RAGConfig = Field(default_factory=RAGConfig)
     skills: SkillsConfig = Field(default_factory=SkillsConfig)
     multi_agent: MultiAgentConfig = Field(default_factory=MultiAgentConfig)

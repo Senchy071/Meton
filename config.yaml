@@ -58,6 +58,14 @@ cli:
   show_timestamps: true
   syntax_highlight: true
   show_tool_output: true
+logging:
+  enabled: true
+  level: INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_dir: ./logs
+  console_output: false  # Keep CLI clean, logs go to file
+  use_rich: true
+  suppress_library_logs: true
+  max_log_files: 30  # Keep last 30 daily log files
 rag:
   enabled: true
   embedding_model: sentence-transformers/all-mpnet-base-v2

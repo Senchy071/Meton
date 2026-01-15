@@ -9,6 +9,25 @@ from rich.console import Console
 from rich.logging import RichHandler
 
 
+def _get_log_level(level_str: str) -> int:
+    """Convert log level string to logging constant.
+
+    Args:
+        level_str: Log level name (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
+    Returns:
+        Logging level constant
+    """
+    levels = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+    return levels.get(level_str.upper(), logging.INFO)
+
+
 class MetonLogger:
     """Custom logger for Meton with Rich-enhanced console output."""
 
@@ -18,7 +37,8 @@ class MetonLogger:
         log_dir: str = "./logs",
         level: int = logging.INFO,
         console_output: bool = True,
-        use_rich: bool = True
+        use_rich: bool = True,
+        max_log_files: int = 30
     ):
         """Initialize Meton logger with Rich integration.
 
@@ -28,6 +48,7 @@ class MetonLogger:
             level: Logging level
             console_output: Enable console output
             use_rich: Use Rich for colored console output
+            max_log_files: Maximum number of daily log files to keep
 
         Example:
             >>> logger = MetonLogger()
@@ -41,6 +62,7 @@ class MetonLogger:
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.use_rich = use_rich
         self.console = Console() if use_rich else None
+        self.max_log_files = max_log_files
 
         # Create logger
         self.logger = logging.getLogger(name)
@@ -58,6 +80,29 @@ class MetonLogger:
                 self._add_console_handler()
 
         self._add_file_handler()
+
+        # Clean up old log files
+        self._cleanup_old_logs()
+
+    def _cleanup_old_logs(self) -> None:
+        """Remove old log files exceeding max_log_files limit."""
+        if self.max_log_files <= 0:
+            return
+
+        # Find all log files for this logger name
+        log_pattern = f"{self.name}_*.log"
+        log_files = sorted(
+            self.log_dir.glob(log_pattern),
+            key=lambda f: f.stat().st_mtime,
+            reverse=True  # Newest first
+        )
+
+        # Remove files exceeding the limit
+        for old_file in log_files[self.max_log_files:]:
+            try:
+                old_file.unlink()
+            except OSError:
+                pass  # Ignore errors during cleanup
 
     def _add_rich_console_handler(self) -> None:
         """Add Rich console handler with beautiful formatting."""
@@ -185,7 +230,9 @@ def setup_logger(
     log_dir: str = "./logs",
     level: int = logging.INFO,
     console_output: bool = True,
-    use_rich: bool = True
+    use_rich: bool = True,
+    max_log_files: int = 30,
+    config: Optional[dict] = None
 ) -> MetonLogger:
     """Set up and return a Meton logger with Rich integration.
 
@@ -195,6 +242,8 @@ def setup_logger(
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         console_output: Enable console output
         use_rich: Use Rich for colored console output
+        max_log_files: Maximum number of daily log files to keep
+        config: Optional logging config dict (from config.yaml logging section)
 
     Returns:
         Configured MetonLogger instance
@@ -205,13 +254,28 @@ def setup_logger(
         >>> logger.debug("Loading configuration...")
         >>> logger.warning("Model not found, using fallback")
         >>> logger.error("Failed to connect to Ollama")
+
+        # With config
+        >>> from core.config import ConfigLoader
+        >>> cfg = ConfigLoader()
+        >>> logger = setup_logger(name="meton", config=cfg.config.logging.model_dump())
     """
+    # If config provided, use its values as defaults
+    if config:
+        log_dir = config.get("log_dir", log_dir)
+        level_str = config.get("level", "INFO")
+        level = _get_log_level(level_str) if isinstance(level_str, str) else level
+        console_output = config.get("console_output", console_output)
+        use_rich = config.get("use_rich", use_rich)
+        max_log_files = config.get("max_log_files", max_log_files)
+
     return MetonLogger(
         name=name,
         log_dir=log_dir,
         level=level,
         console_output=console_output,
-        use_rich=use_rich
+        use_rich=use_rich,
+        max_log_files=max_log_files
     )
 
 
