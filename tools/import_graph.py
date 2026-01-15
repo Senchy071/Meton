@@ -68,9 +68,20 @@ class ImportGraphTool(MetonBaseTool):
     def __init__(self, config=None, **kwargs):
         """Initialize ImportGraphTool with optional configuration."""
         super().__init__(**kwargs)
-        self.logger = setup_logger("import_graph")
+        # Setup logger with config if available
+        if config and hasattr(config, 'config') and hasattr(config.config, 'logging'):
+            self.logger = setup_logger(
+                name="import_graph",
+                config=config.config.logging.model_dump()
+            )
+        else:
+            self.logger = setup_logger("import_graph")
         if config:
-            self._enabled = config.get('tools.import_graph.enabled', True)
+            if hasattr(config, 'config'):
+                if hasattr(config.config.tools, 'import_graph'):
+                    self._enabled = getattr(config.config.tools.import_graph, 'enabled', True)
+            else:
+                self._enabled = config.get('tools.import_graph.enabled', True)
 
     def _run(self, input_str: str) -> str:
         """Analyze import dependencies.

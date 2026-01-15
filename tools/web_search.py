@@ -110,7 +110,10 @@ Note: This tool is DISABLED BY DEFAULT. Enable it in config.yaml or via CLI comm
         object.__setattr__(self, '_timeout', search_config.timeout)
 
         # Setup logger
-        object.__setattr__(self, 'logger', setup_logger("web_search"))
+        object.__setattr__(self, 'logger', setup_logger(
+            name="web_search",
+            config=config.config.logging.model_dump()
+        ))
 
         self._log_execution(
             "initialized",

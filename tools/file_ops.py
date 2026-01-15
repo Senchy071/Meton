@@ -103,7 +103,10 @@ Returns: Operation result or error message."""
         object.__setattr__(self, '_max_file_size', file_ops_config.max_file_size_mb * 1024 * 1024)
 
         # Setup logger
-        object.__setattr__(self, 'logger', setup_logger(name="meton_file_ops", console_output=False))
+        object.__setattr__(self, 'logger', setup_logger(
+            name="meton_file_ops",
+            config=config.config.logging.model_dump()
+        ))
 
         if self.logger:
             self.logger.info("FileOperationsTool initialized")

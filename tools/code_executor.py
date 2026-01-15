@@ -211,7 +211,10 @@ Blocked builtins: open, eval, exec, compile, __import__, etc.
         object.__setattr__(self, '_validator', ImportValidator())
 
         # Setup logger
-        object.__setattr__(self, 'logger', setup_logger("code_executor"))
+        object.__setattr__(self, 'logger', setup_logger(
+            name="code_executor",
+            config=config.config.logging.model_dump()
+        ))
 
         self._log_execution("initialized", f"timeout={self._timeout}s")
 

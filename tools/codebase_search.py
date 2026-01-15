@@ -135,7 +135,10 @@ Note: This tool is DISABLED BY DEFAULT. You must:
         object.__setattr__(self, '_embedding_dimension', rag_config.dimensions)
 
         # Setup logger
-        object.__setattr__(self, 'logger', setup_logger("codebase_search", console_output=False))
+        object.__setattr__(self, 'logger', setup_logger(
+            name="codebase_search",
+            config=config.config.logging.model_dump()
+        ))
 
         # Lazy-loaded indexer (only load when needed)
         object.__setattr__(self, '_indexer', None)

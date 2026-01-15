@@ -127,7 +127,10 @@ Use this when you need to:
         object.__setattr__(self, '_index_cache_size', lookup_config.index_cache_size)
 
         # Setup logger
-        object.__setattr__(self, 'logger', setup_logger("symbol_lookup", console_output=False))
+        object.__setattr__(self, 'logger', setup_logger(
+            name="symbol_lookup",
+            config=config.config.logging.model_dump()
+        ))
 
         # In-memory symbol index (built on first use)
         object.__setattr__(self, '_symbol_index', None)
