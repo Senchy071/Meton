@@ -16,7 +16,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2024-11-18 **PRODUCTION RELEASE
+## [1.1.0] - 2026-01-15
+
+### Added
+- Configurable logging system with daily rotating log files
+  - `MetonLogger` class with Rich-enhanced console output
+  - Library log suppression for noisy dependencies (httpx, langchain, torch, etc.)
+  - Automatic log file cleanup based on `max_log_files` setting
+  - Logging configuration via `config.yaml` logging section
+  - 6 new logging settings: enabled, level, log_dir, console_output, use_rich, suppress_library_logs
+
+### Changed
+- Updated all tools to use centralized logging configuration
+- Updated agent modules to support logging config parameter
+- Entry point (`meton.py`) now configures logging before other imports
+
+---
+
+## [1.0.1] - 2025-12-24
+
+### Added
+- Task 54: Hooks System for event-driven automation
+  - Hook class with shell command or Python function support
+  - HookManager for registration and execution with history tracking
+  - HookLoader for multi-directory discovery (project > user > builtin)
+  - Pre/post hooks for: queries, tools, skills, agents
+  - Conditional execution with template variable support
+  - Built-in hooks: log-tool-usage, notify-on-error
+  - CLI commands: /hook list, info, enable, disable, discover, history, stats, create
+  - 39 comprehensive tests (100% pass rate)
+
+- Task 53: Agent Integration with skills and sub-agents
+  - SkillInvocationTool for agent to invoke skills by name
+  - SubAgentTool for agent to spawn sub-agents for specialized tasks
+  - System prompt includes available skills and sub-agents
+  - 24 comprehensive tests (100% pass rate)
+
+- Task 52: Sub-Agents System (autonomous specialized agents)
+  - SubAgent class with markdown definition support
+  - SubAgentLoader for multi-directory discovery
+  - SubAgentSpawner for isolated agent execution with separate context
+  - SubAgentManager for high-level agent management
+  - Built-in agents: explorer (quick model), planner, code-reviewer, debugger
+  - CLI commands: /agent list, run, info, discover, history
+  - 32 comprehensive tests (100% pass rate)
+
+- Task 51: Markdown Skills System (Claude Code-style)
+  - MarkdownSkill class with YAML frontmatter parsing
+  - MarkdownSkillLoader for multi-directory discovery (project > user > builtin)
+  - Hybrid system supporting both Python and Markdown skills
+  - Built-in markdown skills: code-reviewer, code-explainer, debugger
+  - CLI commands: /skill list, load, unload, reload, info, discover
+  - 34 comprehensive tests (100% pass rate)
+
+### Changed
+- Updated STATUS.md to reflect Phase 6 completion
+- Added Mermaid architecture diagrams
+- Enhanced documentation for all new systems
+
+### Summary
+- Phase 6: Claude Code-Style Extensions complete (4/4 tasks)
+- Total Tasks: 54/54 complete (100%)
+- Total Tests: 510+ comprehensive tests (95%+ pass rate)
+
+---
+
+## [1.0.0] - 2025-11-18 **PRODUCTION RELEASE**
 
 ### Added
 - Task 49: Performance Optimization
@@ -52,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.9.0] - 2024-11-17
+## [0.9.0] - 2025-11-17
 
 ### Added
 - Task 47: Documentation & User Guide
@@ -67,7 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.8.0] - 2024-11-16
+## [0.8.0] - 2025-11-16
 
 ### Added
 - Task 38: LSP Integration & Code Actions
@@ -81,7 +146,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.7.0] - 2024-11-15
+## [0.7.0] - 2025-11-15
 
 ### Added
 - Task 37: VS Code Extension - Scaffold & Basic Structure
@@ -98,7 +163,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.6.0] - 2024-11-14
+## [0.6.0] - 2025-11-14
 
 ### Added
 - Task 46: Export/Import System
@@ -116,7 +181,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.5.0] - 2024-11-13
+## [0.5.0] - 2025-11-13
 
 ### Added
 - Task 45: Configuration Profiles
@@ -136,7 +201,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.4.0] - 2024-11-12
+## [0.4.0] - 2025-11-12
 
 ### Added
 - Task 43: Cross-Session Learning
@@ -167,7 +232,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.3.0] - 2024-11-11
+## [0.3.0] - 2025-11-11
 
 ### Added
 - Task 40: Web UI - Multi-Session & Visualization
@@ -191,7 +256,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.2.0] - 2024-11-10
+## [0.2.0] - 2025-11-10
 
 ### Added
 - Task 36: Performance Analytics
@@ -262,7 +327,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.5] - 2024-11-09
+## [0.1.5] - 2025-11-09
 
 ### Added
 - Task 28: Skill Manager
@@ -338,7 +403,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.0] - 2024-11-08
+## [0.1.0] - 2025-11-08
 
 ### Added
 - Phase 4: Agent Intelligence Complete
@@ -382,7 +447,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.0.5] - 2024-11-07
+## [0.0.5] - 2025-11-07
 
 ### Added
 - Phase 1.5: Execution & Search Complete
@@ -411,7 +476,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.0.4] - 2024-11-06
+## [0.0.4] - 2025-11-06
 
 ### Added
 - Phase 1: Foundation Complete
@@ -427,7 +492,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.0.3] - 2024-11-05
+## [0.0.3] - 2025-11-05
 
 ### Added
 - LangGraph ReAct Agent
@@ -449,7 +514,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.0.2] - 2024-11-04
+## [0.0.2] - 2025-11-04
 
 ### Added
 - File Operations Tool
@@ -471,7 +536,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.0.1] - 2024-11-03
+## [0.0.1] - 2025-11-03
 
 ### Added
 - Initial Project Setup
@@ -502,34 +567,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Major Features | Tests | Status |
 |---------|------|----------------|-------|--------|
-| 1.0.0 | 2024-11-18 | Performance Optimization & Testing Suite | 48 | **PRODUCTION |
-| 0.9.0 | 2024-11-17 | Documentation & User Guide | N/A | Released |
-| 0.8.0 | 2024-11-16 | LSP Integration | 35 | Released |
-| 0.7.0 | 2024-11-15 | VS Code Extension | 28 | Released |
-| 0.6.0 | 2024-11-14 | Export/Import System | 34 | Released |
-| 0.5.0 | 2024-11-13 | Profiles & Templates | 77 | Released |
-| 0.4.0 | 2024-11-12 | Memory & Git | 114 | Released |
-| 0.3.0 | 2024-11-11 | Web UI & Analytics | 60 | Released |
-| 0.2.0 | 2024-11-10 | Agent Intelligence | 240 | Released |
-| 0.1.5 | 2024-11-09 | Skills System | 194 | Released |
-| 0.1.0 | 2024-11-08 | RAG System | 109 | Released |
-| 0.0.5 | 2024-11-07 | Tools (Exec, Web) | 42 | Released |
-| 0.0.4 | 2024-11-06 | Foundation Complete | 74 | Released |
-| 0.0.3 | 2024-11-05 | Agent & CLI | 28 | Released |
-| 0.0.2 | 2024-11-04 | Tools & Conversation | 46 | Released |
-| 0.0.1 | 2024-11-03 | Initial Setup | 35 | Released |
+| 1.1.0 | 2026-01-15 | Logging System | N/A | **CURRENT** |
+| 1.0.1 | 2025-12-24 | Phase 6: Claude Code Extensions | 129 | Released |
+| 1.0.0 | 2025-11-18 | Performance Optimization & Testing Suite | 48 | Released |
+| 0.9.0 | 2025-11-17 | Documentation & User Guide | N/A | Released |
+| 0.8.0 | 2025-11-16 | LSP Integration | 35 | Released |
+| 0.7.0 | 2025-11-15 | VS Code Extension | 28 | Released |
+| 0.6.0 | 2025-11-14 | Export/Import System | 34 | Released |
+| 0.5.0 | 2025-11-13 | Profiles & Templates | 77 | Released |
+| 0.4.0 | 2025-11-12 | Memory & Git | 114 | Released |
+| 0.3.0 | 2025-11-11 | Web UI & Analytics | 60 | Released |
+| 0.2.0 | 2025-11-10 | Agent Intelligence | 240 | Released |
+| 0.1.5 | 2025-11-09 | Skills System | 194 | Released |
+| 0.1.0 | 2025-11-08 | RAG System | 109 | Released |
+| 0.0.5 | 2025-11-07 | Tools (Exec, Web) | 42 | Released |
+| 0.0.4 | 2025-11-06 | Foundation Complete | 74 | Released |
+| 0.0.3 | 2025-11-05 | Agent & CLI | 28 | Released |
+| 0.0.2 | 2025-11-04 | Tools & Conversation | 46 | Released |
+| 0.0.1 | 2025-11-03 | Initial Setup | 35 | Released |
 
 ---
 
 ## Statistics
 
-Total Development Time: 16 days
-Total Lines of Code: ~37,000+ lines of Python
-Total Tests: 353+ comprehensive tests
+Total Development Time: 2+ months (Nov 2025 - Jan 2026)
+Total Lines of Code: ~59,000+ lines of Python
+Total Tests: 510+ comprehensive tests
 Test Pass Rate: 95%+
-Tasks Completed: 48/48 (100%) 
+Tasks Completed: 54/54 (100%)
 Tasks Remaining: 0
-Current Phase: COMPLETE - Production Ready! 
+Current Phase: COMPLETE - Production Ready with Logging System! 
 
 ---
 

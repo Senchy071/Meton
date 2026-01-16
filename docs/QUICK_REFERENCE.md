@@ -95,9 +95,9 @@ python launch_web.py --share --port 8080 # With options
 
 | Alias | Model | Use Case |
 |-------|-------|----------|
-| `primary` | qwen2.5:32b-instruct-q5_K_M | Best quality (~15s) |
-| `fallback` | llama3.1:8b | Balanced (~7s) |
-| `quick` | mistral:latest | Fastest (~3s) |
+| `primary` | qwen2.5-coder:32b | Best quality (~15s) |
+| `fallback` | qwen2.5-instruct-q5_K_M | Balanced (~7s) |
+| `quick` | qwen3-coder:30b | Fastest (~3s) |
 
 ```bash
 /model quick # Switch to fast model
@@ -455,14 +455,14 @@ python utils/prepare_training_data.py \
 # 2. Fine-tune with llama.cpp (offline)
 cd /path/to/llama.cpp
 ./finetune \
-    --model-base codellama-7b.gguf \
+    --model-base base.gguf \
     --lora-out custom-lora.gguf \
     --train-data training_data.txt \
     --epochs 3
 
 # 3. Export model
 ./export-lora \
-    --model-base codellama-7b.gguf \
+    --model-base base.gguf \
     --lora custom-lora.gguf \
     --model-out custom-model.gguf
 

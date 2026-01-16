@@ -32,7 +32,7 @@ System design documentation for the Meton local AI coding assistant.
 └──────┬───────┘ └─────────────────┘
  │
 ┌──────▼───────┐
-│ CodeLlama │
+│ Qwen 2.5    │
 │ (Local LLM) │
 └──────────────┘
 ```
@@ -47,7 +47,7 @@ Purpose: User-facing interactive interface
 
 Key Features:
 - Rich console formatting
-- 12 interactive commands
+- 30+ interactive commands
 - Real-time agent feedback
 - Syntax highlighting
 - Error handling
@@ -126,7 +126,7 @@ switch_model(name) # Change active model
 generate(prompt, stream) # Simple generation
 chat(messages) # Chat with history
 get_llm() # LangChain OllamaLLM instance
-resolve_alias(alias) # primary -> codellama:34b
+resolve_alias(alias) # primary -> qwen2.5-coder:32b
 ```
 
 Flow:
@@ -291,7 +291,7 @@ Meton supports using fine-tuned models created with llama.cpp and imported into 
    ```bash
    cd /path/to/llama.cpp
    ./finetune \
-       --model-base codellama-13b.gguf \
+       --model-base qwen2.5-7b.gguf \
        --lora-out meton-custom-lora.gguf \
        --train-data training_data.txt \
        --epochs 3
@@ -300,9 +300,9 @@ Meton supports using fine-tuned models created with llama.cpp and imported into 
 3. Export full model:
    ```bash
    ./export-lora \
-       --model-base codellama-13b.gguf \
+       --model-base qwen2.5-7b.gguf \
        --lora meton-custom-lora.gguf \
-       --model-out meton-custom-13b.gguf
+       --model-out meton-custom-7b.gguf
    ```
 
 4. Create Ollama model:
@@ -1559,7 +1559,7 @@ class MultiModelManager(ModelManager):
 models:
  provider: "ollama" # or "openai", "anthropic"
  ollama:
- primary_model: "codellama:34b"
+ primary_model: "qwen2.5-coder:32b"
  openai:
  model: "gpt-4"
  api_key: "..."
