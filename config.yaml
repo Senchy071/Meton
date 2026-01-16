@@ -1,6 +1,6 @@
 project:
   name: Meton
-  version: 1.0.0
+  version: 1.1.0
   description: Local AI Coding Assistant
 models:
   primary: qwen2.5-coder:32b
